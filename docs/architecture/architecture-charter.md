@@ -83,10 +83,12 @@ The dependency direction (§1) is enforced as concrete import rules:
 6. **No deep imports across module boundaries.** Import from a module's public
    entry point (`index.ts`), not its internal files.
 
-> **Enforcement:** these rules are documented and code-reviewed today. The next
-> guardrail (its own task) is to enforce them mechanically with ESLint boundary
-> rules (e.g. `import/no-restricted-paths` / `eslint-plugin-boundaries`) so a
-> violating import fails the build, not just review.
+> **Enforcement:** these rules are **mechanically enforced** by
+> `eslint-plugin-boundaries` in `eslint.config.mjs` — a violating import fails
+> `npm run lint`, not just code review. The default is *deny*: an import is
+> forbidden unless explicitly allowed. See **ADR-008** for the configuration,
+> rationale, and worked examples. (Wiring lint into a CI/pre-commit gate so
+> violations cannot be merged is a tracked follow-up.)
 
 ## 4. Feature isolation
 

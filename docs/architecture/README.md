@@ -35,6 +35,7 @@ ADR that supersedes the old one and update the old one's status.
 | [005](./adr-005-config-driven-navigation.md) | Config-driven navigation | Accepted |
 | [006](./adr-006-dark-theme-design-tokens.md) | Dark theme by default via design tokens | Accepted |
 | [007](./adr-007-base-ui-composition.md) | Base UI composition model (render prop) | Accepted |
+| [008](./adr-008-eslint-boundary-enforcement.md) | Automated architecture boundaries via ESLint | Accepted |
 
 ### Writing a new ADR
 
