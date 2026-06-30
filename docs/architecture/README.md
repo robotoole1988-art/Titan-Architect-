@@ -37,6 +37,7 @@ ADR that supersedes the old one and update the old one's status.
 | [007](./adr-007-base-ui-composition.md) | Base UI composition model (render prop) | Accepted |
 | [008](./adr-008-eslint-boundary-enforcement.md) | Automated architecture boundaries via ESLint | Accepted |
 | [009](./adr-009-ci-quality-gates.md) | Automated quality gates in CI (GitHub Actions) | Accepted |
+| [010](./adr-010-knowledge-kernel.md) | The TITAN Knowledge Kernel (core, interfaces only) | Accepted |
 
 ### Writing a new ADR
 
