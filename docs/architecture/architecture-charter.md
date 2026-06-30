@@ -87,8 +87,10 @@ The dependency direction (§1) is enforced as concrete import rules:
 > `eslint-plugin-boundaries` in `eslint.config.mjs` — a violating import fails
 > `npm run lint`, not just code review. The default is *deny*: an import is
 > forbidden unless explicitly allowed. See **ADR-008** for the configuration,
-> rationale, and worked examples. (Wiring lint into a CI/pre-commit gate so
-> violations cannot be merged is a tracked follow-up.)
+> rationale, and worked examples. Lint runs automatically on every push and pull
+> request via GitHub Actions (**ADR-009**), so violations are caught in CI.
+> Making CI *blocking* is one repository setting away: enable branch protection
+> requiring the `CI` check to pass before merge.
 
 ## 4. Feature isolation
 
