@@ -3,6 +3,7 @@ import {
   Boxes,
   BookText,
   BrainCircuit,
+  ClipboardList,
   FileText,
   LayoutDashboard,
   Map,
@@ -44,6 +45,12 @@ export const primaryNavigation: NavSection[] = [
         href: "/brain",
         icon: BrainCircuit,
         description: "The reasoning workspace that coordinates the AI workforce.",
+      },
+      {
+        title: "Business Intake",
+        href: "/business-intake",
+        icon: ClipboardList,
+        description: "Start onboarding: capture a business's details.",
       },
       {
         title: "Experience Studio",
