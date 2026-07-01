@@ -26,6 +26,7 @@ TITAN is building the world's most advanced **AI Growth Operating System for loc
 | Area | Where |
 | --- | --- |
 | 📜 **Founder Manifesto** (the constitution) | [`docs/founder/FOUNDER-MANIFESTO.md`](docs/founder/FOUNDER-MANIFESTO.md) |
+| 🔭 **Product Vision** (what we're building) | [`docs/founder/VISION.md`](docs/founder/VISION.md) |
 | 🏛️ **Architecture Charter** (binding structural rules) | [`docs/architecture/architecture-charter.md`](docs/architecture/architecture-charter.md) |
 | 🧭 **Architecture Decision Records (ADRs)** | [`docs/architecture/`](docs/architecture/README.md) |
 | 📄 **Product Requirement Documents (PRDs)** | [`docs/prd/`](docs/prd/README.md) |

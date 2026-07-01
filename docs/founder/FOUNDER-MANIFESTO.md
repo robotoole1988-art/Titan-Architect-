@@ -26,6 +26,10 @@ audience: Every contributor — human or AI — before any contribution
 
 ---
 
+> **Companion document —** the Manifesto defines our **principles**; the [**TITAN Product Vision**](./VISION.md) defines our **destination**: what we are building and where we are going.
+
+---
+
 ## Table of Contents
 
 1. [Our Mission](#our-mission)
