@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { ClipboardList, Trash2, Wand2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,15 +85,22 @@ export function SavedIntakesList() {
             </div>
 
             <div className="mt-1 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">
-                <Button size="sm" disabled className="gap-1.5">
-                  <Wand2 className="size-3.5" />
-                  Generate Strategy
-                </Button>
-                <span className="text-[11px] text-muted-foreground">
-                  Coming soon
-                </span>
-              </div>
+              <Button
+                size="sm"
+                className="gap-1.5"
+                render={
+                  <Link
+                    href={`/experience-studio?${new URLSearchParams({
+                      businessName: intake.businessName,
+                      trade: intake.trade,
+                      location: intake.location,
+                    }).toString()}`}
+                  />
+                }
+              >
+                <Wand2 className="size-3.5" />
+                Generate Strategy
+              </Button>
               <Button
                 size="sm"
                 variant="ghost"

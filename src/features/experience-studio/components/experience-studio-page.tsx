@@ -14,7 +14,10 @@ import {
   Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { generateExperienceStrategy } from "@/core/experience-strategy";
+import {
+  generateExperienceStrategy,
+  type ExperienceStrategyRequest,
+} from "@/core/experience-strategy";
 import { MOCK_STUDIO_REQUEST } from "../model/mock-request";
 import {
   BulletList,
@@ -31,8 +34,32 @@ import {
  * (mock data) as a premium "strategy room". Server-rendered; no state, no AI,
  * no website generation.
  */
-export function ExperienceStudioPage() {
-  const strategy = generateExperienceStrategy(MOCK_STUDIO_REQUEST);
+interface ExperienceStudioPageProps {
+  businessName?: string;
+  trade?: string;
+  location?: string;
+}
+
+/**
+ * When business details are provided (from a Business Intake, via the URL), the
+ * studio renders a strategy generated for that business. When they are absent or
+ * incomplete it falls back to the sample business, so a missing or invalid
+ * intake reference degrades gracefully.
+ */
+export function ExperienceStudioPage({
+  businessName,
+  trade,
+  location,
+}: ExperienceStudioPageProps = {}) {
+  const name = businessName?.trim();
+  const tradeValue = trade?.trim();
+  const locationValue = location?.trim();
+  const fromIntake = Boolean(name && tradeValue && locationValue);
+  const request: ExperienceStrategyRequest =
+    name && tradeValue && locationValue
+      ? { businessName: name, trade: tradeValue, location: locationValue }
+      : MOCK_STUDIO_REQUEST;
+  const strategy = generateExperienceStrategy(request);
   const {
     meta,
     visualDirection,
@@ -67,7 +94,8 @@ export function ExperienceStudioPage() {
             <span aria-hidden>·</span>
             <span>{meta.location}</span>
             <span className="ml-1 inline-flex items-center rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[11px]">
-              Mock data · v{meta.version}
+              {fromIntake ? "From Business Intake" : "Sample business"} · v
+              {meta.version}
             </span>
           </div>
         </div>
