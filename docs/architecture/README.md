@@ -45,6 +45,7 @@ ADR that supersedes the old one and update the old one's status.
 | [015](./adr-015-brain-orchestrator.md) | TITAN Brain Orchestrator (core, interfaces only) | Accepted |
 | [016](./adr-016-experience-studio.md) | Experience Studio (feature, mock data) | Accepted |
 | [017](./adr-017-website-blueprint-engine.md) | Website Blueprint Engine (core, interfaces only) | Accepted |
+| [018](./adr-018-business-intake.md) | Business Intake (feature, mock/localStorage) | Accepted |
 
 ### Writing a new ADR
 

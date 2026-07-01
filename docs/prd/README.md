@@ -13,3 +13,4 @@ This directory holds **Product Requirement Documents (PRDs)**: the *what* and
 | [003](./prd-003-brain-orchestrator.md) | TITAN Brain Orchestrator | Draft |
 | [004](./prd-004-experience-studio.md) | Experience Studio | Draft |
 | [005](./prd-005-website-blueprint-engine.md) | Website Blueprint Engine | Draft |
+| [006](./prd-006-business-intake.md) | Business Intake | Draft |
