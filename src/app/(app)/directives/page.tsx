@@ -1,14 +1,7 @@
-import { Target } from "lucide-react";
-import { PagePlaceholder } from "@/components/common/page-placeholder";
+import { DirectivesListPage } from "@/features/directives";
 
 export const metadata = { title: "Directives" };
 
-export default function DirectivesPage() {
-  return (
-    <PagePlaceholder
-      title="Directives"
-      description="Strategic build directives that guide development."
-      icon={Target}
-    />
-  );
+export default function Page() {
+  return <DirectivesListPage />;
 }
