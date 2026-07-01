@@ -41,6 +41,7 @@ ADR that supersedes the old one and update the old one's status.
 | [011](./adr-011-industry-dna.md) | Industry DNA Architecture (core, interfaces only) | Accepted |
 | [012](./adr-012-experience-engine.md) | TITAN Experience Engine Architecture (core, interfaces only) | Accepted |
 | [013](./adr-013-experience-pipeline.md) | TITAN Experience Pipeline Architecture (core, interfaces only) | Accepted |
+| [014](./adr-014-experience-strategy-generator.md) | Experience Strategy Generator (core, first value engine) | Accepted |
 
 ### Writing a new ADR
 
