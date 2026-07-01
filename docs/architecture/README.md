@@ -39,6 +39,7 @@ ADR that supersedes the old one and update the old one's status.
 | [009](./adr-009-ci-quality-gates.md) | Automated quality gates in CI (GitHub Actions) | Accepted |
 | [010](./adr-010-knowledge-kernel.md) | The TITAN Knowledge Kernel (core, interfaces only) | Accepted |
 | [011](./adr-011-industry-dna.md) | Industry DNA Architecture (core, interfaces only) | Accepted |
+| [012](./adr-012-experience-engine.md) | TITAN Experience Engine Architecture (core, interfaces only) | Accepted |
 
 ### Writing a new ADR
 
