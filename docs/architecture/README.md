@@ -47,6 +47,7 @@ ADR that supersedes the old one and update the old one's status.
 | [017](./adr-017-website-blueprint-engine.md) | Website Blueprint Engine (core, interfaces only) | Accepted |
 | [018](./adr-018-business-intake.md) | Business Intake (feature, mock/localStorage) | Accepted |
 | [019](./adr-019-intake-to-studio-journey.md) | Connecting features into a journey (Intake → Studio) | Accepted |
+| [020](./adr-020-strategy-trade-intelligence.md) | Trade-archetype intelligence in the Strategy Generator | Accepted |
 
 ### Writing a new ADR
 
