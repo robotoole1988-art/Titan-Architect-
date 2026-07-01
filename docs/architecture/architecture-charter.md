@@ -139,6 +139,7 @@ fixed **now** so growth stays deliberate. The key distinction:
 | Module | Home | Why |
 | --- | --- | --- |
 | **Knowledge Kernel** | `src/core/knowledge-kernel/` | The central knowledge layer: the shared contract for storing and retrieving the six DNA types (Trade, Location, Brand, Customer, Competitor, Marketing). Horizontal infrastructure every feature queries. Interfaces only today — see **ADR-010**. The first citizen of the `core/` layer. |
+| **Industry DNA** | `src/core/industry-dna/` | The TITAN Industry DNA v1.0 schema: the complete, extensible model of a UK trade business across twelve sections. The genome every engine and the Brain read from. Interfaces only — see **ADR-011**. |
 | **AI engine** | `src/core/ai/` | The lowest-level model capability: provider clients, prompt/templating, token & usage accounting, streaming. Horizontal infrastructure used everywhere. Depends only on the foundation layer. |
 | **Brain** | `src/core/brain/` | The central intelligence layer — orchestration, agent runtime, planning, routing, and shared memory/context. It is the heart of the AI OS, consumed by many features. Built **on top of** `core/ai`. Not a feature. |
 | **Codex** | `src/features/codex/` | A user-facing domain (company knowledge & IP). Vertical slice. If knowledge storage/retrieval becomes shared infrastructure the Brain depends on, that *service* is promoted to `core/` (e.g. `core/knowledge/`) while the Codex UI stays a feature. |
