@@ -46,6 +46,7 @@ ADR that supersedes the old one and update the old one's status.
 | [016](./adr-016-experience-studio.md) | Experience Studio (feature, mock data) | Accepted |
 | [017](./adr-017-website-blueprint-engine.md) | Website Blueprint Engine (core, interfaces only) | Accepted |
 | [018](./adr-018-business-intake.md) | Business Intake (feature, mock/localStorage) | Accepted |
+| [019](./adr-019-intake-to-studio-journey.md) | Connecting features into a journey (Intake → Studio) | Accepted |
 
 ### Writing a new ADR
 
