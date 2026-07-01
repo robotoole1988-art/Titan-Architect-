@@ -2,6 +2,7 @@ import {
   Bot,
   Boxes,
   BookText,
+  BrainCircuit,
   FileText,
   LayoutDashboard,
   Map,
@@ -36,6 +37,12 @@ export const primaryNavigation: NavSection[] = [
         href: "/dashboard",
         icon: LayoutDashboard,
         description: "Overview of the TITAN ecosystem.",
+      },
+      {
+        title: "TITAN Brain",
+        href: "/brain",
+        icon: BrainCircuit,
+        description: "The reasoning workspace that coordinates the AI workforce.",
       },
       {
         title: "Codex",
