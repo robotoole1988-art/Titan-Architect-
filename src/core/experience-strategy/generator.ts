@@ -1,14 +1,17 @@
 /**
- * Experience Strategy Generator (v0.1).
+ * Experience Strategy Generator (v2 intelligence).
  *
- * The first engine that produces real business value: it turns a business's
- * basic details into a complete, structured Experience Strategy document.
+ * Turns a business's basic details into a complete, structured Experience
+ * Strategy document. Deterministic — no AI, no website generation, no UI.
  *
- * v0.1 uses **mock data** — deterministic content derived from the request. No
- * AI, no website generation, no UI. The `ExperienceStrategyGenerator` interface
- * and the `ExperienceStrategyContext` type are defined so that later the Brain
- * can inject a real Experience Engine + Pipeline and populate strategies
- * automatically, without changing consumers.
+ * The strategic *thinking* lives in `trade-intelligence.ts`: it classifies the
+ * business into an archetype (how its customers buy) and derives a single,
+ * coherent `TradeProfile`. This generator composes that profile into the
+ * existing `ExperienceStrategy` shape — so the public contract is unchanged and
+ * every consumer (e.g. Experience Studio) benefits automatically.
+ *
+ * The `ExperienceStrategyContext` type is defined so the Brain can later inject
+ * a real Experience Engine + Pipeline without changing consumers.
  */
 
 import type { ExperienceEngine } from "@/core/experience-engine";
@@ -28,9 +31,10 @@ import type {
   StrategyDocumentMeta,
   VisualDirection,
 } from "./types";
+import { buildTradeProfile } from "./trade-intelligence";
 
 /** The version of the Experience Strategy engine these interfaces implement. */
-export const EXPERIENCE_STRATEGY_VERSION = "0.1";
+export const EXPERIENCE_STRATEGY_VERSION = "0.2";
 
 /** The engine contract. The Brain will provide its own implementation later. */
 export interface ExperienceStrategyGenerator {
@@ -38,8 +42,8 @@ export interface ExperienceStrategyGenerator {
 }
 
 /**
- * The backends a future, real generator consumes. The v0.1 mock does not use
- * these; the type documents how the Brain will wire the engine up later.
+ * The backends a future, real generator consumes. The mock does not use these;
+ * the type documents how the Brain will wire the engine up later.
  */
 export interface ExperienceStrategyContext {
   engine: ExperienceEngine;
@@ -49,9 +53,58 @@ export interface ExperienceStrategyContext {
 /** Resolves the active generator — swap the mock for a Brain-backed one later. */
 export type ExperienceStrategyGeneratorProvider = () => ExperienceStrategyGenerator;
 
+/** SEO modifiers that read naturally as a prefix rather than a suffix. */
+const PREFIX_MODIFIERS = new Set([
+  "emergency",
+  "24 hour",
+  "same day",
+  "luxury",
+  "bespoke",
+  "designer",
+  "private",
+  "regular",
+]);
+
+function buildKeywords(
+  tradeLower: string,
+  location: string,
+  modifiers: ReadonlyArray<string>,
+): string[] {
+  const base = [`${tradeLower} ${location}`, `${tradeLower} near me`];
+  const extra = modifiers
+    .filter((modifier) => modifier !== "near me")
+    .map((modifier) =>
+      PREFIX_MODIFIERS.has(modifier)
+        ? `${modifier} ${tradeLower} ${location}`
+        : `${tradeLower} ${modifier} ${location}`,
+    );
+  return [...new Set([...base, ...extra])].slice(0, 5);
+}
+
+const ANIMATION_PRINCIPLES: Record<
+  "subtle" | "balanced" | "bold",
+  string[]
+> = {
+  subtle: [
+    "restraint over spectacle — motion must never delay the primary action",
+    "gentle reveal-on-scroll to build trust",
+    "purposeful micro-interactions only",
+  ],
+  balanced: [
+    "reveal-on-scroll to pace the story",
+    "one cinematic hero moment",
+    "purposeful micro-interactions on calls to action",
+  ],
+  bold: [
+    "confident, cinematic motion",
+    "scroll-driven storytelling",
+    "signature interactive moments",
+  ],
+};
+
 /**
- * Generate a complete Experience Strategy from a request, using mock logic that
- * tailors every section to the business name, trade, and location.
+ * Generate a complete Experience Strategy for a business — every section a
+ * different expression of one strategic thesis, tailored to the trade.
  */
 export function generateExperienceStrategy(
   request: ExperienceStrategyRequest,
@@ -60,6 +113,8 @@ export function generateExperienceStrategy(
   const trade = request.trade.trim();
   const location = request.location.trim();
   const tradeLower = trade.toLowerCase();
+
+  const profile = buildTradeProfile(business, trade, tradeLower, location);
 
   const meta: StrategyDocumentMeta = {
     businessName: business,
@@ -71,124 +126,94 @@ export function generateExperienceStrategy(
   };
 
   const visualDirection: VisualDirection = {
-    summary: `A premium, trustworthy visual identity for ${business} — a ${trade} serving ${location}.`,
-    rationale: `Trade customers in ${location} choose on trust and credibility, so the visual direction leads with professionalism and reassurance.`,
-    aesthetic: "Premium, clean, and confidence-building",
-    moodKeywords: ["trustworthy", "premium", "local", "reliable", "modern"],
-    colourDirection: [
-      "deep navy (authority)",
-      "warm accent (approachability)",
-      "clean neutrals (clarity)",
-    ],
-    typographyDirection:
-      "A strong, legible sans-serif for headings paired with a highly readable body face.",
+    summary: `${profile.positioning}`,
+    rationale: `Buying mode: ${profile.buyingMode} ${profile.thesis}`,
+    aesthetic: profile.aesthetic,
+    moodKeywords: profile.moodKeywords,
+    colourDirection: profile.colourDirection,
+    typographyDirection: profile.typographyDirection,
   };
 
   const heroConcept: HeroConcept = {
-    summary: `A cinematic hero positioning ${business} as the go-to ${trade} in ${location}.`,
-    headline: `${location}'s trusted ${tradeLower}`,
-    subheadline: `${business} — fast, reliable ${tradeLower} work, done right the first time.`,
-    visualConcept: `Full-bleed cinematic footage of ${tradeLower} work in a recognisable ${location} setting, with a calm, confident overlay.`,
-    primaryCta: "Get a free quote",
+    summary: `The hero leads with the positioning — ${profile.positioning}`,
+    rationale: `It must answer the visitor's real objection in seconds: "${profile.primaryObjection}"`,
+    headline: profile.hero.headline,
+    subheadline: profile.hero.subheadline,
+    visualConcept: profile.hero.visualConcept,
+    primaryCta: profile.primaryCta,
   };
 
   const storytelling: Storytelling = {
-    summary: `Position ${business} as the local expert who removes stress and delivers certainty.`,
-    narrativeArc: `Problem (something has gone wrong) → Guide (${business}, the trusted local ${tradeLower}) → Plan (simple and fast) → Success (sorted and guaranteed).`,
-    keyMessages: [
-      `Local ${tradeLower} you can trust`,
-      "Fast response",
-      "Upfront, honest pricing",
-      "Guaranteed workmanship",
-    ],
-    emotionalHooks: ["relief", "confidence", "local pride"],
+    summary: profile.thesis,
+    narrativeArc: profile.storyArc,
+    keyMessages: profile.keyMessages,
+    emotionalHooks: profile.dominantEmotions,
   };
 
   const animationStrategy: AnimationStrategy = {
-    summary: "Purposeful, premium motion that guides attention without distraction.",
-    principles: [
-      "reveal-on-scroll",
-      "subtle parallax in the hero",
-      "micro-interactions on calls to action",
-    ],
-    signatureMoments: [
-      "cinematic hero reveal",
-      "animated trust badges",
-      "smooth section transitions",
-    ],
-    intensity: "balanced",
+    summary: `Motion tuned to a ${profile.buyingMode.toLowerCase()} — purposeful, never decorative.`,
+    principles: ANIMATION_PRINCIPLES[profile.animationIntensity],
+    signatureMoments: profile.animationSignatureMoments,
+    intensity: profile.animationIntensity,
   };
 
   const interactiveFeatures: InteractiveFeatures = {
-    summary: `Interactive tools that turn ${location} visitors into enquiries for ${business}.`,
-    features: [
-      "instant quote estimator",
-      `${location} service-area map`,
-      "before/after project slider",
-      "click-to-call on mobile",
-    ],
+    summary: `Interactive tools chosen for this trade's decision triggers: ${profile.decisionTriggers.join(", ")}.`,
+    features: profile.interactiveTools,
   };
 
   const mediaDirection: MediaDirection = {
-    summary: `Authentic, high-quality media that proves ${business}'s craft.`,
-    photographyStyle: `Real, well-lit photography of genuine ${tradeLower} jobs and the team on-site in ${location}.`,
-    videoStyle:
-      "Short, cinematic clips of work in progress and finished results, with natural sound.",
+    summary: `Media that proves ${business}'s credibility to a customer who buys on: ${profile.decisionTriggers[0]}.`,
+    photographyStyle: profile.photographyStyle,
+    videoStyle: profile.videoStyle,
     threeDStyle:
-      "Restrained 3D accents only where they clarify a service — never gimmicky.",
-    shotList: [
-      `${business} team arriving on-site`,
-      "close-up of skilled work in progress",
-      "satisfied customer with the finished job",
-      `recognisable ${location} landmarks for local context`,
-    ],
+      profile.archetype === "premium" || profile.archetype === "project"
+        ? "Tasteful 3D to let customers explore materials, finishes, or the finished space — never gimmicky."
+        : "Restrained 3D accents only where they genuinely clarify a service.",
+    shotList: profile.shotList,
   };
 
   const conversionStrategy: ConversionStrategy = {
-    summary: "Make enquiring effortless and reduce perceived risk at every step.",
-    primaryCta: "Get a free quote",
+    summary: `Remove the one objection that blocks the sale — "${profile.primaryObjection}" — and make the next step effortless.`,
+    primaryCta: profile.primaryCta,
     leadCaptureFlows: [
-      "sticky header call button",
-      "short 3-field quote form",
-      "callback request",
+      `a sticky "${profile.primaryCta}" action`,
+      `a secondary "${profile.secondaryCta}" path for researchers`,
+      "a short, low-friction lead form",
+      "a callback request",
     ],
-    trustSignals: [
-      "verified reviews",
-      "trade certifications",
-      "workmanship guarantee",
-      "years in business",
-    ],
+    trustSignals: profile.trustSignals,
   };
 
   const seoStrategy: SeoStrategy = {
-    summary: `Own local search for ${tradeLower} in ${location}.`,
-    primaryKeywords: [
-      `${tradeLower} ${location}`,
-      `${tradeLower} near me`,
-      `emergency ${tradeLower} ${location}`,
-    ],
+    summary: `Own local ${tradeLower} search in ${location} with intent that matches how these customers actually search.`,
+    primaryKeywords: buildKeywords(tradeLower, location, profile.seoModifiers),
     localKeywords: [
       `${tradeLower} in ${location}`,
       `best ${tradeLower} ${location}`,
-      `${location} ${tradeLower} services`,
+      `${location} ${tradeLower}`,
     ],
     schemaTypes: ["LocalBusiness", "Service", "FAQPage", "Review"],
-    contentPillars: [
-      `${trade} services`,
-      `${location} location pages`,
-      "frequently asked questions",
-      "project case studies",
-    ],
+    contentPillars: profile.contentPillars,
   };
 
   const mobileStrategy: MobileStrategy = {
-    summary: "Mobile-first, because most trade enquiries come from phones.",
-    principles: [
-      "thumb-friendly calls to action",
-      "click-to-call always visible",
-      "fast-loading hero",
-      "short forms",
-    ],
+    summary: profile.isUrgent
+      ? "Mobile-first and call-first — most enquiries arrive on a phone, in the moment."
+      : "Mobile-first — most research and enquiries happen on a phone.",
+    principles: profile.isUrgent
+      ? [
+          "click-to-call always visible and one-tap",
+          "thumb-friendly actions, instantly",
+          "a fast-loading, reassuring hero",
+          "minimal forms",
+        ]
+      : [
+          "thumb-friendly calls to action",
+          "a fast-loading hero",
+          "short, low-friction forms",
+          "a sticky primary call to action",
+        ],
     performanceTargets: [
       "largest contentful paint under 2.5s on 4G",
       "instant tap response",
@@ -198,13 +223,13 @@ export function generateExperienceStrategy(
 
   const aiMediaBrief: AiMediaBrief = {
     summary: `A brief the Brain/AI will later use to generate media for ${business}. (Not generated by AI here.)`,
-    styleGuidance: `Premium, authentic, and local to ${location}: natural light, real ${tradeLower} contexts, a trustworthy tone, and no stock-photo clichés.`,
+    styleGuidance: `${profile.aesthetic}. Mood: ${profile.moodKeywords.join(", ")}. ${profile.photographyStyle} No stock-photo clichés.`,
     imagePrompts: [
-      `A ${business} professional carrying out ${tradeLower} work on-site in ${location}, natural daylight, premium documentary style`,
-      `Clean finished ${tradeLower} work, close-up, shallow depth of field, warm and reassuring`,
+      `${profile.shotList[0]} — for ${business}, a ${tradeLower} in ${location}. ${profile.aesthetic}, natural light, premium documentary style.`,
+      `${profile.shotList[1]} — ${profile.moodKeywords.slice(0, 2).join(" and ")}, shallow depth of field.`,
     ],
     videoPrompts: [
-      `Cinematic 10-second clip of ${business}'s team completing a ${tradeLower} job in ${location}, calm and reassuring tone`,
+      `${profile.videoStyle} A 10-second piece for ${business} in ${location} — tone: ${profile.moodKeywords[0]}.`,
     ],
   };
 
@@ -223,7 +248,7 @@ export function generateExperienceStrategy(
   };
 }
 
-/** The v0.1 mock generator — a ready-to-use `ExperienceStrategyGenerator`. */
+/** The mock generator — a ready-to-use `ExperienceStrategyGenerator`. */
 export const mockExperienceStrategyGenerator: ExperienceStrategyGenerator = {
   generate: (request) => generateExperienceStrategy(request),
 };
