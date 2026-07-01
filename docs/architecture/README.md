@@ -44,6 +44,7 @@ ADR that supersedes the old one and update the old one's status.
 | [014](./adr-014-experience-strategy-generator.md) | Experience Strategy Generator (core, first value engine) | Accepted |
 | [015](./adr-015-brain-orchestrator.md) | TITAN Brain Orchestrator (core, interfaces only) | Accepted |
 | [016](./adr-016-experience-studio.md) | Experience Studio (feature, mock data) | Accepted |
+| [017](./adr-017-website-blueprint-engine.md) | Website Blueprint Engine (core, interfaces only) | Accepted |
 
 ### Writing a new ADR
 
