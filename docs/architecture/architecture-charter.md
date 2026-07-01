@@ -5,6 +5,10 @@
 > This charter is **binding**. It defines the structural rules of the codebase.
 > Changes to these rules require an ADR. Code that violates the charter should
 > be treated as a defect, even if it "works".
+>
+> It operates under the [**TITAN Founder Manifesto**](../founder/FOUNDER-MANIFESTO.md)
+> — the constitution of TITAN. The Manifesto sets the principles and standards;
+> this charter enforces them in the codebase.
 
 ## 0. Purpose
 
