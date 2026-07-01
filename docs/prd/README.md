@@ -9,3 +9,4 @@ This directory holds **Product Requirement Documents (PRDs)**: the *what* and
 | PRD | Title | Status |
 | --- | --- | --- |
 | [001](./prd-001-experience-engine.md) | TITAN Experience Engine | Draft |
+| [002](./prd-002-experience-pipeline.md) | TITAN Experience Pipeline | Draft |
