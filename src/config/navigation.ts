@@ -6,6 +6,7 @@ import {
   FileText,
   LayoutDashboard,
   Map,
+  Palette,
   Settings,
   Target,
   type LucideIcon,
@@ -43,6 +44,12 @@ export const primaryNavigation: NavSection[] = [
         href: "/brain",
         icon: BrainCircuit,
         description: "The reasoning workspace that coordinates the AI workforce.",
+      },
+      {
+        title: "Experience Studio",
+        href: "/experience-studio",
+        icon: Palette,
+        description: "Review a premium Experience Strategy for a business.",
       },
       {
         title: "Codex",
