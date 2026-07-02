@@ -13,7 +13,8 @@ concurrency:
 
 jobs:
   verify:
-    name: Lint · Type-check · Test · Build
+    # Keep this exact name: branch protection requires this status check by name.
+    name: Lint · Type-check · Build
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
