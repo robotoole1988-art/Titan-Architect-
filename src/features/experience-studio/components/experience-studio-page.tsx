@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   ArrowRight,
   BookOpen,
@@ -60,6 +61,11 @@ export function ExperienceStudioPage({
       ? { businessName: name, trade: tradeValue, location: locationValue }
       : MOCK_STUDIO_REQUEST;
   const strategy = generateExperienceStrategy(request);
+  // Push the business context forward through the URL (ADR-019 pattern) so the
+  // Blueprint Viewer regenerates the same strategy deterministically.
+  const blueprintHref = fromIntake
+    ? `/experience-studio/blueprint?businessName=${encodeURIComponent(request.businessName)}&trade=${encodeURIComponent(request.trade)}&location=${encodeURIComponent(request.location)}`
+    : "/experience-studio/blueprint";
   const {
     meta,
     visualDirection,
@@ -102,9 +108,13 @@ export function ExperienceStudioPage({
 
         <div className="flex flex-col items-start gap-1.5 sm:items-end">
           <div className="flex items-center gap-2">
-            <Button disabled className="gap-2">
+            <Button
+              render={<Link href={blueprintHref} />}
+              nativeButton={false}
+              className="gap-2"
+            >
               <Wand2 className="size-4" />
-              Generate Website
+              Generate Blueprint
             </Button>
             <Button variant="outline" disabled className="gap-2">
               <Check className="size-4" />
@@ -112,7 +122,7 @@ export function ExperienceStudioPage({
             </Button>
           </div>
           <span className="text-[11px] text-muted-foreground">
-            Both coming soon
+            Approve Strategy coming soon
           </span>
         </div>
       </header>

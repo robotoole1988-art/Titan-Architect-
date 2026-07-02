@@ -6,3 +6,4 @@
  * §4 and ADR-008). Everything else in this folder is private to the feature.
  */
 export { ExperienceStudioPage } from "./components/experience-studio-page";
+export { BlueprintViewerPage } from "./components/blueprint-viewer-page";
