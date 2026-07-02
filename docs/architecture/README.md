@@ -48,6 +48,7 @@ ADR that supersedes the old one and update the old one's status.
 | [018](./adr-018-business-intake.md) | Business Intake (feature, mock/localStorage) | Accepted |
 | [019](./adr-019-intake-to-studio-journey.md) | Connecting features into a journey (Intake → Studio) | Accepted |
 | [020](./adr-020-strategy-trade-intelligence.md) | Trade-archetype intelligence in the Strategy Generator | Accepted |
+| [021](./adr-021-section-primitive-registry.md) | Section Primitive Registry — blueprints compose, never free-generate | Accepted |
 
 ### Writing a new ADR
 

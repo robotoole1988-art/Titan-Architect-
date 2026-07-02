@@ -1,12 +1,18 @@
 /**
  * TITAN Website Blueprint — public API.
  *
- * Interfaces only. No implementation, no rendering, no HTML/CSS/React/Tailwind,
- * no media, no AI, no database, no business logic. The Blueprint is the master,
- * platform-independent architectural document a website is built from — the
- * architect's drawings, produced before construction.
+ * The Blueprint is the master, platform-independent architectural document a
+ * website is built from — the architect's drawings, produced before
+ * construction. No rendering, no HTML/CSS/React/Tailwind, no media, no AI, no
+ * database.
  *
- * See docs/architecture/adr-017-website-blueprint-engine.md and
+ * Alongside the contracts this module now ships the first real engine: the
+ * Section Primitive Registry (the typed catalogue of composable sections), the
+ * deterministic blueprint builder (strategy → homepage blueprint), and the
+ * validator that enforces the registry (ADR-021).
+ *
+ * See docs/architecture/adr-017-website-blueprint-engine.md,
+ * docs/architecture/adr-021-section-primitive-registry.md, and
  * docs/prd/prd-005-website-blueprint-engine.md.
  *
  * This is the ONLY surface other modules may import from.
@@ -78,3 +84,15 @@ export type {
   WebsiteBlueprintEngine,
   WebsiteBlueprintEngineProvider,
 } from "./engine";
+
+export type {
+  PrimitiveAspects,
+  SectionPrimitive,
+  PrimitiveRegistry,
+} from "./registry";
+export { SECTION_PRIMITIVE_REGISTRY, getSectionPrimitive } from "./registry";
+
+export type { BlueprintValidationResult } from "./validator";
+export { validateBlueprint } from "./validator";
+
+export { buildWebsiteBlueprint, createWebsiteBlueprintEngine } from "./builder";

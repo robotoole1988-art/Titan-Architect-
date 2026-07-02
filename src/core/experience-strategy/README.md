@@ -4,10 +4,12 @@
 business's basic details into a complete, structured **Experience Strategy** —
 a strategy *document*, not a website.
 
-> **Status: v0.1 — mock data.** No AI APIs, no UI, no website generation. The
-> generator produces deterministic content tailored to the business name, trade,
-> and location. It is designed so the Brain can inject a real Experience Engine +
-> Pipeline later and populate strategies automatically.
+> **Status: v0.2 — deterministic trade intelligence (ADR-020).** No AI APIs, no
+> UI, no website generation. The generator classifies the business into a trade
+> archetype and derives every section from one strategic thesis — deterministic
+> content tailored to the business name, trade, and location. It is designed so
+> the Brain can inject a real Experience Engine + Pipeline later and populate
+> strategies automatically.
 
 ## Input → Output
 
