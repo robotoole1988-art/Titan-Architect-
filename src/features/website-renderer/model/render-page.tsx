@@ -3,8 +3,9 @@
  *
  * Pure and deterministic: resolves each blueprint section through the
  * PrimitiveComponentMap and composes site header → sections → site footer
- * under the resolved theme. Unmapped primitives fail loudly in development
- * and degrade gracefully (skip + warn) in production.
+ * under the resolved theme. Registry primitives always resolve — crafted
+ * component or labelled placeholder; identifiers OUTSIDE the registry fail
+ * loudly in development and degrade gracefully (skip + warn) in production.
  */
 
 import { MotionConfig } from "framer-motion";
@@ -13,7 +14,7 @@ import { resolveTheme } from "../theme/theme";
 import { SiteFooter, SiteHeader } from "../primitives/site-chrome";
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
 import { parseSlots, sectionVariant } from "./slots";
-import { PRIMITIVE_COMPONENT_MAP } from "./primitive-map";
+import { resolvePrimitiveComponent } from "./primitive-map";
 import type { RenderPageOptions } from "./types";
 
 /** Base styles scoped to the rendered site (not the TITAN app). */
@@ -29,7 +30,6 @@ export function renderPage(
   blueprint: WebsiteBlueprint,
   options: RenderPageOptions = {},
 ): ReactElement {
-  const map = options.map ?? PRIMITIVE_COMPONENT_MAP;
   const onUnmapped =
     options.onUnmapped ??
     (process.env.NODE_ENV === "production" ? "skip" : "throw");
@@ -37,7 +37,9 @@ export function renderPage(
   const theme = resolveTheme(blueprint.designSystem?.themeRef);
 
   const sections = page.sections.map((section) => {
-    const Primitive = map[section.identifier];
+    // Registry primitives ALWAYS resolve (crafted or labelled placeholder);
+    // null means the identifier is outside the registry — a broken blueprint.
+    const Primitive = resolvePrimitiveComponent(section.identifier, options.map);
     if (!Primitive) {
       const detail = `primitive "${section.identifier}" (variant "${sectionVariant(section)}", section "${section.id}")`;
       if (onUnmapped === "throw") {

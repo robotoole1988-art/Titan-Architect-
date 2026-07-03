@@ -17,7 +17,10 @@ export type { ResolvedPublication } from "./components/published-site";
 export { submitEnquiry } from "./api/submit-enquiry";
 export type { SubmitEnquiryInput, SubmitEnquiryResult } from "./api/submit-enquiry";
 export { renderPage } from "./model/render-page";
-export { PRIMITIVE_COMPONENT_MAP } from "./model/primitive-map";
+export {
+  PRIMITIVE_COMPONENT_MAP,
+  resolvePrimitiveComponent,
+} from "./model/primitive-map";
 export type {
   PrimitiveSectionProps,
   PrimitiveComponent,

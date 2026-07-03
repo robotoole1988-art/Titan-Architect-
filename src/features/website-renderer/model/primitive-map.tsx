@@ -6,6 +6,10 @@
  * fail loudly in development until their crafted components land.
  */
 
+import {
+  SECTION_PRIMITIVE_REGISTRY,
+  getSectionPrimitive,
+} from "@/core/website-blueprint";
 import { ConversionEmergencyCta } from "../primitives/conversion-emergency-cta";
 import { ConversionLeadCapture } from "../primitives/conversion-lead-capture";
 import { FaqReassuranceAccordion } from "../primitives/faq-reassurance-accordion";
@@ -14,9 +18,10 @@ import { LocationServiceArea } from "../primitives/location-service-area";
 import { ProcessJourneyMap } from "../primitives/process-journey-map";
 import { ProofCredentialBand } from "../primitives/proof-credential-band";
 import { ServicesInteractiveExplorer } from "../primitives/services-interactive-explorer";
+import { PremiumSectionPlaceholder } from "../primitives/premium-placeholder";
 import { StoryTransformationArc } from "../primitives/story-transformation-arc";
 import { TrustReviewWall } from "../primitives/trust-review-wall";
-import type { PrimitiveComponentMap } from "./types";
+import type { PrimitiveComponent, PrimitiveComponentMap } from "./types";
 
 export const PRIMITIVE_COMPONENT_MAP: PrimitiveComponentMap = {
   "hero.rapid-response": HeroRapidResponse,
@@ -30,3 +35,21 @@ export const PRIMITIVE_COMPONENT_MAP: PrimitiveComponentMap = {
   "faq.reassurance-accordion": FaqReassuranceAccordion,
   "story.transformation-arc": StoryTransformationArc,
 };
+
+/**
+ * Resolution NEVER misses for a registry primitive: crafted component where
+ * built, the labelled premium placeholder where not (any variant — the variant
+ * rides in as a prop, so unknown variants land on the primitive's default
+ * component). Null only for identifiers outside the registry entirely.
+ */
+export function resolvePrimitiveComponent(
+  identifier: string,
+  map: PrimitiveComponentMap = PRIMITIVE_COMPONENT_MAP,
+): PrimitiveComponent | null {
+  const crafted = map[identifier];
+  if (crafted) return crafted;
+  if (getSectionPrimitive(SECTION_PRIMITIVE_REGISTRY, identifier)) {
+    return PremiumSectionPlaceholder;
+  }
+  return null;
+}
