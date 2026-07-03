@@ -7,11 +7,13 @@ import { defineConfig } from "vitest/config";
  */
 export default defineConfig({
   test: {
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.{ts,tsx}"],
     environment: "node",
   },
   resolve: {
     alias: {
+      // next/font only works inside the Next.js build; see tests/stubs/.
+      "next/font/google": path.resolve(__dirname, "tests/stubs/next-font-google.ts"),
       "@": path.resolve(__dirname, "src"),
     },
   },

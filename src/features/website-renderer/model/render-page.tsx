@@ -1,0 +1,87 @@
+/**
+ * renderPage — the composition function (ADR-022).
+ *
+ * Pure and deterministic: resolves each blueprint section through the
+ * PrimitiveComponentMap and composes site header → sections → site footer
+ * under the resolved theme. Unmapped primitives fail loudly in development
+ * and degrade gracefully (skip + warn) in production.
+ */
+
+import { MotionConfig } from "framer-motion";
+import type { CSSProperties, ReactElement } from "react";
+import { resolveTheme } from "../theme/theme";
+import { SiteFooter, SiteHeader } from "../primitives/site-chrome";
+import type { WebsiteBlueprint } from "@/core/website-blueprint";
+import { parseSlots, sectionVariant } from "./slots";
+import { PRIMITIVE_COMPONENT_MAP } from "./primitive-map";
+import type { RenderPageOptions } from "./types";
+
+/** Base styles scoped to the rendered site (not the TITAN app). */
+const ROOT_CSS = `
+.wr-root { -webkit-font-smoothing: antialiased; }
+.wr-root ::selection { background: var(--wr-accent); color: var(--wr-accent-ink); }
+@media (prefers-reduced-motion: no-preference) {
+  .wr-root { scroll-behavior: smooth; }
+}
+`;
+
+export function renderPage(
+  blueprint: WebsiteBlueprint,
+  options: RenderPageOptions = {},
+): ReactElement {
+  const map = options.map ?? PRIMITIVE_COMPONENT_MAP;
+  const onUnmapped =
+    options.onUnmapped ??
+    (process.env.NODE_ENV === "production" ? "skip" : "throw");
+  const page = blueprint.pages.pages[0];
+  const theme = resolveTheme(blueprint.designSystem?.themeRef);
+
+  const sections = page.sections.map((section) => {
+    const Primitive = map[section.identifier];
+    if (!Primitive) {
+      const detail = `primitive "${section.identifier}" (variant "${sectionVariant(section)}", section "${section.id}")`;
+      if (onUnmapped === "throw") {
+        throw new Error(
+          `No renderer component registered for ${detail}. Add it to PRIMITIVE_COMPONENT_MAP (ADR-022) or render with onUnmapped: "skip".`,
+        );
+      }
+      if (process.env.NODE_ENV !== "test") {
+        console.warn(`[website-renderer] Skipping unmapped ${detail}.`);
+      }
+      return null;
+    }
+    return (
+      <Primitive
+        key={section.id}
+        section={section}
+        variant={sectionVariant(section)}
+        slots={parseSlots(section)}
+        blueprint={blueprint}
+      />
+    );
+  });
+
+  return (
+    <div
+      id="top"
+      className="wr-root relative"
+      style={
+        {
+          ...theme.vars,
+          background: "var(--wr-bg)",
+          color: "var(--wr-ink)",
+          fontFamily: "var(--wr-font-body, ui-sans-serif, system-ui, sans-serif)",
+          fontSize: "var(--wr-text-base)",
+        } as CSSProperties
+      }
+      data-theme={theme.ref}
+    >
+      <style dangerouslySetInnerHTML={{ __html: ROOT_CSS }} />
+      <MotionConfig reducedMotion="user">
+        <SiteHeader blueprint={blueprint} />
+        <main>{sections}</main>
+        <SiteFooter blueprint={blueprint} />
+      </MotionConfig>
+    </div>
+  );
+}

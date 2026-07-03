@@ -96,9 +96,11 @@ export async function BlueprintViewerPage({
   const experienceArc = stringExtension(blueprint.extensions, "experienceArc");
   const archetype = stringExtension(blueprint.extensions, "archetype");
 
-  const strategyHref = fromIntake
-    ? `/experience-studio?businessName=${encodeURIComponent(request.businessName)}&trade=${encodeURIComponent(request.trade)}&location=${encodeURIComponent(request.location)}`
-    : "/experience-studio";
+  const query = fromIntake
+    ? `?businessName=${encodeURIComponent(request.businessName)}&trade=${encodeURIComponent(request.trade)}&location=${encodeURIComponent(request.location)}`
+    : "";
+  const strategyHref = `/experience-studio${query}`;
+  const previewHref = `/experience-studio/preview${query}`;
 
   return (
     <div className="relative flex flex-1 flex-col gap-6">
@@ -262,10 +264,17 @@ export async function BlueprintViewerPage({
         })}
       </div>
 
-      <footer className="flex items-center justify-between gap-4 rounded-2xl border border-border/60 bg-card/40 p-4 text-sm text-muted-foreground">
-        <span>
-          Next: the Renderer composes these primitives into a real website —
-          coming soon.
+      <footer className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/60 bg-card/40 p-4 text-sm text-muted-foreground">
+        <span className="inline-flex items-center gap-3">
+          <Button
+            render={<Link href={previewHref} />}
+            nativeButton={false}
+            className="gap-2"
+          >
+            Preview Website
+            <ArrowRight className="size-4" />
+          </Button>
+          <span>The Renderer composes these primitives into a real page.</span>
         </span>
         <span className="inline-flex items-center gap-1.5 font-mono text-[11px]">
           {homePage.sections.length} sections
