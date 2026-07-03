@@ -43,6 +43,7 @@ interface BusinessRow {
   id: string;
   name: string;
   trade: string;
+  trade_id: string | null;
   location: string;
   contact: Business["contact"] | null;
   services: string | null;
@@ -76,6 +77,7 @@ function toBusiness(row: BusinessRow): Business {
     id: row.id,
     name: row.name,
     trade: row.trade,
+    ...(row.trade_id !== null ? { tradeId: row.trade_id } : {}),
     location: row.location,
     ...(row.contact ? { contact: row.contact } : {}),
     ...(row.services !== null ? { services: row.services } : {}),
@@ -121,6 +123,7 @@ class SupabaseBusinessRepository implements BusinessRepository {
       id: crypto.randomUUID(),
       name: draft.name,
       trade: draft.trade,
+      trade_id: draft.tradeId ?? null,
       location: draft.location,
       contact: draft.contact ?? null,
       services: draft.services ?? null,

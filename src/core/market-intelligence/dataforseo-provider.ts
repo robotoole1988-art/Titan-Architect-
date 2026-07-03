@@ -6,7 +6,6 @@
  * and confidence can only be as strong as the weakest input.
  */
 
-import "server-only";
 import type {
   ConfidenceLevel,
   LocationFactor,
@@ -83,6 +82,13 @@ const CPC_SPREAD = 0.3;
 export function createDataForSeoMarketDataProvider(
   config: DataForSeoConfig,
 ): MarketDataProvider {
+  // Runtime guard instead of `server-only`: the module sits behind a dynamic
+  // import that bundlers trace into client graphs, but it must never RUN
+  // there. No secret lives in module scope — the key arrives via config from
+  // server-side env reads.
+  if (typeof window !== "undefined") {
+    throw new Error("The DataForSEO provider is server-side only");
+  }
   const transport = config.transport ?? defaultTransport;
   const authorization = `Basic ${Buffer.from(config.apiKey).toString("base64")}`;
 

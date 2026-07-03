@@ -38,9 +38,15 @@ function toBenchmark(seed: SeedTradeBenchmark): TradeBenchmark {
   };
 }
 
-/** Match a free-text trade to a seeded benchmark (fallback when none hits). */
+/**
+ * Match a trade to a seeded benchmark. Taxonomy ids (ADR-026) resolve
+ * directly — the id space IS the tradeKey space; free text falls back to
+ * keyword matching, then to the general benchmark.
+ */
 export function matchTradeSeed(trade: string): SeedTradeBenchmark {
   const tradeLower = trade.trim().toLowerCase();
+  const byId = TRADE_BENCHMARK_SEED.find((seed) => seed.tradeKey === tradeLower);
+  if (byId) return byId;
   for (const seed of TRADE_BENCHMARK_SEED) {
     if (seed.keywords.some((keyword) => tradeLower.includes(keyword))) {
       return seed;

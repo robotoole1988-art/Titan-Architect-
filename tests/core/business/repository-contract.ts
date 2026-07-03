@@ -61,6 +61,39 @@ export function runRepositoryContract(
       });
     });
 
+    it("round-trips the taxonomy trade id (ADR-026)", async () => {
+      await withRepos(async ({ businesses }) => {
+        const classified = await businesses.create({ ...DRAFT, tradeId: "roofing" });
+        expect(classified.tradeId).toBe("roofing");
+        expect((await businesses.get(classified.id))?.tradeId).toBe("roofing");
+        const unclassified = await businesses.create({ ...DRAFT, name: "Free Text Ltd" });
+        expect(unclassified.tradeId).toBeUndefined();
+      });
+    });
+
+    it("versions deal artifacts like any other kind (ADR-026)", async () => {
+      await withRepos(async ({ businesses, artifacts }) => {
+        const business = await businesses.create(DRAFT);
+        const d1 = await artifacts.save({
+          businessId: business.id,
+          kind: "deal",
+          payload: { setupFee: 1995 },
+        });
+        const d2 = await artifacts.save({
+          businessId: business.id,
+          kind: "deal",
+          payload: { setupFee: 1495 },
+        });
+        expect(d1.version).toBe(1);
+        expect(d2.version).toBe(2);
+        const latest = await artifacts.latest<{ setupFee: number }>(
+          business.id,
+          "deal",
+        );
+        expect(latest?.payload.setupFee).toBe(1495);
+      });
+    });
+
     it("gets a saved business back, and null for unknown ids", async () => {
       await withRepos(async ({ businesses }) => {
         const created = await businesses.create(DRAFT);

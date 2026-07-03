@@ -28,13 +28,18 @@ export {
   LOCATION_MULTIPLIERS,
 } from "./seeded-provider";
 
-export {
-  createDataForSeoMarketDataProvider,
-  DATAFORSEO_PROVIDER_NAME,
-} from "./dataforseo-provider";
-export type { DataForSeoConfig, DataForSeoTransport } from "./dataforseo-provider";
+// NOTE: the DataForSEO adapter is deliberately NOT re-exported here — it is
+// `server-only`, and this index must stay importable from client components
+// (the ROI calculator computes live in the browser). Server code reaches it
+// through resolveMarketDataProvider; its contract tests import the module
+// directly.
 
 export { estimateCpl, resolveCplEstimate, BUDGET_SCENARIOS } from "./estimate";
+
+export { computeRoi, defaultCloseRateForTrade } from "./roi";
+export type { RoiInputs, RoiResult } from "./roi";
+
+export { WORKBOOK_ORDER } from "./seed-data";
 
 export {
   resolveMarketDataBackend,

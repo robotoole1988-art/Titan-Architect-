@@ -22,6 +22,7 @@ export async function createBusinessFromIntake(
   const business = await spine.businesses.create({
     name: draft.businessName.trim(),
     trade: draft.trade.trim(),
+    tradeId: draft.tradeId,
     location: draft.location.trim(),
     services: draft.services.trim() || undefined,
     targetCustomer: draft.targetCustomer.trim() || undefined,

@@ -14,6 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  OTHER_TRADE_VALUE,
+  ServicesMultiSelect,
+  TradeSelect,
+} from "@/components/common/trade-fields";
+import { getTradeDefinition } from "@/core/trade-taxonomy";
 import { createBusinessFromIntake } from "../api/actions";
 import {
   BUSINESS_GOALS,
@@ -43,6 +49,10 @@ const EMPTY_DRAFT: BusinessIntakeDraft = {
 
 export function BusinessIntakeForm() {
   const [draft, setDraft] = useState<BusinessIntakeDraft>(EMPTY_DRAFT);
+  // Canonical trade selection (ADR-026): taxonomy id, or Other → free text.
+  const [tradeChoice, setTradeChoice] = useState<string>("roofing");
+  const [otherTrade, setOtherTrade] = useState("");
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -61,8 +71,8 @@ export function BusinessIntakeForm() {
       setError("Business name is required.");
       return;
     }
-    if (!draft.trade.trim()) {
-      setError("Trade is required.");
+    if (tradeChoice === OTHER_TRADE_VALUE && !otherTrade.trim()) {
+      setError("Describe the trade (or pick one from the list).");
       return;
     }
     if (!draft.location.trim()) {
@@ -74,8 +84,20 @@ export function BusinessIntakeForm() {
     try {
       // Server action → Business Spine repository (ADR-023). The saved
       // intake IS the Business record, created as a lead.
-      await createBusinessFromIntake(draft);
+      await createBusinessFromIntake({
+        ...draft,
+        trade:
+          tradeChoice === OTHER_TRADE_VALUE
+            ? otherTrade.trim()
+            : (getTradeDefinition(tradeChoice)?.label ?? tradeChoice),
+        tradeId: tradeChoice === OTHER_TRADE_VALUE ? undefined : tradeChoice,
+        services:
+          tradeChoice === OTHER_TRADE_VALUE
+            ? draft.services
+            : selectedServices.join(", "),
+      });
       setDraft(EMPTY_DRAFT);
+      setSelectedServices([]);
       setJustSaved(true);
     } catch {
       setError("Saving failed — check the server logs and try again.");
@@ -101,11 +123,16 @@ export function BusinessIntakeForm() {
           <div className="grid gap-5 sm:grid-cols-2">
             <div className="flex flex-col gap-2">
               <Label htmlFor="intake-trade">Trade</Label>
-              <Input
+              <TradeSelect
                 id="intake-trade"
-                value={draft.trade}
-                onChange={(event) => setField("trade", event.target.value)}
-                placeholder="e.g. Plumbing"
+                value={tradeChoice}
+                otherText={otherTrade}
+                onChange={(value) => {
+                  setTradeChoice(value);
+                  setSelectedServices([]);
+                  setJustSaved(false);
+                }}
+                onOtherTextChange={setOtherTrade}
               />
             </div>
             <div className="flex flex-col gap-2">
@@ -121,13 +148,28 @@ export function BusinessIntakeForm() {
 
           <div className="flex flex-col gap-2">
             <Label htmlFor="intake-services">Services</Label>
-            <Textarea
-              id="intake-services"
-              value={draft.services}
-              onChange={(event) => setField("services", event.target.value)}
-              rows={3}
-              placeholder="The main services this business offers…"
-            />
+            {tradeChoice === OTHER_TRADE_VALUE ? (
+              <Textarea
+                id="intake-services"
+                value={draft.services}
+                onChange={(event) => setField("services", event.target.value)}
+                rows={3}
+                placeholder="The main services this business offers…"
+              />
+            ) : (
+              <ServicesMultiSelect
+                tradeId={tradeChoice}
+                selected={selectedServices}
+                onToggle={(service) => {
+                  setSelectedServices((current) =>
+                    current.includes(service)
+                      ? current.filter((s) => s !== service)
+                      : [...current, service],
+                  );
+                  setJustSaved(false);
+                }}
+              />
+            )}
           </div>
 
           <div className="flex flex-col gap-2">

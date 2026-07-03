@@ -11,12 +11,14 @@ import {
   ALL_LIFECYCLE_STATES,
   BusinessNotFoundError,
   buildItemLabel,
+  recordArtifactGenerated,
   resolveBusinessSpine,
   transitionBusinessStage,
   type BuildItemKind,
   type BuildItemStatus,
   type LifecycleStage,
 } from "@/core/business";
+import { getPricedService, type Deal } from "@/core/pricing";
 
 function revalidateCrm(businessId?: string): void {
   revalidatePath("/crm");
@@ -34,6 +36,7 @@ function revalidateCrm(businessId?: string): void {
 export async function quickAddLead(formData: FormData): Promise<void> {
   const name = String(formData.get("name") ?? "").trim();
   const trade = String(formData.get("trade") ?? "").trim();
+  const tradeId = String(formData.get("tradeId") ?? "").trim();
   const location = String(formData.get("location") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const phone = String(formData.get("phone") ?? "").trim();
@@ -43,6 +46,7 @@ export async function quickAddLead(formData: FormData): Promise<void> {
   await spine.businesses.create({
     name,
     trade,
+    ...(tradeId ? { tradeId } : {}),
     location,
     ...(email || phone
       ? { contact: { ...(email ? { email } : {}), ...(phone ? { phone } : {}) } }
@@ -77,6 +81,34 @@ export async function addBusinessNote(
   if (!trimmed) return;
   const spine = await resolveBusinessSpine();
   await spine.activity.log({ businessId, kind: "note", message: trimmed });
+  revalidateCrm(businessId);
+}
+
+/** Save a deal as a new artifact version (never overwrites) + activity. */
+export async function saveDeal(businessId: string, deal: Deal): Promise<void> {
+  if (!getPricedService(deal.packageType)) {
+    throw new Error(`Unknown package "${deal.packageType}"`);
+  }
+  for (const value of [deal.setupFee, deal.monthlyManagementFee, deal.monthlyAdSpend]) {
+    if (!Number.isFinite(value) || value < 0) {
+      throw new Error("Deal figures must be non-negative numbers");
+    }
+  }
+  const spine = await resolveBusinessSpine();
+  const artifact = await spine.artifacts.save<Deal>({
+    businessId,
+    kind: "deal",
+    payload: {
+      packageType: deal.packageType,
+      includedServices: deal.includedServices.filter((id) => getPricedService(id)),
+      setupFee: deal.setupFee,
+      monthlyManagementFee: deal.monthlyManagementFee,
+      monthlyAdSpend: deal.monthlyAdSpend,
+      vatRate: deal.vatRate,
+      ...(deal.notes?.trim() ? { notes: deal.notes.trim() } : {}),
+    },
+  });
+  await recordArtifactGenerated(spine, businessId, "deal", artifact.version);
   revalidateCrm(businessId);
 }
 

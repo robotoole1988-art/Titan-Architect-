@@ -37,7 +37,10 @@ export type UrgencyLevel = (typeof URGENCY_LEVELS)[number];
  */
 export interface BusinessIntakeDraft {
   businessName: string;
+  /** Display label (canonical when tradeId set; free text for Other). */
   trade: string;
+  /** Canonical taxonomy id (ADR-026); undefined = Other/unclassified. */
+  tradeId?: string;
   location: string;
   services: string;
   targetCustomer: string;
