@@ -1,8 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Plus, RotateCcw } from "lucide-react";
+import { ArrowRight, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   isLostStage,
   resolveBusinessSpine,
@@ -10,7 +8,8 @@ import {
   type LifecycleStage,
   type ProgressStage,
 } from "@/core/business";
-import { moveBusinessStage, quickAddLead } from "../api/actions";
+import { moveBusinessStage } from "../api/actions";
+import { QuickAddLead } from "./quick-add-lead";
 import { CrmChrome, StageBadge } from "./crm-atoms";
 
 /**
@@ -140,35 +139,7 @@ export async function CrmPipelinePage() {
   return (
     <CrmChrome active="Pipeline">
       {/* Quick-add: name, trade, location, contact — a Business record is born */}
-      <form
-        action={quickAddLead}
-        className="flex flex-wrap items-end gap-3 rounded-2xl border border-border/60 bg-card/40 p-4"
-      >
-        <div className="flex min-w-40 flex-1 flex-col gap-1.5">
-          <Label htmlFor="quick-name">Business name</Label>
-          <Input id="quick-name" name="name" required placeholder="e.g. Kerbside Kings" />
-        </div>
-        <div className="flex min-w-36 flex-1 flex-col gap-1.5">
-          <Label htmlFor="quick-trade">Trade</Label>
-          <Input id="quick-trade" name="trade" required placeholder="e.g. Driveways" />
-        </div>
-        <div className="flex min-w-32 flex-1 flex-col gap-1.5">
-          <Label htmlFor="quick-location">Location</Label>
-          <Input id="quick-location" name="location" required placeholder="e.g. York" />
-        </div>
-        <div className="flex min-w-36 flex-1 flex-col gap-1.5">
-          <Label htmlFor="quick-phone">Phone (optional)</Label>
-          <Input id="quick-phone" name="phone" type="tel" placeholder="07…" />
-        </div>
-        <div className="flex min-w-40 flex-1 flex-col gap-1.5">
-          <Label htmlFor="quick-email">Email (optional)</Label>
-          <Input id="quick-email" name="email" type="email" placeholder="name@…" />
-        </div>
-        <Button type="submit" className="gap-1.5">
-          <Plus className="size-4" />
-          Add lead
-        </Button>
-      </form>
+      <QuickAddLead />
 
       {/* The board */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

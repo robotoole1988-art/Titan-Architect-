@@ -53,6 +53,7 @@ ADR that supersedes the old one and update the old one's status.
 | [023](./adr-023-business-spine-persistence.md) | Business Spine — durable persistence and the Business record | Accepted |
 | [024](./adr-024-crm-three-level-views.md) | CRM v1 — three views of one record, and the approval gate | Accepted |
 | [025](./adr-025-market-intelligence.md) | Market Intelligence — CPL economics behind a provider seam | Accepted |
+| [026](./adr-026-selling-tools.md) | Selling tools — trade taxonomy, Deal Builder, ROI calculator | Accepted |
 
 ### Writing a new ADR
 

@@ -36,4 +36,16 @@ describe("pitch intelligence", () => {
   it("is deterministic", () => {
     expect(resolveTradePitch("Roofer")).toEqual(resolveTradePitch("Roofer"));
   });
+
+  it("accepts taxonomy ids directly (ADR-026)", () => {
+    expect(resolveTradePitch("roofing").matched).toBe("roofing");
+    expect(resolveTradePitch("driveways-paving").matched).toBe("driveways");
+    expect(resolveTradePitch("plumbing-heating-emergency").matched).toBe(
+      "plumbing-heating",
+    );
+    expect(resolveTradePitch("boiler-installation").matched).toBe(
+      "plumbing-heating",
+    );
+    expect(resolveTradePitch("mot-servicing").matched).toBe("general");
+  });
 });

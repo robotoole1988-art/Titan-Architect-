@@ -196,9 +196,20 @@ const MATCHERS: Array<[TradePitchMatch, ReadonlyArray<string>, Omit<TradePitch, 
   ],
 ];
 
-/** Resolve the pitch pack for a trade. Deterministic; never empty. */
+/** Taxonomy id → pitch pack (ADR-026): the id space maps explicitly. */
+const PACK_BY_TAXONOMY_ID: Record<string, Omit<TradePitch, "tradeLabel">> = {
+  roofing: ROOFING,
+  "driveways-paving": DRIVEWAYS,
+  landscaping: DRIVEWAYS,
+  "plumbing-heating-emergency": PLUMBING_HEATING,
+  "boiler-installation": PLUMBING_HEATING,
+};
+
+/** Resolve the pitch pack for a trade (taxonomy id or free text). */
 export function resolveTradePitch(trade: string): TradePitch {
   const tradeLower = trade.trim().toLowerCase();
+  const byId = PACK_BY_TAXONOMY_ID[tradeLower];
+  if (byId) return { ...byId, tradeLabel: trade.trim() };
   for (const [, keywords, pack] of MATCHERS) {
     if (keywords.some((keyword) => tradeLower.includes(keyword))) {
       return { ...pack, tradeLabel: trade.trim() };

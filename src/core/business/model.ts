@@ -77,7 +77,13 @@ export interface BusinessContact {
 /** What Business Intake captures — everything the system needs to begin. */
 export interface BusinessDraft {
   name: string;
+  /** Display label (canonical taxonomy label when tradeId is set). */
   trade: string;
+  /**
+   * Canonical trade-taxonomy id (ADR-026). Absent on legacy/free-text
+   * records — UIs flag those unclassified.
+   */
+  tradeId?: string;
   location: string;
   contact?: BusinessContact;
   services?: string;

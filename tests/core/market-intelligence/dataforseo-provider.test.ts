@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it, vi } from "vitest";
-import { createDataForSeoMarketDataProvider } from "@/core/market-intelligence";
+import { createDataForSeoMarketDataProvider } from "@/core/market-intelligence/dataforseo-provider";
 import { runMarketProviderContract } from "./provider-contract";
 
 /** A canned DataForSEO google_ads search_volume response. */

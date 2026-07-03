@@ -71,6 +71,19 @@ describe("seeded dataset integrity (TITAN-CPL-Benchmarks-v1)", () => {
     expect(byKey["Dublin (GBP eq.)"]).toBe(1);
   });
 
+  it("accepts taxonomy ids directly — no fuzzy matching needed (ADR-026)", async () => {
+    const provider = createSeededMarketDataProvider();
+    expect((await provider.getBenchmark("driveways-paving")).tradeKey).toBe(
+      "driveways-paving",
+    );
+    expect((await provider.getBenchmark("mot-servicing")).tradeKey).toBe(
+      "mot-servicing",
+    );
+    expect((await provider.getBenchmark("garage-repairs")).tradeKey).toBe(
+      "garage-repairs",
+    );
+  });
+
   it("matches trades by keyword (CRM trade strings resolve)", async () => {
     const provider = createSeededMarketDataProvider();
     expect((await provider.getBenchmark("Emergency Roofing & Drainage")).tradeKey).toBe(

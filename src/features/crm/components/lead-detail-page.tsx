@@ -10,13 +10,18 @@ import {
   type Business,
 } from "@/core/business";
 import {
+  defaultCloseRateForTrade,
   resolveCplEstimate,
   resolveMarketDataProvider,
 } from "@/core/market-intelligence";
 import { resolveTradePitch } from "@/core/pitch-intelligence";
+import { confidenceLabel } from "@/core/market-intelligence";
+import type { Deal } from "@/core/pricing";
 import { EstimateCard } from "@/features/market";
 import { addBusinessNote, moveBusinessStage } from "../api/actions";
 import { ActivityLog, CrmChrome, StageBadge } from "./crm-atoms";
+import { DealBuilder } from "./deal-builder";
+import { RoiCalculator } from "./roi-calculator";
 
 /**
  * The lead/business detail (ADR-024): intake data, the full stage control
@@ -38,7 +43,7 @@ function IntakeDatum({ label, value }: { label: string; value?: string }) {
 }
 
 function PitchPanel({ business }: { business: Business }) {
-  const pitch = resolveTradePitch(business.trade);
+  const pitch = resolveTradePitch(business.tradeId ?? business.trade);
   return (
     <section
       aria-label="Pitch intelligence"
@@ -137,16 +142,33 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
   const spine = await resolveBusinessSpine();
   const business = await spine.businesses.get(businessId);
   if (!business) notFound();
-  const [entries, marketProvider] = await Promise.all([
+  const [entries, marketProvider, dealArtifact] = await Promise.all([
     spine.activity.list(businessId),
     resolveMarketDataProvider(),
+    spine.artifacts.latest<Deal>(businessId, "deal"),
   ]);
-  // The founder pitches with this lead's own economics on screen (ADR-025).
+  // The founder pitches with this lead's own economics on screen (ADR-025);
+  // taxonomy ids resolve exactly, legacy free text falls back (ADR-026).
   const cplEstimate = await resolveCplEstimate(
     marketProvider,
-    business.trade,
+    business.tradeId ?? business.trade,
     business.location,
   );
+  const deal = dealArtifact?.payload ?? null;
+  const roiPrefill = {
+    closeRate: defaultCloseRateForTrade(business.tradeId ?? business.trade),
+    customersPerMonth: 4,
+    cpl: cplEstimate.cpl.mid,
+    averageJobValue:
+      (cplEstimate.jobValue.low + cplEstimate.jobValue.high) / 2,
+    monthlyManagementFee: deal?.monthlyManagementFee ?? 0,
+    cplSource: `CPL estimate · ${confidenceLabel(cplEstimate.provenance.confidence).toLowerCase()} · ${cplEstimate.provenance.locationLabel}`,
+    jobValueSource: `benchmark job value · ${confidenceLabel(cplEstimate.provenance.confidence).toLowerCase()}`,
+    closeRateSource: "archetype assumption",
+    mmfSource: deal
+      ? `incl. MMF from deal v${dealArtifact!.version}`
+      : "no deal yet — MMF excluded",
+  };
 
   return (
     <CrmChrome active="Pipeline">
@@ -161,6 +183,11 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-2xl font-semibold tracking-tight">{business.name}</h2>
           <StageBadge stage={business.stage} />
+          {!business.tradeId && (
+            <span className="inline-flex items-center rounded-full border border-amber-400/25 bg-amber-400/10 px-2.5 py-0.5 text-[11px] text-amber-300/90">
+              unclassified trade
+            </span>
+          )}
         </div>
         <p className="text-sm text-muted-foreground">
           {business.trade} · {business.location}
@@ -191,11 +218,18 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-6">
-          <EstimateCard estimate={cplEstimate} />
+          <EstimateCard estimate={cplEstimate} compact />
+          <RoiCalculator prefill={roiPrefill} />
           <PitchPanel business={business} />
         </div>
 
         <div className="flex flex-col gap-6">
+          <DealBuilder
+            businessId={business.id}
+            existingDeal={deal}
+            existingVersion={dealArtifact?.version ?? null}
+          />
+
           {/* Stage control — the one place with the full state list + reason */}
           <section
             aria-label="Lifecycle stage"
