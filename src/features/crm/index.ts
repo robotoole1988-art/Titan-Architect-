@@ -13,3 +13,6 @@ export { CrmPipelinePage } from "./components/pipeline-page";
 export { CrmLeadDetailPage } from "./components/lead-detail-page";
 export { CrmBuildQueuePage } from "./components/build-queue-page";
 export { CrmAccountsPage } from "./components/accounts-page";
+
+export { getNotificationFeed } from "./api/notification-feed";
+export type { NotificationFeed } from "./api/notification-feed";
