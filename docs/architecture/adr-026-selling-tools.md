@@ -66,6 +66,22 @@ graphs, where `server-only` breaks the build — while the real invariant is
 that the adapter never *executes* client-side and no secret lives in module
 scope (the key arrives via config from server-side env reads).
 
+## Addendum (2026-07-05): ad spend is derived, fees are founder-controlled
+
+Founder refinement, same day: in the Deal, **monthly ad spend is not a free
+input**. The founder enters the customer's **lead target per month**; ad
+spend is DERIVED as lead target × CPL (the estimate's CPL with the usual
+editable, provenance-labelled override) and displays locked, with its working
+shown ("50 leads × £40 CPL = £2,000/mo"). It changes only via the lead target
+or the CPL override. Setup fee and MMF remain free founder inputs, catalogue
+pre-filled. The ROI calculator and the Deal are now ONE stateful unit sharing
+lead target and CPL (lead target edits back-solve the customer count), so the
+two surfaces cannot disagree by construction; the save action re-derives ad
+spend server-side (`buildDeal`) and never trusts a client figure. The Deal
+payload gains `leadTargetPerMonth`, `cplUsed`, and `cplSource` (jsonb — no
+schema migration); v1 deal artifacts without them are read compatibly. The
+customer summary is unchanged: two clean figures, no breakdown.
+
 ## Consequences
 
 ### Positive

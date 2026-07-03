@@ -11,14 +11,18 @@
 export {
   PRICING_CATALOGUE,
   UK_VAT_RATE,
-  DEFAULT_MONTHLY_AD_SPEND,
+  DEFAULT_LEAD_TARGET,
   getPricedService,
   defaultDealForPackage,
+  deriveAdSpend,
+  buildDeal,
   computeDeal,
 } from "./pricing";
 export type {
   PricedServiceId,
   PricedService,
   Deal,
+  DealInputs,
+  DealCplSource,
   DealComputed,
 } from "./pricing";

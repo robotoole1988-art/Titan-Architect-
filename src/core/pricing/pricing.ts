@@ -82,37 +82,94 @@ export function getPricedService(id: PricedServiceId): PricedService | undefined
   return CATALOGUE_BY_ID.get(id);
 }
 
-/** A deal's stored shape (the versioned artifact payload). All ex-VAT GBP. */
+/** Where the deal's CPL figure came from (ADR-025 provenance for humans). */
+export type DealCplSource = "estimate" | "founder";
+
+/**
+ * A deal's stored shape (the versioned artifact payload). All ex-VAT GBP.
+ *
+ * v1.1 ADDENDUM: `monthlyAdSpend` is DERIVED — lead target × CPL — never a
+ * free input. Construct deals through {@link buildDeal}; the save action
+ * re-derives server-side, so a client cannot type over it.
+ */
 export interface Deal {
   packageType: PricedServiceId;
   includedServices: PricedServiceId[];
   setupFee: number;
   monthlyManagementFee: number;
+  /** The customer's lead target per month — the founder's input. */
+  leadTargetPerMonth: number;
+  /** CPL used for derivation (estimate pre-fill or founder override). */
+  cplUsed: number;
+  cplSource: DealCplSource;
+  /** DERIVED: leadTargetPerMonth × cplUsed (pennies). */
   monthlyAdSpend: number;
   vatRate: number;
   notes?: string;
 }
 
-/** PLACEHOLDER default monthly ad spend for new deals — founder-editable. */
-export const DEFAULT_MONTHLY_AD_SPEND = 1000;
+/** Round to pennies (banker-free, plain half-up on the wire format). */
+function pennies(value: number): number {
+  return Math.round(value * 100) / 100;
+}
 
-/** Pre-fill a deal from the catalogue (every value overridable). */
-export function defaultDealForPackage(packageType: PricedServiceId): Deal {
+/** The one way ad spend comes into being: lead target × CPL. */
+export function deriveAdSpend(leadTargetPerMonth: number, cpl: number): number {
+  return pennies(leadTargetPerMonth * cpl);
+}
+
+/** PLACEHOLDER default lead target for new flagship deals — founder-editable. */
+export const DEFAULT_LEAD_TARGET = 20;
+
+export type DealInputs = Omit<Deal, "monthlyAdSpend" | "vatRate"> & {
+  vatRate?: number;
+};
+
+/** Construct a Deal with the ad spend derived — the only lawful constructor. */
+export function buildDeal(inputs: DealInputs): Deal {
+  if (!CATALOGUE_BY_ID.has(inputs.packageType)) {
+    throw new Error(`Unknown package "${inputs.packageType}"`);
+  }
+  for (const [label, value] of [
+    ["setupFee", inputs.setupFee],
+    ["monthlyManagementFee", inputs.monthlyManagementFee],
+    ["leadTargetPerMonth", inputs.leadTargetPerMonth],
+    ["cplUsed", inputs.cplUsed],
+  ] as const) {
+    if (!Number.isFinite(value) || value < 0) {
+      throw new Error(`${label} must be a non-negative number`);
+    }
+  }
+  return {
+    packageType: inputs.packageType,
+    includedServices: inputs.includedServices,
+    setupFee: inputs.setupFee,
+    monthlyManagementFee: inputs.monthlyManagementFee,
+    leadTargetPerMonth: inputs.leadTargetPerMonth,
+    cplUsed: inputs.cplUsed,
+    cplSource: inputs.cplSource,
+    monthlyAdSpend: deriveAdSpend(inputs.leadTargetPerMonth, inputs.cplUsed),
+    vatRate: inputs.vatRate ?? UK_VAT_RATE,
+    ...(inputs.notes ? { notes: inputs.notes } : {}),
+  };
+}
+
+/** Pre-fill a deal from the catalogue (fees overridable; ad spend derived). */
+export function defaultDealForPackage(
+  packageType: PricedServiceId,
+  context: { cpl: number },
+): Deal {
   const service = CATALOGUE_BY_ID.get(packageType);
   if (!service) throw new Error(`Unknown package "${packageType}"`);
-  return {
+  return buildDeal({
     packageType,
     includedServices: [packageType],
     setupFee: service.defaultSetupFee,
     monthlyManagementFee: service.defaultMonthlyFee,
-    monthlyAdSpend: service.flagship ? DEFAULT_MONTHLY_AD_SPEND : 0,
-    vatRate: UK_VAT_RATE,
-  };
-}
-
-/** Round to pennies (banker-free, plain half-up on the wire format). */
-function pennies(value: number): number {
-  return Math.round(value * 100) / 100;
+    leadTargetPerMonth: service.flagship ? DEFAULT_LEAD_TARGET : 0,
+    cplUsed: context.cpl,
+    cplSource: "estimate",
+  });
 }
 
 export interface DealComputed {
