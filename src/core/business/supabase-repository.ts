@@ -32,6 +32,10 @@ import {
   type BusinessSpineRepositories,
   type Enquiry,
   type EnquiryDraft,
+  type EnquiryStatus,
+  type MetricEventKind,
+  type MetricsRepository,
+  type SiteMetricRow,
   type EnquiryRepository,
   type LogActivityInput,
   type Publication,
@@ -53,6 +57,8 @@ interface BusinessRow {
   location: string;
   coverage_areas: string[] | null;
   contact: Business["contact"] | null;
+  owner_email: string | null;
+  ga4_measurement_id: string | null;
   services: string | null;
   target_customer: string | null;
   goal: string | null;
@@ -90,6 +96,10 @@ function toBusiness(row: BusinessRow): Business {
       ? { coverageAreas: row.coverage_areas }
       : {}),
     ...(row.contact ? { contact: row.contact } : {}),
+    ...(row.owner_email !== null ? { ownerEmail: row.owner_email } : {}),
+    ...(row.ga4_measurement_id !== null
+      ? { ga4MeasurementId: row.ga4_measurement_id }
+      : {}),
     ...(row.services !== null ? { services: row.services } : {}),
     ...(row.target_customer !== null ? { targetCustomer: row.target_customer } : {}),
     ...(row.goal !== null ? { goal: row.goal } : {}),
@@ -137,6 +147,8 @@ class SupabaseBusinessRepository implements BusinessRepository {
       location: draft.location,
       coverage_areas: draft.coverageAreas ? [...draft.coverageAreas] : [],
       contact: draft.contact ?? null,
+      owner_email: draft.ownerEmail ?? null,
+      ga4_measurement_id: draft.ga4MeasurementId ?? null,
       services: draft.services ?? null,
       target_customer: draft.targetCustomer ?? null,
       goal: draft.goal ?? null,
@@ -200,6 +212,26 @@ class SupabaseBusinessRepository implements BusinessRepository {
         .single<BusinessRow>(),
     );
     return toBusiness(updated);
+  }
+
+  async updateDetails(
+    id: string,
+    patch: Partial<Pick<BusinessDraft, "ownerEmail" | "ga4MeasurementId">>,
+  ): Promise<Business> {
+    const row: Record<string, unknown> = { updated_at: nowIso() };
+    if ("ownerEmail" in patch) row.owner_email = patch.ownerEmail ?? null;
+    if ("ga4MeasurementId" in patch) {
+      row.ga4_measurement_id = patch.ga4MeasurementId ?? null;
+    }
+    const { data, error } = await this.client
+      .from("businesses")
+      .update(row)
+      .eq("id", id)
+      .select()
+      .maybeSingle<BusinessRow>();
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    if (!data) throw new BusinessNotFoundError(id);
+    return toBusiness(data);
   }
 
   async remove(id: string): Promise<void> {
@@ -684,6 +716,10 @@ interface EnquiryRow {
   message: string;
   source_page: string;
   created_at: string;
+  status: EnquiryStatus;
+  seen_at: string | null;
+  contacted_at: string | null;
+  outcome_at: string | null;
 }
 
 function toEnquiry(row: EnquiryRow): Enquiry {
@@ -696,6 +732,30 @@ function toEnquiry(row: EnquiryRow): Enquiry {
     message: row.message,
     sourcePage: row.source_page,
     createdAt: row.created_at,
+    status: row.status,
+    ...(row.seen_at !== null ? { seenAt: row.seen_at } : {}),
+    ...(row.contacted_at !== null ? { contactedAt: row.contacted_at } : {}),
+    ...(row.outcome_at !== null ? { outcomeAt: row.outcome_at } : {}),
+  };
+}
+
+interface MetricRow {
+  business_id: string;
+  path: string;
+  date: string;
+  views: number;
+  form_starts: number;
+  form_submits: number;
+}
+
+function toMetric(row: MetricRow): SiteMetricRow {
+  return {
+    businessId: row.business_id,
+    path: row.path,
+    date: row.date,
+    views: row.views,
+    formStarts: row.form_starts,
+    formSubmits: row.form_submits,
   };
 }
 
@@ -723,11 +783,48 @@ class SupabaseEnquiryRepository implements EnquiryRepository {
           message: draft.message,
           source_page: draft.sourcePage,
           created_at: nowIso(),
+          status: "new",
         })
         .select()
         .single<EnquiryRow>(),
     );
     return toEnquiry(inserted);
+  }
+
+  async get(id: string): Promise<Enquiry | null> {
+    const { data, error } = await this.client
+      .from("enquiries")
+      .select()
+      .eq("id", id)
+      .maybeSingle<EnquiryRow>();
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return data ? toEnquiry(data) : null;
+  }
+
+  async setStatus(
+    id: string,
+    status: EnquiryStatus,
+    atIso: string,
+  ): Promise<Enquiry> {
+    const current = await this.get(id);
+    if (!current) throw new Error(`Unknown enquiry "${id}"`);
+    const patch: Record<string, unknown> = { status };
+    if (status === "seen" && !current.seenAt) patch.seen_at = atIso;
+    if (status === "contacted" && !current.contactedAt) {
+      patch.contacted_at = atIso;
+    }
+    if (status === "qualified" || status === "disqualified") {
+      patch.outcome_at = atIso;
+    }
+    const updated = must(
+      await this.client
+        .from("enquiries")
+        .update(patch)
+        .eq("id", id)
+        .select()
+        .single<EnquiryRow>(),
+    );
+    return toEnquiry(updated);
   }
 
   async listForBusiness(businessId: string): Promise<Enquiry[]> {
@@ -739,6 +836,78 @@ class SupabaseEnquiryRepository implements EnquiryRepository {
       .order("id", { ascending: false });
     if (error) throw new Error(`Supabase error: ${error.message}`);
     return (data as EnquiryRow[]).map(toEnquiry);
+  }
+
+  async listRecent(limit: number): Promise<Enquiry[]> {
+    const { data, error } = await this.client
+      .from("enquiries")
+      .select()
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(limit);
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return (data as EnquiryRow[]).map(toEnquiry);
+  }
+}
+
+class SupabaseMetricsRepository implements MetricsRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async record(
+    businessId: string,
+    path: string,
+    kind: MetricEventKind,
+    date: string,
+  ): Promise<void> {
+    const owner = await this.client
+      .from("businesses")
+      .select("id")
+      .eq("id", businessId)
+      .maybeSingle();
+    if (owner.error) throw new Error(`Supabase error: ${owner.error.message}`);
+    if (!owner.data) throw new BusinessNotFoundError(businessId);
+
+    const column =
+      kind === "view" ? "views" : kind === "form_start" ? "form_starts" : "form_submits";
+    // Read-modify-write: racing beacons may drop the odd count — acceptable
+    // for v1 daily aggregates (an RPC upsert is the scale-up path).
+    const existing = await this.client
+      .from("site_metrics")
+      .select()
+      .eq("business_id", businessId)
+      .eq("path", path)
+      .eq("date", date)
+      .maybeSingle<MetricRow>();
+    if (existing.error) throw new Error(`Supabase error: ${existing.error.message}`);
+    if (existing.data) {
+      const { error } = await this.client
+        .from("site_metrics")
+        .update({ [column]: existing.data[column as keyof MetricRow] as number + 1 })
+        .eq("business_id", businessId)
+        .eq("path", path)
+        .eq("date", date);
+      if (error) throw new Error(`Supabase error: ${error.message}`);
+      return;
+    }
+    const { error } = await this.client.from("site_metrics").insert({
+      business_id: businessId,
+      path,
+      date,
+      views: 0,
+      form_starts: 0,
+      form_submits: 0,
+      [column]: 1,
+    });
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+  }
+
+  async listForBusiness(businessId: string): Promise<SiteMetricRow[]> {
+    const { data, error } = await this.client
+      .from("site_metrics")
+      .select()
+      .eq("business_id", businessId);
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return (data as MetricRow[]).map(toMetric);
   }
 }
 
@@ -756,5 +925,6 @@ export function createSupabaseBusinessSpine(
     builds: new SupabaseBuildRepository(client),
     publications: new SupabasePublicationRepository(client),
     enquiries: new SupabaseEnquiryRepository(client),
+    metrics: new SupabaseMetricsRepository(client),
   };
 }

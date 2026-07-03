@@ -11,6 +11,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { SidebarContent } from "./sidebar";
+import { NotificationsBell } from "./notifications-bell";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
@@ -56,6 +57,7 @@ export function CommandBar() {
 
       {/* Right-side actions */}
       <div className="ml-auto flex items-center gap-1.5">
+        <NotificationsBell />
         <ThemeToggle />
         <UserMenu />
       </div>

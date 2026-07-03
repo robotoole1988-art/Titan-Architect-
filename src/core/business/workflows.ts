@@ -5,7 +5,10 @@
  */
 
 import { isLostStage, stageLabel, type Business, type LifecycleStage } from "./model";
-import { BusinessNotFoundError } from "./repository";
+import { BusinessNotFoundError,
+  type Enquiry,
+  type EnquiryStatus,
+} from "./repository";
 import type {
   ArtifactKind,
   BusinessSpineRepositories,
@@ -197,6 +200,8 @@ export interface EnquiryOutcome {
   accepted: boolean;
   /** True when the honeypot fired and nothing was stored. */
   dropped: boolean;
+  /** The stored enquiry (ADR-030) — the notification's subject. */
+  enquiry?: Enquiry;
 }
 
 /**
@@ -235,5 +240,74 @@ export async function processEnquiry(
     message: `Enquiry from ${enquiry.name} (${enquiry.contact}) via /sites/${publication.slug}`,
     meta: { enquiryId: enquiry.id, publicationId: publication.id },
   });
-  return { accepted: true, dropped: false };
+
+  return { accepted: true, dropped: false, enquiry };
+}
+
+
+/** Forward-only rank of the speed-to-lead lifecycle (ADR-030). */
+const ENQUIRY_STATUS_RANK: Record<EnquiryStatus, number> = {
+  new: 0,
+  seen: 1,
+  contacted: 2,
+  qualified: 3,
+  disqualified: 3,
+};
+
+/**
+ * Move an enquiry through its lifecycle (ADR-030). Forward-only: an enquiry
+ * that has been contacted cannot become merely "seen" again. Logs to the
+ * account's activity feed.
+ */
+export async function markEnquiryStatus(
+  repos: BusinessSpineRepositories,
+  enquiryId: string,
+  status: EnquiryStatus,
+): Promise<Enquiry> {
+  const current = await repos.enquiries.get(enquiryId);
+  if (!current) throw new Error(`Unknown enquiry "${enquiryId}"`);
+  if (ENQUIRY_STATUS_RANK[status] <= ENQUIRY_STATUS_RANK[current.status]) {
+    throw new Error(
+      `Illegal enquiry transition "${current.status}" → "${status}" — the lifecycle is forward-only.`,
+    );
+  }
+  const updated = await repos.enquiries.setStatus(
+    enquiryId,
+    status,
+    new Date().toISOString(),
+  );
+  await repos.activity.log({
+    businessId: updated.businessId,
+    kind: "enquiry",
+    message: `Enquiry from ${updated.name} marked ${status}`,
+  });
+  return updated;
+}
+
+/** Speed-to-lead for ONE enquiry: creation → first contact. Null until contacted. */
+export function responseTimeMs(enquiry: Enquiry): number | null {
+  if (!enquiry.contactedAt) return null;
+  return Date.parse(enquiry.contactedAt) - Date.parse(enquiry.createdAt);
+}
+
+/** Average speed-to-lead over contacted enquiries; null when none. */
+export function averageResponseTimeMs(
+  enquiries: ReadonlyArray<Enquiry>,
+): number | null {
+  const times = enquiries
+    .map(responseTimeMs)
+    .filter((time): time is number => time !== null);
+  if (times.length === 0) return null;
+  return times.reduce((sum, time) => sum + time, 0) / times.length;
+}
+
+/** "12m 30s" / "1h 05m" — the panel's human form of speed-to-lead. */
+export function formatResponseTime(ms: number): string {
+  const minutes = Math.floor(ms / 60_000);
+  if (minutes < 60) {
+    const seconds = Math.round((ms % 60_000) / 1000);
+    return seconds > 0 ? `${minutes}m ${seconds}s` : `${minutes}m`;
+  }
+  const hours = Math.floor(minutes / 60);
+  return `${hours}h ${String(minutes % 60).padStart(2, "0")}m`;
 }

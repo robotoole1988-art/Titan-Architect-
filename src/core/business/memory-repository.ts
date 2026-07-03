@@ -27,6 +27,10 @@ import {
   type BusinessSpineRepositories,
   type Enquiry,
   type EnquiryDraft,
+  type EnquiryStatus,
+  type MetricEventKind,
+  type MetricsRepository,
+  type SiteMetricRow,
   type EnquiryRepository,
   type LogActivityInput,
   type Publication,
@@ -45,6 +49,7 @@ interface MemoryState {
   /** Monotonic insertion order — timestamps can tie within a millisecond. */
   sequence: Map<string, number>;
   nextSequence: number;
+  metrics: Map<string, SiteMetricRow>;
 }
 
 function nowIso(): string {
@@ -102,6 +107,18 @@ class MemoryBusinessRepository implements BusinessRepository {
       this.state.businesses.set(id, updated);
       return structuredClone(updated);
     }
+    return structuredClone(business);
+  }
+
+  async updateDetails(
+    id: string,
+    patch: Partial<Pick<BusinessDraft, "ownerEmail" | "ga4MeasurementId">>,
+  ): Promise<Business> {
+    const business = this.state.businesses.get(id);
+    if (!business) throw new BusinessNotFoundError(id);
+    if ("ownerEmail" in patch) business.ownerEmail = patch.ownerEmail;
+    if ("ga4MeasurementId" in patch) business.ga4MeasurementId = patch.ga4MeasurementId;
+    business.updatedAt = nowIso();
     return structuredClone(business);
   }
 
@@ -225,8 +242,32 @@ class MemoryEnquiryRepository implements EnquiryRepository {
       ...draft,
       id: crypto.randomUUID(),
       createdAt: nowIso(),
+      status: "new",
     };
     this.state.enquiries.push(enquiry);
+    return structuredClone(enquiry);
+  }
+
+  async get(id: string): Promise<Enquiry | null> {
+    const enquiry = this.state.enquiries.find((entry) => entry.id === id);
+    return enquiry ? structuredClone(enquiry) : null;
+  }
+
+  async setStatus(
+    id: string,
+    status: EnquiryStatus,
+    atIso: string,
+  ): Promise<Enquiry> {
+    const enquiry = this.state.enquiries.find((entry) => entry.id === id);
+    if (!enquiry) throw new Error(`Unknown enquiry "${id}"`);
+    enquiry.status = status;
+    if (status === "seen" && !enquiry.seenAt) enquiry.seenAt = atIso;
+    if (status === "contacted" && !enquiry.contactedAt) {
+      enquiry.contactedAt = atIso;
+    }
+    if (status === "qualified" || status === "disqualified") {
+      enquiry.outcomeAt = atIso;
+    }
     return structuredClone(enquiry);
   }
 
@@ -235,6 +276,42 @@ class MemoryEnquiryRepository implements EnquiryRepository {
       .filter((enquiry) => enquiry.businessId === businessId)
       .reverse()
       .map((enquiry) => structuredClone(enquiry));
+  }
+
+  async listRecent(limit: number): Promise<Enquiry[]> {
+    return this.state.enquiries
+      .slice(-limit)
+      .reverse()
+      .map((enquiry) => structuredClone(enquiry));
+  }
+}
+
+class MemoryMetricsRepository implements MetricsRepository {
+  constructor(private readonly state: MemoryState) {}
+
+  async record(
+    businessId: string,
+    path: string,
+    kind: MetricEventKind,
+    date: string,
+  ): Promise<void> {
+    if (!this.state.businesses.has(businessId)) {
+      throw new BusinessNotFoundError(businessId);
+    }
+    const key = `${businessId}|${path}|${date}`;
+    const row =
+      this.state.metrics.get(key) ??
+      ({ businessId, path, date, views: 0, formStarts: 0, formSubmits: 0 } satisfies SiteMetricRow);
+    if (kind === "view") row.views += 1;
+    if (kind === "form_start") row.formStarts += 1;
+    if (kind === "form_submit") row.formSubmits += 1;
+    this.state.metrics.set(key, row);
+  }
+
+  async listForBusiness(businessId: string): Promise<SiteMetricRow[]> {
+    return [...this.state.metrics.values()]
+      .filter((row) => row.businessId === businessId)
+      .map((row) => structuredClone(row));
   }
 }
 
@@ -400,6 +477,7 @@ export function createMemoryBusinessSpine(): BusinessSpineRepositories {
     publications: [],
     domains: new Map(),
     enquiries: [],
+    metrics: new Map(),
     sequence: new Map(),
     nextSequence: 1,
   };
@@ -410,5 +488,6 @@ export function createMemoryBusinessSpine(): BusinessSpineRepositories {
     builds: new MemoryBuildRepository(state),
     publications: new MemoryPublicationRepository(state),
     enquiries: new MemoryEnquiryRepository(state),
+    metrics: new MemoryMetricsRepository(state),
   };
 }
