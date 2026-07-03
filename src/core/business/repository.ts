@@ -46,7 +46,7 @@ export interface BusinessRepository {
 }
 
 /** The artifact kinds the pipeline persists today. */
-export type ArtifactKind = "strategy" | "blueprint" | "deal";
+export type ArtifactKind = "strategy" | "blueprint" | "deal" | "campaign_plan";
 
 /** A saved, versioned pipeline artifact linked to its Business. */
 export interface ArtifactRecord<T = unknown> {

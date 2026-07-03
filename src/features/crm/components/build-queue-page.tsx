@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, Check, Eye, Hand, ShieldCheck, Undo2 } from "lucide-react";
+import { ArrowRight, Check, Eye, Hand, ShieldCheck, Undo2 , FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -11,7 +11,7 @@ import {
   type Business,
   type Publication,
 } from "@/core/business";
-import { setBuildItemStatus } from "../api/actions";
+import { setBuildItemStatus, generateAdsPlan } from "../api/actions";
 import { CrmChrome } from "./crm-atoms";
 
 /**
@@ -50,10 +50,80 @@ const MANUAL_NEXT: Partial<Record<BuildItemStatus, BuildItemStatus>> = {
 function ItemControls({
   businessId,
   item,
+  ads,
 }: {
   businessId: string;
   item: BuildItem;
+  /** Google Ads context (ADR-031): can a plan be generated / does one exist? */
+  ads?: { canGenerate: boolean; planVersion: number | null };
 }) {
+  // The Google Ads item designs through TITAN (ADR-031): generate the plan,
+  // review it in the viewer, approve the DESIGN — execution stays manual.
+  if (item.kind === "google_ads") {
+    const viewLink = ads?.planVersion ? (
+      <Button
+        size="sm"
+        variant="outline"
+        render={<Link href={`/crm/${businessId}/campaign-plan`} />}
+        className="gap-1.5"
+        data-view-plan
+      >
+        <FileSpreadsheet className="size-3.5" />
+        Plan v{ads.planVersion}
+      </Button>
+    ) : null;
+    if (item.status === "queued" || item.status === "building") {
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          {viewLink}
+          {ads?.canGenerate ? (
+            <form
+              action={async () => {
+                "use server";
+                await generateAdsPlan(businessId);
+              }}
+            >
+              <Button size="sm" type="submit" data-generate-plan>
+                Generate campaign plan
+              </Button>
+            </form>
+          ) : (
+            <span className="text-[11px] text-muted-foreground">
+              needs a deal + live site
+            </span>
+          )}
+        </div>
+      );
+    }
+    if (item.status === "review") {
+      return (
+        <div className="flex flex-wrap items-center gap-2">
+          {viewLink}
+          <form
+            action={async () => {
+              "use server";
+              await setBuildItemStatus(businessId, "google_ads", "approved");
+            }}
+          >
+            <Button size="sm" type="submit">
+              Approve
+            </Button>
+          </form>
+          <form
+            action={async () => {
+              "use server";
+              await setBuildItemStatus(businessId, "google_ads", "building");
+            }}
+          >
+            <Button size="sm" variant="outline" type="submit">
+              Send back
+            </Button>
+          </form>
+        </div>
+      );
+    }
+    if (viewLink) return viewLink;
+  }
   if (item.status === "review") {
     return (
       <div className="flex flex-wrap items-center gap-2">
@@ -177,11 +247,13 @@ function BuildCard({
   business,
   publication,
   latestBlueprintVersion,
+  ads,
 }: {
   build: Build;
   business: Business;
   publication: Publication | null;
   latestBlueprintVersion: number | null;
+  ads?: { canGenerate: boolean; planVersion: number | null };
 }) {
   return (
     <section
@@ -245,7 +317,7 @@ function BuildCard({
                 </span>
               )}
             </div>
-            <ItemControls businessId={business.id} item={item} />
+            <ItemControls businessId={business.id} item={item} ads={ads} />
           </li>
         ))}
       </ul>
@@ -263,13 +335,23 @@ export async function CrmBuildQueuePage() {
   const publicationByBusiness = new Map(
     await Promise.all(
       builds.map(async (build) => {
-        const [publication, latestBlueprint] = await Promise.all([
-          spine.publications.current(build.businessId),
-          spine.artifacts.latest(build.businessId, "blueprint"),
-        ]);
+        const [publication, latestBlueprint, latestDeal, latestPlan] =
+          await Promise.all([
+            spine.publications.current(build.businessId),
+            spine.artifacts.latest(build.businessId, "blueprint"),
+            spine.artifacts.latest(build.businessId, "deal"),
+            spine.artifacts.latest(build.businessId, "campaign_plan"),
+          ]);
         return [
           build.businessId,
-          { publication, latestBlueprintVersion: latestBlueprint?.version ?? null },
+          {
+            publication,
+            latestBlueprintVersion: latestBlueprint?.version ?? null,
+            ads: {
+              canGenerate: latestDeal !== null && publication !== null,
+              planVersion: latestPlan?.version ?? null,
+            },
+          },
         ] as const;
       }),
     ),
@@ -328,13 +410,25 @@ export async function CrmBuildQueuePage() {
                         <Eye className="size-3" />
                         preview
                       </Link>
+                    ) : item.kind === "google_ads" ? (
+                      <Link
+                        href={`/crm/${business.id}/campaign-plan`}
+                        className="inline-flex items-center gap-1 text-xs text-sky-300 underline-offset-2 hover:underline"
+                      >
+                        <FileSpreadsheet className="size-3" />
+                        review the plan
+                      </Link>
                     ) : (
                       <span className="text-[11px] text-muted-foreground">
                         manual item — review offline
                       </span>
                     )}
                   </div>
-                  <ItemControls businessId={business.id} item={item} />
+                  <ItemControls
+                    businessId={business.id}
+                    item={item}
+                    ads={publicationByBusiness.get(build.businessId)?.ads}
+                  />
                 </li>
               );
             })}
@@ -363,6 +457,7 @@ export async function CrmBuildQueuePage() {
                 business={business}
                 publication={info?.publication ?? null}
                 latestBlueprintVersion={info?.latestBlueprintVersion ?? null}
+                ads={info?.ads}
               />
             ) : null;
           })}
