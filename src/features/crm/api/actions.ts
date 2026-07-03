@@ -18,7 +18,7 @@ import {
   type BuildItemStatus,
   type LifecycleStage,
 } from "@/core/business";
-import { getPricedService, type Deal } from "@/core/pricing";
+import { buildDeal, getPricedService, type DealInputs } from "@/core/pricing";
 
 function revalidateCrm(businessId?: string): void {
   revalidatePath("/crm");
@@ -84,29 +84,25 @@ export async function addBusinessNote(
   revalidateCrm(businessId);
 }
 
-/** Save a deal as a new artifact version (never overwrites) + activity. */
-export async function saveDeal(businessId: string, deal: Deal): Promise<void> {
-  if (!getPricedService(deal.packageType)) {
-    throw new Error(`Unknown package "${deal.packageType}"`);
-  }
-  for (const value of [deal.setupFee, deal.monthlyManagementFee, deal.monthlyAdSpend]) {
-    if (!Number.isFinite(value) || value < 0) {
-      throw new Error("Deal figures must be non-negative numbers");
-    }
-  }
+/**
+ * Save a deal as a new artifact version (never overwrites) + activity.
+ * Ad spend is RE-DERIVED here via buildDeal (lead target × CPL) — the server
+ * never trusts a client-supplied spend figure (v1.1 addendum).
+ */
+export async function saveDeal(
+  businessId: string,
+  inputs: DealInputs,
+): Promise<void> {
+  const deal = buildDeal({
+    ...inputs,
+    includedServices: inputs.includedServices.filter((id) => getPricedService(id)),
+    notes: inputs.notes?.trim() || undefined,
+  });
   const spine = await resolveBusinessSpine();
-  const artifact = await spine.artifacts.save<Deal>({
+  const artifact = await spine.artifacts.save({
     businessId,
     kind: "deal",
-    payload: {
-      packageType: deal.packageType,
-      includedServices: deal.includedServices.filter((id) => getPricedService(id)),
-      setupFee: deal.setupFee,
-      monthlyManagementFee: deal.monthlyManagementFee,
-      monthlyAdSpend: deal.monthlyAdSpend,
-      vatRate: deal.vatRate,
-      ...(deal.notes?.trim() ? { notes: deal.notes.trim() } : {}),
-    },
+    payload: deal,
   });
   await recordArtifactGenerated(spine, businessId, "deal", artifact.version);
   revalidateCrm(businessId);

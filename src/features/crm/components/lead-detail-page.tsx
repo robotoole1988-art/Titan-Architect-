@@ -20,8 +20,7 @@ import type { Deal } from "@/core/pricing";
 import { EstimateCard } from "@/features/market";
 import { addBusinessNote, moveBusinessStage } from "../api/actions";
 import { ActivityLog, CrmChrome, StageBadge } from "./crm-atoms";
-import { DealBuilder } from "./deal-builder";
-import { RoiCalculator } from "./roi-calculator";
+import { SellingTools } from "./selling-tools";
 
 /**
  * The lead/business detail (ADR-024): intake data, the full stage control
@@ -155,19 +154,15 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
     business.location,
   );
   const deal = dealArtifact?.payload ?? null;
-  const roiPrefill = {
+  const sellingPrefill = {
     closeRate: defaultCloseRateForTrade(business.tradeId ?? business.trade),
     customersPerMonth: 4,
     cpl: cplEstimate.cpl.mid,
     averageJobValue:
       (cplEstimate.jobValue.low + cplEstimate.jobValue.high) / 2,
-    monthlyManagementFee: deal?.monthlyManagementFee ?? 0,
     cplSource: `CPL estimate · ${confidenceLabel(cplEstimate.provenance.confidence).toLowerCase()} · ${cplEstimate.provenance.locationLabel}`,
     jobValueSource: `benchmark job value · ${confidenceLabel(cplEstimate.provenance.confidence).toLowerCase()}`,
     closeRateSource: "archetype assumption",
-    mmfSource: deal
-      ? `incl. MMF from deal v${dealArtifact!.version}`
-      : "no deal yet — MMF excluded",
   };
 
   return (
@@ -219,17 +214,16 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-6">
           <EstimateCard estimate={cplEstimate} compact />
-          <RoiCalculator prefill={roiPrefill} />
+          <SellingTools
+            businessId={business.id}
+            prefill={sellingPrefill}
+            existingDeal={deal}
+            existingVersion={dealArtifact?.version ?? null}
+          />
           <PitchPanel business={business} />
         </div>
 
         <div className="flex flex-col gap-6">
-          <DealBuilder
-            businessId={business.id}
-            existingDeal={deal}
-            existingVersion={dealArtifact?.version ?? null}
-          />
-
           {/* Stage control — the one place with the full state list + reason */}
           <section
             aria-label="Lifecycle stage"

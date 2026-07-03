@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   PRICING_CATALOGUE,
   UK_VAT_RATE,
+  buildDeal,
   computeDeal,
   defaultDealForPackage,
+  deriveAdSpend,
   getPricedService,
   type Deal,
 } from "@/core/pricing";
@@ -26,15 +28,62 @@ describe("pricing catalogue (ADR-026)", () => {
     expect(getPricedService("lead_generation")?.flagship).toBe(true);
   });
 
-  it("pre-fills a deal from the catalogue", () => {
-    const deal = defaultDealForPackage("lead_generation");
+  it("pre-fills a deal from the catalogue, ad spend DERIVED from lead target × CPL", () => {
+    const deal = defaultDealForPackage("lead_generation", { cpl: 75 });
     const service = getPricedService("lead_generation")!;
     expect(deal.packageType).toBe("lead_generation");
     expect(deal.setupFee).toBe(service.defaultSetupFee);
     expect(deal.monthlyManagementFee).toBe(service.defaultMonthlyFee);
-    expect(deal.monthlyAdSpend).toBeGreaterThan(0);
+    expect(deal.leadTargetPerMonth).toBeGreaterThan(0);
+    expect(deal.cplUsed).toBe(75);
+    expect(deal.cplSource).toBe("estimate");
+    expect(deal.monthlyAdSpend).toBe(
+      deriveAdSpend(deal.leadTargetPerMonth, deal.cplUsed),
+    );
     expect(deal.includedServices).toContain("lead_generation");
     expect(deal.vatRate).toBe(UK_VAT_RATE);
+  });
+
+  it("non-flagship packages start with no ad spend", () => {
+    const deal = defaultDealForPackage("website_build", { cpl: 75 });
+    expect(deal.leadTargetPerMonth).toBe(0);
+    expect(deal.monthlyAdSpend).toBe(0);
+  });
+});
+
+describe("derived ad spend (v1.1 addendum)", () => {
+  it("shows the founder's example working: 50 leads × £40 CPL = £2,000/mo", () => {
+    expect(deriveAdSpend(50, 40)).toBe(2000);
+  });
+
+  it("rounds derived spend to pennies", () => {
+    expect(deriveAdSpend(33, 41.67)).toBe(1375.11);
+  });
+
+  it("buildDeal ALWAYS derives ad spend — a client cannot type over it", () => {
+    const deal = buildDeal({
+      packageType: "lead_generation",
+      includedServices: ["lead_generation"],
+      setupFee: 1995,
+      monthlyManagementFee: 499,
+      leadTargetPerMonth: 16,
+      cplUsed: 75,
+      cplSource: "estimate",
+    });
+    expect(deal.monthlyAdSpend).toBe(1200);
+    expect(computeDeal(deal).ongoingMonthlyExVat).toBe(1699);
+  });
+
+  it("buildDeal rejects nonsense", () => {
+    const base = {
+      packageType: "lead_generation" as const,
+      includedServices: ["lead_generation" as const],
+      setupFee: 1995,
+      monthlyManagementFee: 499,
+      cplSource: "estimate" as const,
+    };
+    expect(() => buildDeal({ ...base, leadTargetPerMonth: -1, cplUsed: 75 })).toThrow();
+    expect(() => buildDeal({ ...base, leadTargetPerMonth: 10, cplUsed: -5 })).toThrow();
   });
 });
 
@@ -44,7 +93,10 @@ describe("computeDeal — the founder's phone-quote maths", () => {
     includedServices: ["lead_generation", "website_build"],
     setupFee: 1995,
     monthlyManagementFee: 499,
-    monthlyAdSpend: 1000,
+    leadTargetPerMonth: 25,
+    cplUsed: 40,
+    cplSource: "estimate",
+    monthlyAdSpend: 1000, // 25 × £40
     vatRate: 0.2,
   };
 
