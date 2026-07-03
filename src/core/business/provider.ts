@@ -24,7 +24,7 @@ export function resolvePersistenceBackend(
  * of the cache key, so a dev server that survived the upgrade via HMR cannot
  * serve a stale, incomplete spine.
  */
-const SPINE_SHAPE_VERSION = 2;
+const SPINE_SHAPE_VERSION = 3;
 
 const GLOBAL_KEY = Symbol.for(`titan.business-spine.v${SPINE_SHAPE_VERSION}`);
 

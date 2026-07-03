@@ -89,6 +89,8 @@ const ACTIVITY_LABELS: Record<ActivityEntry["kind"], string> = {
   artifact_generated: "Artifact",
   build_created: "Build",
   build_item_update: "Build item",
+  publication: "Publish",
+  enquiry: "Enquiry",
 };
 
 export function ActivityLog({ entries }: { entries: ActivityEntry[] }) {

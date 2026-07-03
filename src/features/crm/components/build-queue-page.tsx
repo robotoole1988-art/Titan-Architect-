@@ -9,6 +9,7 @@ import {
   type BuildItem,
   type BuildItemStatus,
   type Business,
+  type Publication,
 } from "@/core/business";
 import { setBuildItemStatus } from "../api/actions";
 import { CrmChrome } from "./crm-atoms";
@@ -126,7 +127,62 @@ function ItemControls({
   return null;
 }
 
-function BuildCard({ build, business }: { build: Build; business: Business }) {
+function PublicationChip({
+  publication,
+  latestBlueprintVersion,
+  businessId,
+}: {
+  publication: Publication | null;
+  latestBlueprintVersion: number | null;
+  businessId: string;
+}) {
+  if (!publication) {
+    return (
+      <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/20 px-2.5 py-0.5 text-[11px] text-muted-foreground">
+        not published
+      </span>
+    );
+  }
+  const updateAvailable =
+    latestBlueprintVersion !== null &&
+    latestBlueprintVersion > publication.blueprintVersion;
+  return (
+    <span className="inline-flex flex-wrap items-center gap-2">
+      <Link
+        href={`/sites/${publication.slug}`}
+        target="_blank"
+        className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-0.5 text-[11px] text-emerald-200 underline-offset-2 hover:underline"
+        data-publication-live
+      >
+        published v{publication.version} · /sites/{publication.slug} ↗
+      </Link>
+      {updateAvailable && (
+        <form
+          action={async () => {
+            "use server";
+            await setBuildItemStatus(businessId, "website", "review");
+          }}
+        >
+          <Button size="sm" variant="outline" type="submit" data-stage-update>
+            Update available (blueprint v{latestBlueprintVersion}) — stage for review
+          </Button>
+        </form>
+      )}
+    </span>
+  );
+}
+
+function BuildCard({
+  build,
+  business,
+  publication,
+  latestBlueprintVersion,
+}: {
+  build: Build;
+  business: Business;
+  publication: Publication | null;
+  latestBlueprintVersion: number | null;
+}) {
   return (
     <section
       aria-label={business.name}
@@ -146,17 +202,24 @@ function BuildCard({ build, business }: { build: Build; business: Business }) {
             {new Date(build.createdAt).toLocaleDateString("en-GB")}
           </p>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          render={
-            <Link href={`/experience-studio/preview?businessId=${business.id}`} />
-          }
-          className="gap-1.5"
-        >
-          <Eye className="size-3.5" />
-          Preview site
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <PublicationChip
+            publication={publication}
+            latestBlueprintVersion={latestBlueprintVersion}
+            businessId={business.id}
+          />
+          <Button
+            size="sm"
+            variant="outline"
+            render={
+              <Link href={`/experience-studio/preview?businessId=${business.id}`} />
+            }
+            className="gap-1.5"
+          >
+            <Eye className="size-3.5" />
+            Preview site
+          </Button>
+        </div>
       </header>
 
       <ul className="flex flex-col divide-y divide-border/40">
@@ -197,6 +260,20 @@ export async function CrmBuildQueuePage() {
     spine.businesses.list(),
   ]);
   const businessById = new Map(businesses.map((business) => [business.id, business]));
+  const publicationByBusiness = new Map(
+    await Promise.all(
+      builds.map(async (build) => {
+        const [publication, latestBlueprint] = await Promise.all([
+          spine.publications.current(build.businessId),
+          spine.artifacts.latest(build.businessId, "blueprint"),
+        ]);
+        return [
+          build.businessId,
+          { publication, latestBlueprintVersion: latestBlueprint?.version ?? null },
+        ] as const;
+      }),
+    ),
+  );
 
   const awaitingReview = builds.flatMap((build) =>
     build.items
@@ -278,8 +355,15 @@ export async function CrmBuildQueuePage() {
         <div className="flex flex-col gap-4">
           {builds.map((build) => {
             const business = businessById.get(build.businessId);
+            const info = publicationByBusiness.get(build.businessId);
             return business ? (
-              <BuildCard key={build.id} build={build} business={business} />
+              <BuildCard
+                key={build.id}
+                build={build}
+                business={business}
+                publication={info?.publication ?? null}
+                latestBlueprintVersion={info?.latestBlueprintVersion ?? null}
+              />
             ) : null;
           })}
         </div>

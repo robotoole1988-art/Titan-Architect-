@@ -11,9 +11,11 @@ import {
   ALL_LIFECYCLE_STATES,
   BusinessNotFoundError,
   buildItemLabel,
+  publishWebsite,
   recordArtifactGenerated,
   resolveBusinessSpine,
   transitionBusinessStage,
+  unpublishWebsite,
   type BuildItemKind,
   type BuildItemStatus,
   type LifecycleStage,
@@ -134,10 +136,20 @@ export async function setBuildItemStatus(
   });
 
   if (kind === "website" && status === "live") {
+    // Going live IS publishing (ADR-027): the founder-approved snapshot pins
+    // the latest blueprint version and starts serving at the public URL.
+    await publishWebsite(spine, businessId);
     const business = await spine.businesses.get(businessId);
     if (business && business.stage !== "live" && business.stage !== "account") {
       await transitionBusinessStage(spine, businessId, "live");
     }
   }
+  revalidateCrm(businessId);
+}
+
+/** Take the live site offline (explicit founder action, ADR-027). */
+export async function unpublishBusinessSite(businessId: string): Promise<void> {
+  const spine = await resolveBusinessSpine();
+  await unpublishWebsite(spine, businessId);
   revalidateCrm(businessId);
 }

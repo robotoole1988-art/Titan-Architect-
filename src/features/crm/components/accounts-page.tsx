@@ -1,13 +1,14 @@
 import Link from "next/link";
-import { ArrowRight, BarChart3, Eye, Radio } from "lucide-react";
+import { ArrowRight, BarChart3, Eye, Globe, Inbox, Radio } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   buildItemLabel,
   resolveBusinessSpine,
   type Build,
   type Business,
+  type Enquiry,
 } from "@/core/business";
-import { moveBusinessStage } from "../api/actions";
+import { moveBusinessStage, unpublishBusinessSite } from "../api/actions";
 import { ActivityLog, CrmChrome, StageBadge } from "./crm-atoms";
 
 /**
@@ -44,11 +45,60 @@ function LiveBundle({ build }: { build: Build | null }) {
   );
 }
 
+function EnquiriesPanel({ enquiries }: { enquiries: Enquiry[] }) {
+  return (
+    <div className="flex flex-col gap-2" data-enquiries-panel>
+      <h3 className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        <Inbox className="size-3.5" />
+        Enquiries ({enquiries.length})
+      </h3>
+      {enquiries.length === 0 ? (
+        <p className="rounded-xl border border-dashed border-border/60 p-4 text-sm text-muted-foreground">
+          None yet — enquiries from the live site land here, newest first.
+        </p>
+      ) : (
+        <ul className="flex flex-col gap-2">
+          {enquiries.slice(0, 8).map((enquiry) => (
+            <li
+              key={enquiry.id}
+              className="rounded-xl border border-border/60 bg-background/40 px-4 py-3"
+              data-enquiry
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-sm font-medium">
+                  {enquiry.name}
+                  <span className="ml-2 font-normal text-muted-foreground">
+                    {enquiry.contact}
+                  </span>
+                </p>
+                <span className="text-[11px] text-muted-foreground">
+                  {new Date(enquiry.createdAt).toLocaleString("en-GB", {
+                    day: "2-digit",
+                    month: "short",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}{" "}
+                  · from {enquiry.sourcePage}
+                </span>
+              </div>
+              {enquiry.message && (
+                <p className="mt-1 text-sm text-foreground/85">“{enquiry.message}”</p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 async function AccountCard({ business }: { business: Business }) {
   const spine = await resolveBusinessSpine();
-  const [build, entries] = await Promise.all([
+  const [build, entries, publication, enquiries] = await Promise.all([
     spine.builds.getForBusiness(business.id),
     spine.activity.list(business.id),
+    spine.publications.current(business.id),
+    spine.enquiries.listForBusiness(business.id),
   ]);
 
   return (
@@ -73,6 +123,23 @@ async function AccountCard({ business }: { business: Business }) {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {publication ? (
+            <Button
+              size="sm"
+              render={
+                <Link href={`/sites/${publication.slug}`} target="_blank" />
+              }
+              className="gap-1.5"
+              data-live-site-link
+            >
+              <Globe className="size-3.5" />
+              /sites/{publication.slug} · v{publication.version}
+            </Button>
+          ) : (
+            <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/20 px-2.5 py-0.5 text-[11px] text-muted-foreground">
+              site offline
+            </span>
+          )}
           <Button
             size="sm"
             variant="outline"
@@ -82,8 +149,20 @@ async function AccountCard({ business }: { business: Business }) {
             className="gap-1.5"
           >
             <Eye className="size-3.5" />
-            Live site
+            Preview
           </Button>
+          {publication && (
+            <form
+              action={async () => {
+                "use server";
+                await unpublishBusinessSite(business.id);
+              }}
+            >
+              <Button size="sm" variant="ghost" type="submit">
+                Unpublish
+              </Button>
+            </form>
+          )}
           {business.stage === "live" && (
             <form
               action={async () => {
@@ -106,6 +185,8 @@ async function AccountCard({ business }: { business: Business }) {
         </h3>
         <LiveBundle build={build} />
       </div>
+
+      <EnquiriesPanel enquiries={enquiries} />
 
       {/* Performance scaffold — designed empty state, never fake numbers */}
       <div className="flex flex-col gap-2">

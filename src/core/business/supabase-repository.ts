@@ -30,7 +30,13 @@ import {
   type BuildRepository,
   type BusinessRepository,
   type BusinessSpineRepositories,
+  type Enquiry,
+  type EnquiryDraft,
+  type EnquiryRepository,
   type LogActivityInput,
+  type Publication,
+  type PublicationRepository,
+  type PublicationStatus,
   type SaveArtifactInput,
 } from "./repository";
 
@@ -514,6 +520,223 @@ class SupabaseBuildRepository implements BuildRepository {
   }
 }
 
+interface PublicationRow {
+  id: string;
+  business_id: string;
+  slug: string;
+  version: number;
+  blueprint_version: number;
+  status: PublicationStatus;
+  created_at: string;
+  status_changed_at: string;
+}
+
+function toPublication(row: PublicationRow): Publication {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    slug: row.slug,
+    version: row.version,
+    blueprintVersion: row.blueprint_version,
+    status: row.status,
+    createdAt: row.created_at,
+    statusChangedAt: row.status_changed_at,
+  };
+}
+
+class SupabasePublicationRepository implements PublicationRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async publish(
+    businessId: string,
+    blueprintVersion: number,
+    slug: string,
+  ): Promise<Publication> {
+    const owner = await this.client
+      .from("businesses")
+      .select("id")
+      .eq("id", businessId)
+      .maybeSingle();
+    if (owner.error) throw new Error(`Supabase error: ${owner.error.message}`);
+    if (!owner.data) throw new BusinessNotFoundError(businessId);
+
+    const now = nowIso();
+    const supersede = await this.client
+      .from("publications")
+      .update({ status: "superseded", status_changed_at: now })
+      .eq("business_id", businessId)
+      .eq("status", "live");
+    if (supersede.error) {
+      throw new Error(`Supabase error: ${supersede.error.message}`);
+    }
+
+    const { data: latest, error: latestError } = await this.client
+      .from("publications")
+      .select("version")
+      .eq("business_id", businessId)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle<{ version: number }>();
+    if (latestError) throw new Error(`Supabase error: ${latestError.message}`);
+
+    const inserted = must(
+      await this.client
+        .from("publications")
+        .insert({
+          id: crypto.randomUUID(),
+          business_id: businessId,
+          slug,
+          version: (latest?.version ?? 0) + 1,
+          blueprint_version: blueprintVersion,
+          status: "live",
+          created_at: now,
+          status_changed_at: now,
+        })
+        .select()
+        .single<PublicationRow>(),
+    );
+    return toPublication(inserted);
+  }
+
+  private async liveWhere(
+    column: string,
+    value: string,
+  ): Promise<Publication | null> {
+    const { data, error } = await this.client
+      .from("publications")
+      .select()
+      .eq(column, value)
+      .eq("status", "live")
+      .maybeSingle<PublicationRow>();
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return data ? toPublication(data) : null;
+  }
+
+  async current(businessId: string): Promise<Publication | null> {
+    return this.liveWhere("business_id", businessId);
+  }
+
+  async currentBySlug(slug: string): Promise<Publication | null> {
+    return this.liveWhere("slug", slug);
+  }
+
+  async currentByHostname(hostname: string): Promise<Publication | null> {
+    const { data, error } = await this.client
+      .from("site_domains")
+      .select("business_id")
+      .eq("hostname", hostname.toLowerCase())
+      .maybeSingle<{ business_id: string }>();
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return data ? this.current(data.business_id) : null;
+  }
+
+  async history(businessId: string): Promise<Publication[]> {
+    const { data, error } = await this.client
+      .from("publications")
+      .select()
+      .eq("business_id", businessId)
+      .order("version", { ascending: false });
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return (data as PublicationRow[]).map(toPublication);
+  }
+
+  async unpublish(businessId: string): Promise<void> {
+    const { error } = await this.client
+      .from("publications")
+      .update({ status: "unpublished", status_changed_at: nowIso() })
+      .eq("business_id", businessId)
+      .eq("status", "live");
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+  }
+
+  async slugOwner(slug: string): Promise<string | null> {
+    const { data, error } = await this.client
+      .from("publications")
+      .select("business_id")
+      .eq("slug", slug)
+      .limit(1)
+      .maybeSingle<{ business_id: string }>();
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return data?.business_id ?? null;
+  }
+
+  async addDomain(hostname: string, businessId: string): Promise<void> {
+    const { error } = await this.client.from("site_domains").upsert({
+      hostname: hostname.toLowerCase(),
+      business_id: businessId,
+      created_at: nowIso(),
+    });
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+  }
+}
+
+interface EnquiryRow {
+  id: string;
+  business_id: string;
+  publication_id: string;
+  name: string;
+  contact: string;
+  message: string;
+  source_page: string;
+  created_at: string;
+}
+
+function toEnquiry(row: EnquiryRow): Enquiry {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    publicationId: row.publication_id,
+    name: row.name,
+    contact: row.contact,
+    message: row.message,
+    sourcePage: row.source_page,
+    createdAt: row.created_at,
+  };
+}
+
+class SupabaseEnquiryRepository implements EnquiryRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async create(draft: EnquiryDraft): Promise<Enquiry> {
+    const owner = await this.client
+      .from("businesses")
+      .select("id")
+      .eq("id", draft.businessId)
+      .maybeSingle();
+    if (owner.error) throw new Error(`Supabase error: ${owner.error.message}`);
+    if (!owner.data) throw new BusinessNotFoundError(draft.businessId);
+
+    const inserted = must(
+      await this.client
+        .from("enquiries")
+        .insert({
+          id: crypto.randomUUID(),
+          business_id: draft.businessId,
+          publication_id: draft.publicationId,
+          name: draft.name,
+          contact: draft.contact,
+          message: draft.message,
+          source_page: draft.sourcePage,
+          created_at: nowIso(),
+        })
+        .select()
+        .single<EnquiryRow>(),
+    );
+    return toEnquiry(inserted);
+  }
+
+  async listForBusiness(businessId: string): Promise<Enquiry[]> {
+    const { data, error } = await this.client
+      .from("enquiries")
+      .select()
+      .eq("business_id", businessId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return (data as EnquiryRow[]).map(toEnquiry);
+  }
+}
+
 /** Build the durable spine from server-side configuration. */
 export function createSupabaseBusinessSpine(
   config: SupabaseSpineConfig,
@@ -526,5 +749,7 @@ export function createSupabaseBusinessSpine(
     artifacts: new SupabaseArtifactRepository(client),
     activity: new SupabaseActivityRepository(client),
     builds: new SupabaseBuildRepository(client),
+    publications: new SupabasePublicationRepository(client),
+    enquiries: new SupabaseEnquiryRepository(client),
   };
 }

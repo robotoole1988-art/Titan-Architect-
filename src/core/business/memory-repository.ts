@@ -25,7 +25,12 @@ import {
   type BuildRepository,
   type BusinessRepository,
   type BusinessSpineRepositories,
+  type Enquiry,
+  type EnquiryDraft,
+  type EnquiryRepository,
   type LogActivityInput,
+  type Publication,
+  type PublicationRepository,
   type SaveArtifactInput,
 } from "./repository";
 
@@ -34,6 +39,9 @@ interface MemoryState {
   artifacts: ArtifactRecord[];
   activity: ActivityEntry[];
   builds: Build[];
+  publications: Publication[];
+  domains: Map<string, string>;
+  enquiries: Enquiry[];
   /** Monotonic insertion order — timestamps can tie within a millisecond. */
   sequence: Map<string, number>;
   nextSequence: number;
@@ -108,6 +116,125 @@ class MemoryBusinessRepository implements BusinessRepository {
     this.state.builds = this.state.builds.filter(
       (build) => build.businessId !== id,
     );
+    this.state.publications = this.state.publications.filter(
+      (publication) => publication.businessId !== id,
+    );
+    this.state.enquiries = this.state.enquiries.filter(
+      (enquiry) => enquiry.businessId !== id,
+    );
+    for (const [hostname, owner] of this.state.domains) {
+      if (owner === id) this.state.domains.delete(hostname);
+    }
+  }
+}
+
+class MemoryPublicationRepository implements PublicationRepository {
+  constructor(private readonly state: MemoryState) {}
+
+  private forBusiness(businessId: string): Publication[] {
+    return this.state.publications.filter(
+      (publication) => publication.businessId === businessId,
+    );
+  }
+
+  async publish(
+    businessId: string,
+    blueprintVersion: number,
+    slug: string,
+  ): Promise<Publication> {
+    if (!this.state.businesses.has(businessId)) {
+      throw new BusinessNotFoundError(businessId);
+    }
+    const now = nowIso();
+    const existing = this.forBusiness(businessId);
+    for (const publication of existing) {
+      if (publication.status === "live") {
+        publication.status = "superseded";
+        publication.statusChangedAt = now;
+      }
+    }
+    const publication: Publication = {
+      id: crypto.randomUUID(),
+      businessId,
+      slug,
+      version: existing.length
+        ? Math.max(...existing.map((p) => p.version)) + 1
+        : 1,
+      blueprintVersion,
+      status: "live",
+      createdAt: now,
+      statusChangedAt: now,
+    };
+    this.state.publications.push(publication);
+    return structuredClone(publication);
+  }
+
+  async current(businessId: string): Promise<Publication | null> {
+    const live = this.forBusiness(businessId).find((p) => p.status === "live");
+    return live ? structuredClone(live) : null;
+  }
+
+  async currentBySlug(slug: string): Promise<Publication | null> {
+    const live = this.state.publications.find(
+      (p) => p.slug === slug && p.status === "live",
+    );
+    return live ? structuredClone(live) : null;
+  }
+
+  async currentByHostname(hostname: string): Promise<Publication | null> {
+    const businessId = this.state.domains.get(hostname.toLowerCase());
+    return businessId ? this.current(businessId) : null;
+  }
+
+  async history(businessId: string): Promise<Publication[]> {
+    return this.forBusiness(businessId)
+      .sort((a, b) => b.version - a.version)
+      .map((publication) => structuredClone(publication));
+  }
+
+  async unpublish(businessId: string): Promise<void> {
+    const live = this.forBusiness(businessId).find((p) => p.status === "live");
+    if (live) {
+      live.status = "unpublished";
+      live.statusChangedAt = nowIso();
+    }
+  }
+
+  async slugOwner(slug: string): Promise<string | null> {
+    return (
+      this.state.publications.find((p) => p.slug === slug)?.businessId ?? null
+    );
+  }
+
+  async addDomain(hostname: string, businessId: string): Promise<void> {
+    if (!this.state.businesses.has(businessId)) {
+      throw new BusinessNotFoundError(businessId);
+    }
+    this.state.domains.set(hostname.toLowerCase(), businessId);
+  }
+}
+
+class MemoryEnquiryRepository implements EnquiryRepository {
+  constructor(private readonly state: MemoryState) {}
+
+  async create(draft: EnquiryDraft): Promise<Enquiry> {
+    if (!this.state.businesses.has(draft.businessId)) {
+      throw new BusinessNotFoundError(draft.businessId);
+    }
+    const enquiry: Enquiry = {
+      ...draft,
+      id: crypto.randomUUID(),
+      createdAt: nowIso(),
+    };
+    this.state.enquiries.push(enquiry);
+    return structuredClone(enquiry);
+  }
+
+  async listForBusiness(businessId: string): Promise<Enquiry[]> {
+    return this.state.enquiries
+      .filter((enquiry) => enquiry.businessId === businessId)
+      .reverse()
+      .map((enquiry) => structuredClone(enquiry));
   }
 }
 
@@ -270,6 +397,9 @@ export function createMemoryBusinessSpine(): BusinessSpineRepositories {
     artifacts: [],
     activity: [],
     builds: [],
+    publications: [],
+    domains: new Map(),
+    enquiries: [],
     sequence: new Map(),
     nextSequence: 1,
   };
@@ -278,5 +408,7 @@ export function createMemoryBusinessSpine(): BusinessSpineRepositories {
     artifacts: new MemoryArtifactRepository(state),
     activity: new MemoryActivityRepository(state),
     builds: new MemoryBuildRepository(state),
+    publications: new MemoryPublicationRepository(state),
+    enquiries: new MemoryEnquiryRepository(state),
   };
 }

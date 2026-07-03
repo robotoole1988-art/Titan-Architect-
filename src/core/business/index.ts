@@ -55,10 +55,24 @@ export type {
   BusinessSpineRepositories,
 } from "./repository";
 
+export type {
+  PublicationStatus,
+  Publication,
+  PublicationRepository,
+  Enquiry,
+  EnquiryDraft,
+  EnquiryRepository,
+} from "./repository";
+
 export {
   transitionBusinessStage,
   recordArtifactGenerated,
+  publishWebsite,
+  unpublishWebsite,
+  uniqueSlugFor,
+  processEnquiry,
 } from "./workflows";
+export type { EnquiryInput, EnquiryOutcome } from "./workflows";
 
 export { createMemoryBusinessSpine } from "./memory-repository";
 export { createSupabaseBusinessSpine } from "./supabase-repository";
