@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { resolveBusinessSpine, type Business } from "@/core/business";
 import {
   generateExperienceStrategy,
   type ExperienceStrategyRequest,
@@ -20,7 +21,9 @@ import {
   getSectionPrimitive,
   validateBlueprint,
   type SectionBlueprint,
+  type WebsiteBlueprint,
 } from "@/core/website-blueprint";
+import { generateBlueprintArtifact } from "../api/actions";
 import { MOCK_STUDIO_REQUEST } from "../model/mock-request";
 import { AccentChip, Chip, Eyebrow, Field } from "./studio-atoms";
 
@@ -31,9 +34,37 @@ import { AccentChip, Chip, Eyebrow, Field } from "./studio-atoms";
  * future Renderer's job; see ADR-021).
  */
 interface BlueprintViewerPageProps {
+  /** Stored Business record id (ADR-023) — the primary path. */
+  businessId?: string;
   businessName?: string;
   trade?: string;
   location?: string;
+}
+
+/** First-visit view for a stored business with no blueprint artifact yet. */
+function GenerateBlueprintPrompt({ business }: { business: Business }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-5 py-24 text-center">
+      <Eyebrow>Website Blueprint</Eyebrow>
+      <h1 className="text-3xl font-semibold tracking-tight">{business.name}</h1>
+      <p className="max-w-md text-sm text-muted-foreground">
+        No blueprint has been generated for this business yet. It will be built
+        from the latest stored strategy (creating strategy v1 first if needed)
+        and saved as blueprint v1.
+      </p>
+      <form
+        action={async () => {
+          "use server";
+          await generateBlueprintArtifact(business.id);
+        }}
+      >
+        <Button type="submit" className="gap-2">
+          Generate Blueprint
+          <ArrowRight className="size-4" />
+        </Button>
+      </form>
+    </div>
+  );
 }
 
 function stringExtension(
@@ -74,10 +105,33 @@ function aspectChips(section: SectionBlueprint): string[] {
  * gracefully to the sample business.
  */
 export async function BlueprintViewerPage({
+  businessId,
   businessName,
   trade,
   location,
 }: BlueprintViewerPageProps = {}) {
+  let business: Business | null = null;
+  let storedBlueprint: WebsiteBlueprint | null = null;
+  let artifactVersion: number | null = null;
+  let fromStrategyVersion: number | null = null;
+
+  if (businessId) {
+    const spine = await resolveBusinessSpine();
+    business = await spine.businesses.get(businessId);
+    if (business) {
+      const artifact = await spine.artifacts.latest<WebsiteBlueprint>(
+        business.id,
+        "blueprint",
+      );
+      if (!artifact) return <GenerateBlueprintPrompt business={business} />;
+      storedBlueprint = artifact.payload;
+      artifactVersion = artifact.version;
+      const strategyVersion = artifact.meta?.strategyVersion;
+      fromStrategyVersion =
+        typeof strategyVersion === "number" ? strategyVersion : null;
+    }
+  }
+
   const name = businessName?.trim();
   const tradeValue = trade?.trim();
   const locationValue = location?.trim();
@@ -87,18 +141,22 @@ export async function BlueprintViewerPage({
       ? { businessName: name, trade: tradeValue, location: locationValue }
       : MOCK_STUDIO_REQUEST;
 
-  const strategy = generateExperienceStrategy(request);
-  const engine = createWebsiteBlueprintEngine();
-  const blueprint = await engine.build({ strategy });
+  const blueprint =
+    storedBlueprint ??
+    (await createWebsiteBlueprintEngine().build({
+      strategy: generateExperienceStrategy(request),
+    }));
   const validation = validateBlueprint(blueprint, SECTION_PRIMITIVE_REGISTRY);
 
   const [homePage] = blueprint.pages.pages;
   const experienceArc = stringExtension(blueprint.extensions, "experienceArc");
   const archetype = stringExtension(blueprint.extensions, "archetype");
 
-  const query = fromIntake
-    ? `?businessName=${encodeURIComponent(request.businessName)}&trade=${encodeURIComponent(request.trade)}&location=${encodeURIComponent(request.location)}`
-    : "";
+  const query = business
+    ? `?businessId=${business.id}`
+    : fromIntake
+      ? `?businessName=${encodeURIComponent(request.businessName)}&trade=${encodeURIComponent(request.trade)}&location=${encodeURIComponent(request.location)}`
+      : "";
   const strategyHref = `/experience-studio${query}`;
   const previewHref = `/experience-studio/preview${query}`;
 
@@ -122,9 +180,19 @@ export async function BlueprintViewerPage({
             <span aria-hidden>·</span>
             <span>{blueprint.identity.location}</span>
             <span className="ml-1 inline-flex items-center rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[11px]">
-              {fromIntake ? "From Business Intake" : "Sample business"} ·
-              schema v{blueprint.version}
+              {business
+                ? "Stored record"
+                : fromIntake
+                  ? "From Business Intake"
+                  : "Sample business"}{" "}
+              · schema v{blueprint.version}
             </span>
+            {artifactVersion !== null && (
+              <span className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[11px] text-emerald-300/90">
+                blueprint v{artifactVersion}
+                {fromStrategyVersion !== null && ` · from strategy v${fromStrategyVersion}`}
+              </span>
+            )}
             {archetype && (
               <span className="inline-flex items-center rounded-full border border-amber-400/25 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-200/90 capitalize">
                 {archetype} archetype
@@ -265,15 +333,23 @@ export async function BlueprintViewerPage({
       </div>
 
       <footer className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/60 bg-card/40 p-4 text-sm text-muted-foreground">
-        <span className="inline-flex items-center gap-3">
-          <Button
-            render={<Link href={previewHref} />}
-            nativeButton={false}
-            className="gap-2"
-          >
+        <span className="inline-flex flex-wrap items-center gap-3">
+          <Button render={<Link href={previewHref} />} className="gap-2">
             Preview Website
             <ArrowRight className="size-4" />
           </Button>
+          {business && (
+            <form
+              action={async () => {
+                "use server";
+                await generateBlueprintArtifact(business.id);
+              }}
+            >
+              <Button variant="outline" type="submit">
+                Regenerate Blueprint
+              </Button>
+            </form>
+          )}
           <span>The Renderer composes these primitives into a real page.</span>
         </span>
         <span className="inline-flex items-center gap-1.5 font-mono text-[11px]">

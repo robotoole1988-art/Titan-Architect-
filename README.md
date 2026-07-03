@@ -50,4 +50,27 @@ Quality gates:
 npm run lint       # code quality + architecture boundaries
 npm run typecheck  # tsc --noEmit
 npm run build      # production build
+npm test           # vitest (contract + engine + renderer suites)
 ```
+
+## Durable persistence in 5 minutes (Supabase)
+
+Out of the box TITAN runs on a **zero-setup in-memory store**: everything
+works, but data lasts only until the dev server restarts. To make businesses,
+strategies, and blueprints durable (synced across devices, backed up):
+
+1. Create a free project at [supabase.com](https://supabase.com) (any region).
+2. Open the project's **SQL Editor**, paste the contents of
+   [`supabase/migrations/20260703010000_business_spine.sql`](./supabase/migrations/20260703010000_business_spine.sql),
+   and run it once.
+3. Copy `.env.example` to `.env.local` and fill in both values from
+   **Project Settings → API**:
+   - `SUPABASE_URL` — the Project URL
+   - `SUPABASE_SERVICE_ROLE_KEY` — the `service_role` secret (server-side
+     only; it never reaches the browser — ADR-023)
+4. Restart `npm run dev`. The `/businesses` page footer switches from
+   “in-memory” to “Supabase (durable)”.
+
+That's it — a business saved today is still there after a restart and from any
+other machine. (`supabase db push` with the Supabase CLI applies the same
+migration if you prefer the CLI.)

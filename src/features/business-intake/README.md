@@ -6,8 +6,11 @@ generating strategy and blueprint outputs.
 
 ## Status
 
-**v0.1 — mock / localStorage.** No database, no AI, no external APIs. Saved
-intakes persist to `localStorage`.
+**v0.2 — writes the Business record (ADR-023).** Saving an intake creates a
+durable `Business` in the Business Spine (`core/business`) at lifecycle stage
+**lead** — the parent record every strategy, blueprint, and website hangs off.
+Storage is the repository abstraction: in-memory by default, Supabase when
+configured. The old localStorage store is retired.
 
 ## Route
 
@@ -16,8 +19,9 @@ intakes persist to `localStorage`.
 ## Public API (`index.ts`)
 
 - `BusinessIntakePage` — the intake screen, rendered by the route.
-- Types: `BusinessIntake` (the saved record later modules consume),
-  `BusinessIntakeDraft`, `MarketingBudget`, `BusinessGoal`, `UrgencyLevel`.
+- Types: `BusinessIntakeDraft` (the form's fields), `MarketingBudget`,
+  `BusinessGoal`, `UrgencyLevel`. (The saved record type is `Business` from
+  `core/business`.)
 
 ## Fields
 
@@ -25,40 +29,33 @@ Business Name, Trade, Location, Services, Target Customer, Monthly Marketing
 Budget, Current Website URL, Main Goal, Urgency Level. Name / Trade / Location
 are required.
 
-## Output
-
-A saved `BusinessIntake` record (with system-managed `id` / `createdAt` /
-`updatedAt`). These records are the input the future strategy and blueprint
-engines will consume — the intake already carries the business name, trade, and
-location the Experience Strategy Generator needs.
-
 ## UI
 
 Premium dark onboarding surface: a two-column layout with the intake form and
-the list of saved intakes. Each saved intake shows its goal, budget, urgency,
-and a **disabled "Generate Strategy" (coming soon)** action, plus Remove.
+the saved businesses. Each saved business shows its lifecycle stage, goal and
+budget, an active **Generate Strategy** action (by stored id), a **Journey**
+link, and Remove.
 
 ## Structure
 
 ```
 business-intake/
 ├── index.ts
+├── api/
+│   └── actions.ts                  # server actions → Business Spine repository
 ├── model/
-│   ├── types.ts                    # BusinessIntake + options
-│   ├── mock-data.ts                # a seed intake
-│   ├── business-intake-store.ts    # localStorage store
+│   ├── types.ts                    # the intake draft + options
 │   └── format.ts
-├── hooks/
-│   └── use-business-intake.ts      # useSyncExternalStore access
 └── components/
     ├── business-intake-page.tsx    # layout
-    ├── business-intake-form.tsx    # the form (create)
-    └── saved-intakes-list.tsx      # the saved list (+ remove)
+    ├── business-intake-form.tsx    # the form (client) → createBusinessFromIntake
+    └── saved-intakes-list.tsx      # server-rendered list (+ remove)
 ```
 
 ## Architecture
 
-- Self-contained feature; no cross-feature imports. The `/business-intake` route
-  is thin (renders the feature's public `BusinessIntakePage`).
-- Data lives behind the store, so swapping localStorage for a real backend later
-  touches only `model/business-intake-store.ts`.
+- Writes through `core/business` repository interfaces only — never a
+  database client (ADR-023). The `/business-intake` route stays thin.
+- Onward journey links carry the stored business **id** (ADR-019's URL
+  boundary, evolved by ADR-023); pages resolve records server-side with
+  graceful fallback.

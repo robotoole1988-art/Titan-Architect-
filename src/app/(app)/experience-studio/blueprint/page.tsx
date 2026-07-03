@@ -19,6 +19,7 @@ export default async function Page({
   const params = await searchParams;
   return (
     <BlueprintViewerPage
+      businessId={firstParam(params.businessId)}
       businessName={firstParam(params.businessName)}
       trade={firstParam(params.trade)}
       location={firstParam(params.location)}

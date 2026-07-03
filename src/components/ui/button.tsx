@@ -44,11 +44,17 @@ function Button({
   className,
   variant = "default",
   size = "default",
+  // Every `render` usage in this codebase renders a non-<button> (Links).
+  // Base UI requires nativeButton={false} for those; defaulting it here keeps
+  // call sites clean and the console free of semantics warnings. Pass
+  // nativeButton explicitly if a render prop ever yields a real <button>.
+  nativeButton,
   ...props
 }: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
   return (
     <ButtonPrimitive
       data-slot="button"
+      nativeButton={nativeButton ?? props.render === undefined}
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     />

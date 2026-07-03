@@ -30,9 +30,12 @@ export const URGENCY_LEVELS = ["Low", "Medium", "High", "Critical"] as const;
 
 export type UrgencyLevel = (typeof URGENCY_LEVELS)[number];
 
-/** A saved Business Intake record — the output later modules will consume. */
-export interface BusinessIntake {
-  id: string;
+/**
+ * The intake form's editable fields. Saving creates a `Business` record in
+ * the Business Spine (core/business, ADR-023) — the durable entity that
+ * supersedes the old localStorage BusinessIntake record.
+ */
+export interface BusinessIntakeDraft {
   businessName: string;
   trade: string;
   location: string;
@@ -43,13 +46,4 @@ export interface BusinessIntake {
   currentWebsiteUrl: string;
   mainGoal: BusinessGoal;
   urgencyLevel: UrgencyLevel;
-  /** ISO-8601 timestamps. System-managed. */
-  createdAt: string;
-  updatedAt: string;
 }
-
-/** The editable fields — everything except system-managed id/createdAt/updatedAt. */
-export type BusinessIntakeDraft = Omit<
-  BusinessIntake,
-  "id" | "createdAt" | "updatedAt"
->;

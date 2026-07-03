@@ -7,3 +7,7 @@
  */
 export { ExperienceStudioPage } from "./components/experience-studio-page";
 export { BlueprintViewerPage } from "./components/blueprint-viewer-page";
+export {
+  generateStrategyArtifact,
+  generateBlueprintArtifact,
+} from "./api/actions";
