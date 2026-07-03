@@ -11,12 +11,26 @@ import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Business, BusinessDraft, LifecycleStage, StageTransition } from "./model";
 import {
+  BUILD_ITEM_KINDS,
+  assertBuildItemTransition,
+  isManualBuildKind,
+  type BuildItemKind,
+  type BuildItemStatus,
+} from "./build-model";
+import {
   BusinessNotFoundError,
+  type ActivityEntry,
+  type ActivityKind,
+  type ActivityRepository,
   type ArtifactKind,
   type ArtifactRecord,
   type ArtifactRepository,
+  type Build,
+  type BuildItem,
+  type BuildRepository,
   type BusinessRepository,
   type BusinessSpineRepositories,
+  type LogActivityInput,
   type SaveArtifactInput,
 } from "./repository";
 
@@ -146,7 +160,11 @@ class SupabaseBusinessRepository implements BusinessRepository {
     return (data as BusinessRow[]).map(toBusiness);
   }
 
-  async updateStage(id: string, stage: LifecycleStage): Promise<Business> {
+  async updateStage(
+    id: string,
+    stage: LifecycleStage,
+    reason?: string,
+  ): Promise<Business> {
     const current = await this.get(id);
     if (!current) throw new BusinessNotFoundError(id);
     if (current.stage === stage) return current;
@@ -157,7 +175,10 @@ class SupabaseBusinessRepository implements BusinessRepository {
         .from("businesses")
         .update({
           stage,
-          stage_history: [...current.stageHistory, { stage, enteredAt }],
+          stage_history: [
+            ...current.stageHistory,
+            { stage, enteredAt, ...(reason ? { reason } : {}) },
+          ],
           updated_at: enteredAt,
         })
         .eq("id", id)
@@ -260,6 +281,236 @@ class SupabaseArtifactRepository implements ArtifactRepository {
   }
 }
 
+interface ActivityRow {
+  id: string;
+  business_id: string;
+  kind: ActivityKind;
+  message: string;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+}
+
+function toActivity(row: ActivityRow): ActivityEntry {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    kind: row.kind,
+    message: row.message,
+    ...(row.meta ? { meta: row.meta } : {}),
+    createdAt: row.created_at,
+  };
+}
+
+class SupabaseActivityRepository implements ActivityRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async log(input: LogActivityInput): Promise<ActivityEntry> {
+    const owner = await this.client
+      .from("businesses")
+      .select("id")
+      .eq("id", input.businessId)
+      .maybeSingle();
+    if (owner.error) throw new Error(`Supabase error: ${owner.error.message}`);
+    if (!owner.data) throw new BusinessNotFoundError(input.businessId);
+
+    const inserted = must(
+      await this.client
+        .from("business_activity")
+        .insert({
+          id: crypto.randomUUID(),
+          business_id: input.businessId,
+          kind: input.kind,
+          message: input.message,
+          meta: input.meta ?? null,
+          created_at: nowIso(),
+        })
+        .select()
+        .single<ActivityRow>(),
+    );
+    return toActivity(inserted);
+  }
+
+  async list(businessId: string): Promise<ActivityEntry[]> {
+    const { data, error } = await this.client
+      .from("business_activity")
+      .select()
+      .eq("business_id", businessId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return (data as ActivityRow[]).map(toActivity);
+  }
+}
+
+interface BuildRow {
+  id: string;
+  business_id: string;
+  created_at: string;
+}
+
+interface BuildItemRow {
+  id: string;
+  build_id: string;
+  kind: BuildItemKind;
+  status: BuildItemStatus;
+  manual: boolean;
+  note: string | null;
+  updated_at: string;
+}
+
+function toBuildItem(row: BuildItemRow): BuildItem {
+  return {
+    id: row.id,
+    buildId: row.build_id,
+    kind: row.kind,
+    status: row.status,
+    manual: row.manual,
+    ...(row.note !== null ? { note: row.note } : {}),
+    updatedAt: row.updated_at,
+  };
+}
+
+const KIND_ORDER = new Map(BUILD_ITEM_KINDS.map((kind, index) => [kind, index]));
+
+function toBuild(row: BuildRow, items: BuildItemRow[]): Build {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    createdAt: row.created_at,
+    items: items
+      .map(toBuildItem)
+      .sort(
+        (a, b) => (KIND_ORDER.get(a.kind) ?? 99) - (KIND_ORDER.get(b.kind) ?? 99),
+      ),
+  };
+}
+
+class SupabaseBuildRepository implements BuildRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  private async itemsFor(buildIds: string[]): Promise<Map<string, BuildItemRow[]>> {
+    if (buildIds.length === 0) return new Map();
+    const { data, error } = await this.client
+      .from("build_items")
+      .select()
+      .in("build_id", buildIds);
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    const grouped = new Map<string, BuildItemRow[]>();
+    for (const row of data as BuildItemRow[]) {
+      const bucket = grouped.get(row.build_id) ?? [];
+      bucket.push(row);
+      grouped.set(row.build_id, bucket);
+    }
+    return grouped;
+  }
+
+  async createForBusiness(
+    businessId: string,
+  ): Promise<{ build: Build; created: boolean }> {
+    const existing = await this.getForBusiness(businessId);
+    if (existing) return { build: existing, created: false };
+
+    const owner = await this.client
+      .from("businesses")
+      .select("id")
+      .eq("id", businessId)
+      .maybeSingle();
+    if (owner.error) throw new Error(`Supabase error: ${owner.error.message}`);
+    if (!owner.data) throw new BusinessNotFoundError(businessId);
+
+    const createdAt = nowIso();
+    const buildId = crypto.randomUUID();
+    const buildRow = must(
+      await this.client
+        .from("builds")
+        .insert({ id: buildId, business_id: businessId, created_at: createdAt })
+        .select()
+        .single<BuildRow>(),
+    );
+    const itemRows = must(
+      await this.client
+        .from("build_items")
+        .insert(
+          BUILD_ITEM_KINDS.map((kind) => ({
+            id: crypto.randomUUID(),
+            build_id: buildId,
+            kind,
+            status: "queued",
+            manual: isManualBuildKind(kind),
+            note: null,
+            updated_at: createdAt,
+          })),
+        )
+        .select(),
+    );
+    return { build: toBuild(buildRow, itemRows as BuildItemRow[]), created: true };
+  }
+
+  async getForBusiness(businessId: string): Promise<Build | null> {
+    const { data, error } = await this.client
+      .from("builds")
+      .select()
+      .eq("business_id", businessId)
+      .maybeSingle<BuildRow>();
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    if (!data) return null;
+    const items = await this.itemsFor([data.id]);
+    return toBuild(data, items.get(data.id) ?? []);
+  }
+
+  async list(): Promise<Build[]> {
+    const { data, error } = await this.client
+      .from("builds")
+      .select()
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    const rows = data as BuildRow[];
+    const items = await this.itemsFor(rows.map((row) => row.id));
+    return rows.map((row) => toBuild(row, items.get(row.id) ?? []));
+  }
+
+  async setItemStatus(
+    buildId: string,
+    kind: BuildItemKind,
+    status: BuildItemStatus,
+    note?: string,
+  ): Promise<Build> {
+    const { data: item, error } = await this.client
+      .from("build_items")
+      .select()
+      .eq("build_id", buildId)
+      .eq("kind", kind)
+      .maybeSingle<BuildItemRow>();
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    if (!item) throw new BusinessNotFoundError(`${buildId}/${kind}`);
+
+    assertBuildItemTransition(item.status, status);
+    must(
+      await this.client
+        .from("build_items")
+        .update({
+          status,
+          updated_at: nowIso(),
+          ...(note !== undefined ? { note } : {}),
+        })
+        .eq("id", item.id)
+        .select()
+        .single<BuildItemRow>(),
+    );
+
+    const buildRow = must(
+      await this.client
+        .from("builds")
+        .select()
+        .eq("id", buildId)
+        .single<BuildRow>(),
+    );
+    const items = await this.itemsFor([buildId]);
+    return toBuild(buildRow, items.get(buildId) ?? []);
+  }
+}
+
 /** Build the durable spine from server-side configuration. */
 export function createSupabaseBusinessSpine(
   config: SupabaseSpineConfig,
@@ -270,5 +521,7 @@ export function createSupabaseBusinessSpine(
   return {
     businesses: new SupabaseBusinessRepository(client),
     artifacts: new SupabaseArtifactRepository(client),
+    activity: new SupabaseActivityRepository(client),
+    builds: new SupabaseBuildRepository(client),
   };
 }

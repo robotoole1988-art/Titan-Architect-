@@ -11,16 +11,32 @@
 
 export {
   LIFECYCLE_STAGES,
+  LOST_STAGES,
+  ALL_LIFECYCLE_STATES,
   stageIndex,
   isStageAtLeast,
+  isLostStage,
+  stageLabel,
 } from "./model";
 export type {
+  ProgressStage,
+  LostStage,
   LifecycleStage,
   StageTransition,
   BusinessContact,
   BusinessDraft,
   Business,
 } from "./model";
+
+export {
+  BUILD_ITEM_KINDS,
+  BUILD_ITEM_STATUSES,
+  BuildTransitionError,
+  assertBuildItemTransition,
+  buildItemLabel,
+  isManualBuildKind,
+} from "./build-model";
+export type { BuildItemKind, BuildItemStatus } from "./build-model";
 
 export { BusinessNotFoundError } from "./repository";
 export type {
@@ -29,8 +45,20 @@ export type {
   ArtifactRecord,
   SaveArtifactInput,
   ArtifactRepository,
+  ActivityKind,
+  ActivityEntry,
+  LogActivityInput,
+  ActivityRepository,
+  BuildItem,
+  Build,
+  BuildRepository,
   BusinessSpineRepositories,
 } from "./repository";
+
+export {
+  transitionBusinessStage,
+  recordArtifactGenerated,
+} from "./workflows";
 
 export { createMemoryBusinessSpine } from "./memory-repository";
 export { createSupabaseBusinessSpine } from "./supabase-repository";

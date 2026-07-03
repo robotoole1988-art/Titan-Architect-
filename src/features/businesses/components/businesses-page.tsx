@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { ArrowRight, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { resolveBusinessSpine, resolvePersistenceBackend } from "@/core/business";
+import {
+  resolveBusinessSpine,
+  resolvePersistenceBackend,
+  stageLabel,
+} from "@/core/business";
 
 /**
  * /businesses — every saved Business and where it stands (ADR-023). The seed
@@ -59,7 +63,7 @@ export async function BusinessesPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2.5 py-0.5 text-[11px] capitalize text-emerald-300/90">
-                    {business.stage}
+                    {stageLabel(business.stage)}
                   </span>
                   <ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
                 </div>

@@ -11,6 +11,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import {
   BusinessNotFoundError,
+  recordArtifactGenerated,
   resolveBusinessSpine,
   type Business,
   type BusinessSpineRepositories,
@@ -30,6 +31,9 @@ function revalidateJourney(businessId: string): void {
   revalidatePath("/experience-studio/preview");
   revalidatePath(`/businesses/${businessId}`);
   revalidatePath("/businesses");
+  revalidatePath("/crm");
+  revalidatePath("/crm/build-queue");
+  revalidatePath(`/crm/${businessId}`);
 }
 
 async function requireBusiness(
@@ -50,11 +54,13 @@ async function saveStrategyVersion(
     trade: business.trade,
     location: business.location,
   });
-  return spine.artifacts.save<ExperienceStrategy>({
+  const artifact = await spine.artifacts.save<ExperienceStrategy>({
     businessId: business.id,
     kind: "strategy",
     payload: strategy,
   });
+  await recordArtifactGenerated(spine, business.id, "strategy", artifact.version);
+  return artifact;
 }
 
 /** Generate (or regenerate) the strategy — new version, then show it. */
@@ -79,12 +85,14 @@ export async function generateBlueprintArtifact(businessId: string): Promise<voi
     (await saveStrategyVersion(spine, business));
 
   const blueprint = buildWebsiteBlueprint({ strategy: strategyArtifact.payload });
-  await spine.artifacts.save<WebsiteBlueprint>({
+  const artifact = await spine.artifacts.save<WebsiteBlueprint>({
     businessId,
     kind: "blueprint",
     payload: blueprint,
     meta: { strategyVersion: strategyArtifact.version },
   });
+  // Logs the generation and advances a queued website build item to review.
+  await recordArtifactGenerated(spine, businessId, "blueprint", artifact.version);
   revalidateJourney(businessId);
   redirect(`/experience-studio/blueprint?businessId=${businessId}`);
 }
