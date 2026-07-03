@@ -15,7 +15,7 @@ import { SiteFooter, SiteHeader } from "../primitives/site-chrome";
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
 import { parseSlots, sectionVariant } from "./slots";
 import { resolvePrimitiveComponent } from "./primitive-map";
-import type { RenderPageOptions } from "./types";
+import type { RenderPageOptions, SiteNavLink } from "./types";
 
 /** Base styles scoped to the rendered site (not the TITAN app). */
 const ROOT_CSS = `
@@ -33,8 +33,38 @@ export function renderPage(
   const onUnmapped =
     options.onUnmapped ??
     (process.env.NODE_ENV === "production" ? "skip" : "throw");
-  const page = blueprint.pages.pages[0];
+  const collection = blueprint.pages.pages;
+  const page = options.pageId
+    ? collection.find((candidate) => candidate.id === options.pageId)
+    : collection[0];
+  if (!page) {
+    throw new Error(
+      `Page "${options.pageId}" is not in this blueprint's collection.`,
+    );
+  }
   const theme = resolveTheme(blueprint.designSystem?.themeRef);
+  const pageHref =
+    options.pageHref ??
+    ((pageId: string, suggestedUrl: string) => suggestedUrl || `/${pageId}`);
+  // Navigation links every page of the collection (ADR-028); single-page
+  // blueprints render no nav (nothing to navigate to).
+  const nav: SiteNavLink[] =
+    collection.length > 1
+      ? (blueprint.navigation.items ?? [])
+          .map((item) => {
+            const target = collection.find(
+              (candidate) => candidate.id === item.toPageId,
+            );
+            if (!target) return null;
+            return {
+              pageId: target.id,
+              label: item.label ?? target.name,
+              href: pageHref(target.id, target.suggestedUrl ?? "/"),
+              active: target.id === page.id,
+            };
+          })
+          .filter((link): link is SiteNavLink => link !== null)
+      : [];
 
   const sections = page.sections.map((section) => {
     // Registry primitives ALWAYS resolve (crafted or labelled placeholder);
@@ -81,9 +111,9 @@ export function renderPage(
     >
       <style dangerouslySetInnerHTML={{ __html: ROOT_CSS }} />
       <MotionConfig reducedMotion="user">
-        <SiteHeader blueprint={blueprint} />
+        <SiteHeader blueprint={blueprint} nav={nav} />
         <main>{sections}</main>
-        <SiteFooter blueprint={blueprint} />
+        <SiteFooter blueprint={blueprint} nav={nav} />
       </MotionConfig>
     </div>
   );

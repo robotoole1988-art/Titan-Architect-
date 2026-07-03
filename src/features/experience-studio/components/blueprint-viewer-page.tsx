@@ -239,17 +239,36 @@ export async function BlueprintViewerPage({
               {experienceArc}
             </p>
             <p className="text-sm text-muted-foreground">
-              {homePage.sections.length} sections · homepage only · composed
-              1:1 from registered primitives — the Renderer never free-generates
-              layout.
+              {blueprint.pages.pages.length === 1
+                ? `${homePage.sections.length} sections · one page`
+                : `${blueprint.pages.pages.length} pages · homepage + ${blueprint.pages.pages.length - 1} area landing page(s)`}{" "}
+              · composed 1:1 from registered primitives — the Renderer never
+              free-generates layout.
             </p>
           </div>
         </section>
       )}
 
-      {/* Ordered section cards */}
-      <div className="flex flex-col gap-4 duration-700 animate-in fade-in-0">
-        {homePage.sections.map((section, index) => {
+      {/* The page collection: every page, its identity, its ordered sections */}
+      {blueprint.pages.pages.map((page) => (
+        <div key={page.id} className="flex flex-col gap-4 duration-700 animate-in fade-in-0" data-viewer-page={page.id}>
+          <header className="mt-2 flex flex-wrap items-center gap-2.5">
+            <h2 className="text-xl font-semibold tracking-tight">
+              {page.type === "home" ? "Homepage" : page.name}
+            </h2>
+            <span className="rounded-md border border-border/60 bg-background/50 px-2 py-1 font-mono text-[11px] text-muted-foreground">
+              {page.suggestedUrl ?? "/"}
+            </span>
+            <span className="inline-flex items-center rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[11px] text-muted-foreground capitalize">
+              {page.type} · {page.sections.length} sections
+            </span>
+            {page.seo?.titleDirection && (
+              <span className="inline-flex max-w-md items-center truncate rounded-full border border-amber-400/20 bg-amber-400/5 px-2 py-0.5 text-[11px] text-amber-200/80">
+                {page.seo.titleDirection}
+              </span>
+            )}
+          </header>
+          {page.sections.map((section, index) => {
           const primitive = getSectionPrimitive(
             SECTION_PRIMITIVE_REGISTRY,
             section.identifier,
@@ -329,8 +348,9 @@ export async function BlueprintViewerPage({
               )}
             </section>
           );
-        })}
-      </div>
+          })}
+        </div>
+      ))}
 
       <footer className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border/60 bg-card/40 p-4 text-sm text-muted-foreground">
         <span className="inline-flex flex-wrap items-center gap-3">

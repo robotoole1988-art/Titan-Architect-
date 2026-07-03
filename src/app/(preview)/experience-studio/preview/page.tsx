@@ -22,6 +22,7 @@ export default async function Page({
       businessName={firstParam(params.businessName)}
       trade={firstParam(params.trade)}
       location={firstParam(params.location)}
+      page={firstParam(params.page)}
     />
   );
 }

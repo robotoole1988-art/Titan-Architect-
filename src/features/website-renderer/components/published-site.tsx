@@ -1,26 +1,39 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { resolveBusinessSpine, type Publication } from "@/core/business";
-import type { WebsiteBlueprint } from "@/core/website-blueprint";
+import {
+  buildPageJsonLd,
+  type PageBlueprint,
+  type WebsiteBlueprint,
+} from "@/core/website-blueprint";
 import { renderPage } from "../model/render-page";
 import { rendererFontClass } from "../theme/fonts";
 
 /**
- * The PUBLISHED site (ADR-027): the preview pipeline minus chrome. Serves the
- * publication's PINNED blueprint version — a regenerated blueprint changes
- * nothing here until an explicit, approval-gated republish.
+ * The PUBLISHED site (ADR-027/028): the preview pipeline minus chrome. One
+ * publication pins ONE blueprint version — now the whole page collection:
+ * homepage plus area landing pages, served at /{area-slug} under the same
+ * snapshot semantics. Each page carries its own SEO and JSON-LD.
  */
 
 export interface ResolvedPublication {
   publication: Publication;
   blueprint: WebsiteBlueprint;
+  /** The specific page of the collection this request resolves to. */
+  page: PageBlueprint;
   businessName: string;
+  /** How the site is being served — drives internal link hrefs. */
+  servingMode: "slug" | "hostname";
 }
 
-/** Resolve a live publication by slug OR hostname (domain table, then the
- * `<slug>.host` convention used for local demos). Null → 404. */
+interface PublishedLookup {
+  /** Sub-path within the site, e.g. "sale" for the Sale area page. */
+  pagePath?: string;
+}
+
+/** Resolve a live publication + page by slug OR hostname. Null → 404. */
 export async function resolvePublishedSite(
-  lookup: { slug: string } | { hostname: string },
+  lookup: ({ slug: string } | { hostname: string }) & PublishedLookup,
 ): Promise<ResolvedPublication | null> {
   const spine = await resolveBusinessSpine();
   let publication: Publication | null = null;
@@ -47,22 +60,33 @@ export async function resolvePublishedSite(
     spine.businesses.get(publication.businessId),
   ]);
   if (!artifact || !business) return null;
+
+  const pages = artifact.payload.pages.pages;
+  const page = lookup.pagePath
+    ? pages.find(
+        (candidate) => candidate.suggestedUrl === `/${lookup.pagePath}`,
+      )
+    : pages[0];
+  if (!page) return null;
+
   return {
     publication,
     blueprint: artifact.payload,
+    page,
     businessName: business.name,
+    servingMode: "slug" in lookup ? "slug" : "hostname",
   };
 }
 
-/** SEO fundamentals from the blueprint's SEO aspects (ADR-027). */
+/** SEO fundamentals from the RESOLVED page's own SEO aspects (ADR-028). */
 export function publishedSiteMetadata(
   resolved: ResolvedPublication,
   canonicalUrl: string,
 ): Metadata {
-  const homepage = resolved.blueprint.pages.pages[0];
+  const { page, blueprint } = resolved;
   const title =
-    homepage.seo?.titleDirection ?? resolved.blueprint.identity.businessName ?? "";
-  const description = homepage.seo?.metaDescriptionDirection ?? "";
+    page.seo?.titleDirection ?? blueprint.identity.businessName ?? "";
+  const description = page.seo?.metaDescriptionDirection ?? "";
   return {
     title,
     description,
@@ -79,16 +103,42 @@ export function publishedSiteMetadata(
   };
 }
 
-/** Full-bleed, chrome-free render of the pinned blueprint. */
-export function PublishedSitePage({ resolved }: { resolved: ResolvedPublication }) {
+/**
+ * Full-bleed, chrome-free render of the pinned page, with its JSON-LD.
+ * `baseUrl` is the site root this request serves from (no trailing slash).
+ */
+export function PublishedSitePage({
+  resolved,
+  baseUrl,
+}: {
+  resolved: ResolvedPublication;
+  baseUrl: string;
+}) {
+  const { blueprint, page, publication, servingMode } = resolved;
+  const jsonLd = buildPageJsonLd(blueprint, page.id, { baseUrl });
+  const pageHref =
+    servingMode === "slug"
+      ? (pageId: string, url: string) =>
+          `/sites/${publication.slug}${url === "/" ? "" : url}`
+      : undefined;
+
   return (
     <div className={rendererFontClass}>
-      {renderPage(resolved.blueprint, {
+      {jsonLd.map((item) => (
+        <script
+          key={String(item["@type"])}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(item) }}
+        />
+      ))}
+      {renderPage(blueprint, {
         // Production serving must not crash on an unmapped primitive.
         onUnmapped: "skip",
+        pageId: page.id,
+        ...(pageHref ? { pageHref } : {}),
         serving: {
-          publicationId: resolved.publication.id,
-          slug: resolved.publication.slug,
+          publicationId: publication.id,
+          slug: publication.slug,
         },
       })}
     </div>

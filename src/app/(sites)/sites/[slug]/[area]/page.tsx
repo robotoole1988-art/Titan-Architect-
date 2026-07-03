@@ -7,7 +7,7 @@ import {
   resolvePublishedSite,
 } from "@/features/website-renderer";
 
-/** Thin route: the live site's HOMEPAGE by slug (ADR-027/028). */
+/** Thin route: an AREA landing page by slug (ADR-028). */
 
 async function siteBase(slug: string): Promise<string> {
   const headerList = await headers();
@@ -19,21 +19,21 @@ async function siteBase(slug: string): Promise<string> {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; area: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
-  const resolved = await resolvePublishedSite({ slug });
+  const { slug, area } = await params;
+  const resolved = await resolvePublishedSite({ slug, pagePath: area });
   if (!resolved) return { robots: { index: false } };
-  return publishedSiteMetadata(resolved, await siteBase(slug));
+  return publishedSiteMetadata(resolved, `${await siteBase(slug)}/${area}`);
 }
 
 export default async function Page({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; area: string }>;
 }) {
-  const { slug } = await params;
-  const resolved = await resolvePublishedSite({ slug });
+  const { slug, area } = await params;
+  const resolved = await resolvePublishedSite({ slug, pagePath: area });
   if (!resolved) publishedSiteNotFound();
   return <PublishedSitePage resolved={resolved} baseUrl={await siteBase(slug)} />;
 }

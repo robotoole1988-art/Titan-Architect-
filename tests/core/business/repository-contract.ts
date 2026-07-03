@@ -61,6 +61,21 @@ export function runRepositoryContract(
       });
     });
 
+    it("round-trips coverage areas (ADR-028)", async () => {
+      await withRepos(async ({ businesses }) => {
+        const areas = ["Sale", "Stockport", "Altrincham"];
+        const created = await businesses.create({
+          ...DRAFT,
+          coverageAreas: areas,
+        });
+        expect(created.coverageAreas).toEqual(areas);
+        expect((await businesses.get(created.id))?.coverageAreas).toEqual(areas);
+        // Absent on records created without them (legacy-safe).
+        const bare = await businesses.create({ ...DRAFT, name: "Bare Ltd" });
+        expect(bare.coverageAreas ?? []).toEqual([]);
+      });
+    });
+
     it("round-trips the taxonomy trade id (ADR-026)", async () => {
       await withRepos(async ({ businesses }) => {
         const classified = await businesses.create({ ...DRAFT, tradeId: "roofing" });

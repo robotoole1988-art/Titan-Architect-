@@ -51,6 +51,7 @@ interface BusinessRow {
   trade: string;
   trade_id: string | null;
   location: string;
+  coverage_areas: string[] | null;
   contact: Business["contact"] | null;
   services: string | null;
   target_customer: string | null;
@@ -85,6 +86,9 @@ function toBusiness(row: BusinessRow): Business {
     trade: row.trade,
     ...(row.trade_id !== null ? { tradeId: row.trade_id } : {}),
     location: row.location,
+    ...(row.coverage_areas && row.coverage_areas.length > 0
+      ? { coverageAreas: row.coverage_areas }
+      : {}),
     ...(row.contact ? { contact: row.contact } : {}),
     ...(row.services !== null ? { services: row.services } : {}),
     ...(row.target_customer !== null ? { targetCustomer: row.target_customer } : {}),
@@ -131,6 +135,7 @@ class SupabaseBusinessRepository implements BusinessRepository {
       trade: draft.trade,
       trade_id: draft.tradeId ?? null,
       location: draft.location,
+      coverage_areas: draft.coverageAreas ? [...draft.coverageAreas] : [],
       contact: draft.contact ?? null,
       services: draft.services ?? null,
       target_customer: draft.targetCustomer ?? null,

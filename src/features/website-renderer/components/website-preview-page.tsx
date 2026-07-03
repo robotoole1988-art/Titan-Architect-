@@ -27,6 +27,8 @@ interface WebsitePreviewPageProps {
   businessName?: string;
   trade?: string;
   location?: string;
+  /** Page of the collection to preview (ADR-028); defaults to the homepage. */
+  page?: string;
 }
 
 // "Drainage" keeps the sample in the emergency archetype (ADR-020 keywords) —
@@ -42,6 +44,7 @@ export async function WebsitePreviewPage({
   businessName,
   trade,
   location,
+  page,
 }: WebsitePreviewPageProps = {}) {
   // Stored path (ADR-023): render the SAVED blueprint artifact, exactly as
   // reviewed in the viewer. Falls through gracefully when the id is unknown
@@ -79,11 +82,18 @@ export async function WebsitePreviewPage({
       ? blueprint.extensions.archetype
       : undefined;
 
-  const query = storedBlueprint
-    ? `?businessId=${businessId}`
+  const baseQuery = storedBlueprint
+    ? `businessId=${businessId}`
     : fromIntake
-      ? `?businessName=${encodeURIComponent(request.businessName)}&trade=${encodeURIComponent(request.trade)}&location=${encodeURIComponent(request.location)}`
+      ? `businessName=${encodeURIComponent(request.businessName)}&trade=${encodeURIComponent(request.trade)}&location=${encodeURIComponent(request.location)}`
       : "";
+  const query = baseQuery ? `?${baseQuery}` : "";
+
+  const pages = blueprint.pages.pages;
+  const activePage =
+    (page && pages.find((candidate) => candidate.id === page)) || pages[0];
+  const pageQuery = (pageId: string) =>
+    `${baseQuery ? `?${baseQuery}&` : "?"}page=${encodeURIComponent(pageId)}`;
 
   return (
     <div className="flex flex-1 flex-col">
@@ -104,6 +114,24 @@ export async function WebsitePreviewPage({
               ? `rendered from blueprint v${storedVersion}`
               : "rendered from blueprint"}
           </span>
+          {pages.length > 1 && (
+            <span className="flex min-w-0 items-center gap-1 overflow-x-auto">
+              {pages.map((candidate) => (
+                <Link
+                  key={candidate.id}
+                  href={`/experience-studio/preview${pageQuery(candidate.id)}`}
+                  data-page-switch={candidate.id}
+                  className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] transition-colors ${
+                    candidate.id === activePage.id
+                      ? "border-amber-400/40 bg-amber-400/15 text-amber-200"
+                      : "border-border/60 bg-muted/20 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {candidate.type === "home" ? "Home" : candidate.name}
+                </Link>
+              ))}
+            </span>
+          )}
         </div>
         <Link
           href={`/experience-studio/blueprint${query}`}
@@ -116,7 +144,11 @@ export async function WebsitePreviewPage({
 
       {/* the rendered website — full bleed */}
       <div className={rendererFontClass}>
-        <RenderedSite blueprint={blueprint} />
+        <RenderedSite
+          blueprint={blueprint}
+          pageId={activePage.id}
+          previewQuery={baseQuery}
+        />
       </div>
     </div>
   );

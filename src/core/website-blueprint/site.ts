@@ -12,6 +12,8 @@ export interface SiteIdentityBlueprint extends BlueprintElement {
   businessName?: string;
   trade?: string;
   location?: string;
+  /** Coverage areas — each becomes an area landing page (ADR-028). */
+  coverageAreas?: ReadonlyArray<string>;
   positioning?: string;
   voice?: ReadonlyArray<string>;
 }

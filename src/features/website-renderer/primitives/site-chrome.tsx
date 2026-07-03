@@ -6,9 +6,42 @@
 
 import { Phone } from "lucide-react";
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
+import type { SiteNavLink } from "../model/types";
 import { AnnotationTag, Container, SignalCTA, displayFont, monoFont } from "./atoms";
 
-export function SiteHeader({ blueprint }: { blueprint: WebsiteBlueprint }) {
+/** Page-collection links (ADR-028) — blueprint navigation drives these. */
+function NavLinks({ nav, footer = false }: { nav: SiteNavLink[]; footer?: boolean }) {
+  if (nav.length === 0) return null;
+  return (
+    <nav aria-label={footer ? "Areas we cover" : "Site"}>
+      <ul className={`flex flex-wrap items-center ${footer ? "gap-x-5 gap-y-2" : "gap-x-4"}`}>
+        {nav.map((link) => (
+          <li key={link.pageId}>
+            <a
+              href={link.href}
+              aria-current={link.active ? "page" : undefined}
+              className={`text-sm transition-opacity hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-4 ${link.active ? "" : "opacity-70"}`}
+              style={{
+                color: link.active ? "var(--wr-accent)" : "var(--wr-ink-muted)",
+                outlineColor: "var(--wr-accent)",
+              }}
+            >
+              {link.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
+}
+
+export function SiteHeader({
+  blueprint,
+  nav = [],
+}: {
+  blueprint: WebsiteBlueprint;
+  nav?: SiteNavLink[];
+}) {
   const { identity, header } = blueprint;
   return (
     <header className="absolute inset-x-0 top-0 z-40">
@@ -33,6 +66,9 @@ export function SiteHeader({ blueprint }: { blueprint: WebsiteBlueprint }) {
             </span>
           )}
         </a>
+        <div className="hidden md:block">
+          <NavLinks nav={nav} />
+        </div>
         {header.cta?.label && (
           <SignalCTA href="#callback" size="sm">
             <Phone className="size-3.5" aria-hidden />
@@ -44,7 +80,13 @@ export function SiteHeader({ blueprint }: { blueprint: WebsiteBlueprint }) {
   );
 }
 
-export function SiteFooter({ blueprint }: { blueprint: WebsiteBlueprint }) {
+export function SiteFooter({
+  blueprint,
+  nav = [],
+}: {
+  blueprint: WebsiteBlueprint;
+  nav?: SiteNavLink[];
+}) {
   const { identity, footer } = blueprint;
   return (
     <footer className="border-t" style={{ borderColor: "var(--wr-line)", background: "var(--wr-bg-raised)" }}>
@@ -62,6 +104,17 @@ export function SiteFooter({ blueprint }: { blueprint: WebsiteBlueprint }) {
             ))}
           </div>
         </div>
+        {nav.length > 0 && (
+          <div className="flex flex-col gap-3 border-t pt-6" style={{ borderColor: "var(--wr-line)" }}>
+            <span
+              className="text-[10px] uppercase tracking-[0.22em]"
+              style={{ ...monoFont, color: "var(--wr-ink-faint)" }}
+            >
+              Areas we cover
+            </span>
+            <NavLinks nav={nav} footer />
+          </div>
+        )}
         {(footer.legal?.length ?? 0) > 0 && (
           <div
             className="flex flex-wrap gap-x-6 gap-y-2 border-t pt-6 text-[11px] uppercase tracking-[0.16em]"

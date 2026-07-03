@@ -34,9 +34,25 @@ export type PrimitiveComponentMap = Readonly<Record<string, PrimitiveComponent>>
 /** What to do when a section's primitive has no component mapping. */
 export type UnmappedPrimitiveBehaviour = "throw" | "skip";
 
+/** One resolved navigation link (page collection, ADR-028). */
+export interface SiteNavLink {
+  pageId: string;
+  label: string;
+  href: string;
+  active: boolean;
+}
+
 export interface RenderPageOptions {
   /** Override the component map (tests, future partial renderers). */
   map?: PrimitiveComponentMap;
+  /** Which page of the collection to render (default: the first/homepage). */
+  pageId?: string;
+  /**
+   * Resolve a page's href for navigation links. Defaults to the page's
+   * suggestedUrl — correct for hostname serving; slug serving and previews
+   * pass their own resolver (ADR-028).
+   */
+  pageHref?: (pageId: string, suggestedUrl: string) => string;
   /** Defaults by NODE_ENV: throw in development, skip (+warn) in production. */
   onUnmapped?: UnmappedPrimitiveBehaviour;
   /** Live-publication context — enables real enquiry capture (ADR-027). */

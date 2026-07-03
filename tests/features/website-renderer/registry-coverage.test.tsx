@@ -71,6 +71,38 @@ describe("registry coverage", () => {
     });
   }
 
+  it("renders any page of a multi-page collection, with cross-page navigation", () => {
+    const multi = buildWebsiteBlueprint({
+      strategy: generateExperienceStrategy({
+        businessName: "Kerbside Kings",
+        trade: "Driveways & Paving",
+        location: "Manchester",
+      }),
+      coverageAreas: ["Sale", "Stockport"],
+    });
+    const salePage = multi.pages.pages.find((page) => page.suggestedUrl === "/sale")!;
+    const html = renderToStaticMarkup(
+      renderPage(multi, { pageId: salePage.id }),
+    );
+    // The area page's own sections render (landing sequence, not homepage's).
+    for (const section of salePage.sections) {
+      expect(html).toContain(`data-primitive="${section.identifier}"`);
+    }
+    // Navigation links every page of the collection via suggested URLs.
+    expect(html).toContain('href="/sale"');
+    expect(html).toContain('href="/stockport"');
+    // A custom href resolver rewrites the links (slug serving / previews).
+    const rewritten = renderToStaticMarkup(
+      renderPage(multi, {
+        pageId: salePage.id,
+        pageHref: (pageId, url) => `/sites/demo${url === "/" ? "" : url}`,
+      }),
+    );
+    expect(rewritten).toContain('href="/sites/demo/stockport"');
+    // Unknown page ids fail loudly.
+    expect(() => renderPage(multi, { pageId: "page.nope" })).toThrowError(/page/i);
+  });
+
   it("labels unbuilt primitives honestly — never passes one off as crafted", () => {
     const html = renderToStaticMarkup(renderPage(drivewaysBlueprint));
     // hero.cinematic-reveal has no crafted component yet.

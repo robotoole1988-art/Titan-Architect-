@@ -42,6 +42,8 @@ export interface BusinessIntakeDraft {
   /** Canonical taxonomy id (ADR-026); undefined = Other/unclassified. */
   tradeId?: string;
   location: string;
+  /** Comma-separated coverage areas, e.g. "Sale, Stockport" (ADR-028). */
+  coverageAreas: string;
   services: string;
   targetCustomer: string;
   monthlyMarketingBudget: MarketingBudget;

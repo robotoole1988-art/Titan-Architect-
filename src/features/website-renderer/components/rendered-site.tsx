@@ -10,8 +10,29 @@
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
 import { renderPage } from "../model/render-page";
 
-export function RenderedSite({ blueprint }: { blueprint: WebsiteBlueprint }) {
-  return renderPage(blueprint);
+export function RenderedSite({
+  blueprint,
+  pageId,
+  previewQuery,
+}: {
+  blueprint: WebsiteBlueprint;
+  /** Which page of the collection to render (ADR-028). */
+  pageId?: string;
+  /**
+   * Present in PREVIEWS: the preview route's own query string (without
+   * `page`). Nav links stay inside the preview by switching `?page=`.
+   */
+  previewQuery?: string;
+}) {
+  return renderPage(blueprint, {
+    pageId,
+    ...(previewQuery !== undefined
+      ? {
+          pageHref: (targetPageId: string) =>
+            `${previewQuery ? `?${previewQuery}&` : "?"}page=${encodeURIComponent(targetPageId)}`,
+        }
+      : {}),
+  });
 }
 
 export default RenderedSite;
