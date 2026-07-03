@@ -84,7 +84,11 @@ export async function generateBlueprintArtifact(businessId: string): Promise<voi
     (await spine.artifacts.latest<ExperienceStrategy>(businessId, "strategy")) ??
     (await saveStrategyVersion(spine, business));
 
-  const blueprint = buildWebsiteBlueprint({ strategy: strategyArtifact.payload });
+  const blueprint = buildWebsiteBlueprint({
+    strategy: strategyArtifact.payload,
+    // One unique landing page per coverage area (ADR-028).
+    coverageAreas: business.coverageAreas,
+  });
   const artifact = await spine.artifacts.save<WebsiteBlueprint>({
     businessId,
     kind: "blueprint",

@@ -85,6 +85,11 @@ export interface BusinessDraft {
    */
   tradeId?: string;
   location: string;
+  /**
+   * Coverage areas — towns/localities the business serves (ADR-028). Each
+   * becomes a unique area landing page in the generated site.
+   */
+  coverageAreas?: ReadonlyArray<string>;
   contact?: BusinessContact;
   services?: string;
   targetCustomer?: string;

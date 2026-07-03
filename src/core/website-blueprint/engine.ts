@@ -23,6 +23,8 @@ import type { WebsiteBlueprint } from "./website-blueprint";
 /** The input to the engine: the approved Experience Strategy (+ optional context). */
 export interface WebsiteBlueprintRequest {
   strategy: ExperienceStrategy;
+  /** Coverage areas (ADR-028): one unique landing page is built per area. */
+  coverageAreas?: ReadonlyArray<string>;
   industryDna?: IndustryDna;
   extensions?: BlueprintExtensions;
 }

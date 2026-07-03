@@ -95,4 +95,7 @@ export { SECTION_PRIMITIVE_REGISTRY, getSectionPrimitive } from "./registry";
 export type { BlueprintValidationResult } from "./validator";
 export { validateBlueprint } from "./validator";
 
-export { buildWebsiteBlueprint, createWebsiteBlueprintEngine } from "./builder";
+export { buildWebsiteBlueprint, createWebsiteBlueprintEngine, pageSlug } from "./builder";
+
+export type { JsonLdObject, PageJsonLdOptions } from "./schema";
+export { buildPageJsonLd } from "./schema";

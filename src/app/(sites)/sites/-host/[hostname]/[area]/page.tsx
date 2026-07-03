@@ -6,29 +6,26 @@ import {
   resolvePublishedSite,
 } from "@/features/website-renderer";
 
-/**
- * Thin route: the live site's HOMEPAGE by HOSTNAME (custom domains / slug
- * subdomains). Requests land here via the middleware rewrite (ADR-027).
- */
+/** Thin route: an AREA landing page by hostname (ADR-028). */
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ hostname: string }>;
+  params: Promise<{ hostname: string; area: string }>;
 }): Promise<Metadata> {
-  const { hostname } = await params;
-  const resolved = await resolvePublishedSite({ hostname });
+  const { hostname, area } = await params;
+  const resolved = await resolvePublishedSite({ hostname, pagePath: area });
   if (!resolved) return { robots: { index: false } };
-  return publishedSiteMetadata(resolved, `https://${hostname}/`);
+  return publishedSiteMetadata(resolved, `https://${hostname}/${area}`);
 }
 
 export default async function Page({
   params,
 }: {
-  params: Promise<{ hostname: string }>;
+  params: Promise<{ hostname: string; area: string }>;
 }) {
-  const { hostname } = await params;
-  const resolved = await resolvePublishedSite({ hostname });
+  const { hostname, area } = await params;
+  const resolved = await resolvePublishedSite({ hostname, pagePath: area });
   if (!resolved) publishedSiteNotFound();
   return (
     <PublishedSitePage resolved={resolved} baseUrl={`https://${hostname}`} />

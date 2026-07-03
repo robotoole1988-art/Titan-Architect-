@@ -39,6 +39,7 @@ const EMPTY_DRAFT: BusinessIntakeDraft = {
   businessName: "",
   trade: "",
   location: "",
+  coverageAreas: "",
   services: "",
   targetCustomer: "",
   monthlyMarketingBudget: "£500 – £1,000 / month",
@@ -144,6 +145,16 @@ export function BusinessIntakeForm() {
                 placeholder="e.g. Manchester"
               />
             </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="intake-areas">Coverage areas (optional)</Label>
+            <Input
+              id="intake-areas"
+              value={draft.coverageAreas}
+              onChange={(event) => setField("coverageAreas", event.target.value)}
+              placeholder="e.g. Sale, Stockport, Altrincham — one landing page per area"
+            />
           </div>
 
           <div className="flex flex-col gap-2">

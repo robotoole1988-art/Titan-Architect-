@@ -24,6 +24,10 @@ export async function createBusinessFromIntake(
     trade: draft.trade.trim(),
     tradeId: draft.tradeId,
     location: draft.location.trim(),
+    coverageAreas: draft.coverageAreas
+      .split(",")
+      .map((area) => area.trim())
+      .filter(Boolean),
     services: draft.services.trim() || undefined,
     targetCustomer: draft.targetCustomer.trim() || undefined,
     goal: draft.mainGoal,

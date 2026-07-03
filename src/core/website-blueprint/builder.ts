@@ -17,6 +17,7 @@
 
 import {
   classifyArchetype,
+  generateExperienceStrategy,
   type ExperienceStrategy,
   type TradeArchetype,
 } from "@/core/experience-strategy";
@@ -431,6 +432,7 @@ function buildSection(
   index: number,
   strategy: ExperienceStrategy,
   archetype: TradeArchetype,
+  pageId = "home",
 ): SectionBlueprint {
   const primitive = SECTION_PRIMITIVE_REGISTRY[plan.primitive];
   if (!primitive) {
@@ -439,7 +441,7 @@ function buildSection(
     );
   }
 
-  const sectionId = `home.${String(index + 1).padStart(2, "0")}.${primitive.id}`;
+  const sectionId = `${pageId}.${String(index + 1).padStart(2, "0")}.${primitive.id}`;
   const family = familyOf(primitive.id);
   const isHero = family === "hero";
   const needsCta = isHero || family === "conversion";
@@ -489,6 +491,229 @@ function buildSection(
         : {}),
     },
   };
+}
+
+/** URL-safe slug for a page (areas). Never emits leading/trailing hyphens. */
+export function pageSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+/**
+ * A legal variant for a primitive, rotated deterministically by `shift` and
+ * (when possible) avoiding `avoid` — structural variety across area pages.
+ */
+function rotatedVariant(
+  primitiveId: string,
+  avoid: string | undefined,
+  shift: number,
+): string {
+  const variants = SECTION_PRIMITIVE_REGISTRY[primitiveId].variants;
+  const pool = avoid && variants.length > 1
+    ? variants.filter((variant) => variant !== avoid)
+    : variants;
+  return pool[shift % pool.length];
+}
+
+/**
+ * The area-page sequence (ADR-028): landing-page intent, conversion-forward —
+ * localised hero, trust, services, area coverage, area FAQ, strong capture.
+ * Deliberately NOT the homepage sequence (anti-doorway policy), and variants
+ * rotate per area so no two area pages share an identical structure signature.
+ */
+function areaSequence(
+  archetype: TradeArchetype,
+  areaIndex: number,
+): ReadonlyArray<SectionPlan> {
+  const home = ARCHETYPE_SEQUENCES[archetype];
+  const homeHero = home[0];
+  const homeCapture = home.find((plan) => plan.primitive === "conversion.lead-capture");
+  return [
+    {
+      primitive: homeHero.primitive,
+      variant: rotatedVariant(homeHero.primitive, homeHero.variant, areaIndex),
+    },
+    {
+      primitive: "trust.review-wall",
+      variant: rotatedVariant("trust.review-wall", undefined, areaIndex),
+    },
+    {
+      primitive: "services.interactive-explorer",
+      variant: rotatedVariant("services.interactive-explorer", undefined, areaIndex + 1),
+    },
+    {
+      primitive: "location.service-area",
+      variant: rotatedVariant("location.service-area", undefined, areaIndex),
+    },
+    {
+      primitive: "faq.reassurance-accordion",
+      variant: rotatedVariant("faq.reassurance-accordion", undefined, areaIndex),
+    },
+    { primitive: "conversion.lead-capture", variant: homeCapture?.variant ?? "short-form" },
+  ];
+}
+
+/** Replace (or append) one "slot: direction" entry. */
+function withSlot(
+  requirements: ReadonlyArray<string>,
+  slot: string,
+  direction: string,
+): ReadonlyArray<string> {
+  const entry = `${slot}: ${direction}`;
+  const index = requirements.findIndex((req) => req.startsWith(`${slot}:`));
+  if (index === -1) return [...requirements, entry];
+  return requirements.map((req, i) => (i === index ? entry : req));
+}
+
+/**
+ * Localise an area section's slots (ADR-028): the area name is woven into the
+ * headline and FAQ; trust gains an explicit, honest area-proof brief.
+ */
+function localiseAreaSection(
+  section: SectionBlueprint,
+  primitiveId: string,
+  area: string,
+  strategy: ExperienceStrategy,
+): SectionBlueprint {
+  let requirements = section.contentRequirements ?? [];
+  if (familyOf(primitiveId) === "hero") {
+    const headline =
+      requirements
+        .find((req) => req.startsWith("headline:"))
+        ?.slice("headline:".length)
+        .trim() ?? "";
+    if (!headline.includes(area)) {
+      requirements = withSlot(requirements, "headline", `${headline} — ${area}`);
+    }
+  }
+  if (primitiveId === "faq.reassurance-accordion") {
+    requirements = withSlot(
+      requirements,
+      "questions-direction",
+      `The questions ${area} customers actually ask before choosing ${strategy.meta.trade.toLowerCase()} — answer the objection behind "${strategy.conversionStrategy.summary}" with ${area}-specific answers: ${strategy.seoStrategy.contentPillars.join(" · ")}.`,
+    );
+  }
+  if (primitiveId === "trust.review-wall") {
+    requirements = [
+      ...requirements,
+      `area-proof: Real jobs and reviews from ${area} — populate from verified ${area} work when it exists; until then this slot is an explicit empty-state brief, never fabricated.`,
+    ];
+  }
+  return {
+    ...section,
+    contentRequirements: requirements,
+    suggestedComponents: section.suggestedComponents?.map((component) => ({
+      ...component,
+      contentRequirements: requirements,
+    })),
+  };
+}
+
+/**
+ * One area landing page. The strategy is REGENERATED with the area as its
+ * location, so headlines, local keywords, and coverage copy are genuinely
+ * localised — then slots are explicitly area-woven on top.
+ */
+function buildAreaPage(
+  area: string,
+  areaIndex: number,
+  base: ExperienceStrategy,
+  archetype: TradeArchetype,
+): PageBlueprint {
+  const slug = pageSlug(area);
+  const pageId = `area.${slug}`;
+  const areaStrategy = generateExperienceStrategy({
+    businessName: base.meta.businessName,
+    trade: base.meta.trade,
+    location: area,
+  });
+  const sections = areaSequence(archetype, areaIndex).map((plan, index) =>
+    localiseAreaSection(
+      buildSection(plan, index, areaStrategy, archetype, pageId),
+      plan.primitive,
+      area,
+      areaStrategy,
+    ),
+  );
+  const subheadline = areaStrategy.heroConcept.subheadline;
+
+  return {
+    id: pageId,
+    confidence: strategyConfidence(
+      `Area landing page for ${area} — conversion-forward landing sequence, localised strategy (anti-doorway policy, ADR-028).`,
+    ),
+    name: area,
+    type: "landing",
+    purpose: `Land ${base.meta.businessName} as THE ${base.meta.trade.toLowerCase()} choice in ${area}: locally credible, one clear next step.`,
+    targetAudience: `${area} customers searching for ${base.meta.trade.toLowerCase()} near them.`,
+    primaryConversionGoal: areaStrategy.conversionStrategy.primaryCta,
+    seoIntent: `Own local search for ${base.meta.trade.toLowerCase()} in ${area}.`,
+    suggestedUrl: `/${slug}`,
+    sections,
+    internalLinks: {
+      id: `${pageId}.links`,
+      confidence: strategyConfidence("Area pages link home; home links every area."),
+      links: [
+        {
+          id: `${pageId}.links.home`,
+          confidence: strategyConfidence("Breadcrumb anchor."),
+          toPageId: "home",
+          anchorText: base.meta.businessName,
+          reason: "Every area page anchors back to the homepage (breadcrumb).",
+        },
+      ],
+    },
+    seo: {
+      id: `${pageId}.seo`,
+      confidence: strategyConfidence(
+        "Area-page SEO derived from the area-localised strategy.",
+      ),
+      intent: `Local landing page for ${area}.`,
+      titleDirection: `${base.meta.businessName} — ${base.meta.trade} in ${area}`,
+      metaDescriptionDirection: subheadline.includes(area)
+        ? subheadline
+        : `${subheadline} Serving ${area}.`,
+      targetKeywords: areaStrategy.seoStrategy.localKeywords,
+      headingsOutline: sections.map((section) => section.identifier),
+      schemaOpportunities: ["LocalBusiness", "Service", "FAQPage", "BreadcrumbList"],
+    },
+    extensions: { area, areaSlug: slug },
+  };
+}
+
+/**
+ * The anti-doorway gate (ADR-028): the generator REFUSES to emit area pages
+ * that copy the homepage structure or read as near-copies of each other.
+ */
+function enforceAreaDifferentiation(
+  home: PageBlueprint,
+  areas: ReadonlyArray<PageBlueprint>,
+): void {
+  const homeSequence = home.sections.map((section) => section.identifier).join("|");
+  const seen = new Map<string, string>();
+  for (const page of areas) {
+    const sequence = page.sections.map((section) => section.identifier).join("|");
+    if (sequence === homeSequence) {
+      throw new Error(
+        `Anti-doorway policy (ADR-028): area page "${page.name}" copies the homepage structure.`,
+      );
+    }
+    const slots = page.sections
+      .flatMap((section) => section.contentRequirements ?? [])
+      .join("\n");
+    const clash = seen.get(slots);
+    if (clash) {
+      throw new Error(
+        `Anti-doorway policy (ADR-028): area pages "${clash}" and "${page.name}" are near-copies.`,
+      );
+    }
+    seen.set(slots, page.name);
+  }
 }
 
 function buildHomePage(
@@ -579,6 +804,14 @@ export function buildWebsiteBlueprint(
   const { meta } = strategy;
   const archetype = classifyArchetype(meta.trade.toLowerCase());
   const homePage = buildHomePage(strategy, archetype);
+  const coverageAreas = (request.coverageAreas ?? []).filter(
+    (area) => area.trim().length > 0,
+  );
+  const areaPages = coverageAreas.map((area, index) =>
+    buildAreaPage(area.trim(), index, strategy, archetype),
+  );
+  enforceAreaDifferentiation(homePage, areaPages);
+  const allPages = [homePage, ...areaPages];
 
   return {
     id: "website-blueprint.home",
@@ -592,28 +825,35 @@ export function buildWebsiteBlueprint(
       businessName: meta.businessName,
       trade: meta.trade,
       location: meta.location,
+      ...(coverageAreas.length > 0 ? { coverageAreas } : {}),
       positioning: strategy.visualDirection.summary,
       voice: strategy.visualDirection.moodKeywords,
     },
     informationArchitecture: {
       id: "information-architecture",
       confidence: strategyConfidence(
-        "Homepage-only architecture; pillars reserved as future pages.",
+        coverageAreas.length > 0
+          ? "Homepage plus one landing page per coverage area (ADR-028)."
+          : "Homepage-only architecture; pillars reserved as future pages.",
       ),
-      hierarchy: ["home"],
+      hierarchy: allPages.map((page) => page.id),
       pillars: strategy.seoStrategy.contentPillars,
     },
     navigation: {
       id: "navigation",
-      confidence: strategyConfidence("Single-page navigation for a homepage-only blueprint."),
-      items: [
-        {
-          id: "navigation.home",
-          confidence: strategyConfidence("The only page in this blueprint."),
-          label: "Home",
-          toPageId: "home",
-        },
-      ],
+      confidence: strategyConfidence(
+        "Navigation links every page of the collection (ADR-028).",
+      ),
+      items: allPages.map((page) => ({
+        id: `navigation.${page.id}`,
+        confidence: strategyConfidence(
+          page.type === "home"
+            ? "The homepage."
+            : `Area landing page for ${page.name}.`,
+        ),
+        label: page.type === "home" ? "Home" : page.name,
+        toPageId: page.id,
+      })),
     },
     header: {
       id: "header",
@@ -637,8 +877,12 @@ export function buildWebsiteBlueprint(
     },
     pages: {
       id: "pages",
-      confidence: strategyConfidence("Homepage only in this engine version."),
-      pages: [homePage],
+      confidence: strategyConfidence(
+        coverageAreas.length > 0
+          ? `Homepage + ${areaPages.length} area landing page(s), differentiation enforced (ADR-028).`
+          : "Homepage only (no coverage areas recorded).",
+      ),
+      pages: allPages,
     },
     seo: {
       id: "site.seo",
