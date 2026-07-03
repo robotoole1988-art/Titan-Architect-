@@ -50,6 +50,7 @@ ADR that supersedes the old one and update the old one's status.
 | [020](./adr-020-strategy-trade-intelligence.md) | Trade-archetype intelligence in the Strategy Generator | Accepted |
 | [021](./adr-021-section-primitive-registry.md) | Section Primitive Registry — blueprints compose, never free-generate | Accepted |
 | [022](./adr-022-website-renderer.md) | Website Renderer — the React realisation of the Blueprint | Accepted |
+| [023](./adr-023-business-spine-persistence.md) | Business Spine — durable persistence and the Business record | Accepted |
 
 ### Writing a new ADR
 

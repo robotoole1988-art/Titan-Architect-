@@ -1,11 +1,15 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { ArrowLeft, Layers } from "lucide-react";
+import { resolveBusinessSpine } from "@/core/business";
 import {
   generateExperienceStrategy,
   type ExperienceStrategyRequest,
 } from "@/core/experience-strategy";
-import { createWebsiteBlueprintEngine } from "@/core/website-blueprint";
+import {
+  createWebsiteBlueprintEngine,
+  type WebsiteBlueprint,
+} from "@/core/website-blueprint";
 import { rendererFontClass } from "../theme/fonts";
 
 // Lazily hydrated: the HTML is server-rendered in full; the client bundle
@@ -18,6 +22,8 @@ const RenderedSite = dynamic(() => import("./rendered-site"));
  * a thin TITAN chrome bar. Falls back gracefully to the sample business.
  */
 interface WebsitePreviewPageProps {
+  /** Stored Business record id (ADR-023) — renders the SAVED blueprint. */
+  businessId?: string;
   businessName?: string;
   trade?: string;
   location?: string;
@@ -32,10 +38,28 @@ const SAMPLE_REQUEST: ExperienceStrategyRequest = {
 };
 
 export async function WebsitePreviewPage({
+  businessId,
   businessName,
   trade,
   location,
 }: WebsitePreviewPageProps = {}) {
+  // Stored path (ADR-023): render the SAVED blueprint artifact, exactly as
+  // reviewed in the viewer. Falls through gracefully when the id is unknown
+  // or nothing is stored yet.
+  let storedBlueprint: WebsiteBlueprint | null = null;
+  let storedVersion: number | null = null;
+  if (businessId) {
+    const spine = await resolveBusinessSpine();
+    const artifact = await spine.artifacts.latest<WebsiteBlueprint>(
+      businessId,
+      "blueprint",
+    );
+    if (artifact) {
+      storedBlueprint = artifact.payload;
+      storedVersion = artifact.version;
+    }
+  }
+
   const name = businessName?.trim();
   const tradeValue = trade?.trim();
   const locationValue = location?.trim();
@@ -45,16 +69,21 @@ export async function WebsitePreviewPage({
       ? { businessName: name, trade: tradeValue, location: locationValue }
       : SAMPLE_REQUEST;
 
-  const strategy = generateExperienceStrategy(request);
-  const blueprint = await createWebsiteBlueprintEngine().build({ strategy });
+  const blueprint =
+    storedBlueprint ??
+    (await createWebsiteBlueprintEngine().build({
+      strategy: generateExperienceStrategy(request),
+    }));
   const archetype =
     typeof blueprint.extensions?.archetype === "string"
       ? blueprint.extensions.archetype
       : undefined;
 
-  const query = fromIntake
-    ? `?businessName=${encodeURIComponent(request.businessName)}&trade=${encodeURIComponent(request.trade)}&location=${encodeURIComponent(request.location)}`
-    : "";
+  const query = storedBlueprint
+    ? `?businessId=${businessId}`
+    : fromIntake
+      ? `?businessName=${encodeURIComponent(request.businessName)}&trade=${encodeURIComponent(request.trade)}&location=${encodeURIComponent(request.location)}`
+      : "";
 
   return (
     <div className="flex flex-1 flex-col">
@@ -71,7 +100,9 @@ export async function WebsitePreviewPage({
           )}
           <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[11px] text-muted-foreground md:inline-flex">
             <Layers className="size-3" />
-            rendered from blueprint
+            {storedVersion !== null
+              ? `rendered from blueprint v${storedVersion}`
+              : "rendered from blueprint"}
           </span>
         </div>
         <Link

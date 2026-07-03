@@ -1,5 +1,6 @@
 import {
   Bot,
+  Briefcase,
   Boxes,
   BookText,
   BrainCircuit,
@@ -51,6 +52,12 @@ export const primaryNavigation: NavSection[] = [
         href: "/business-intake",
         icon: ClipboardList,
         description: "Start onboarding: capture a business's details.",
+      },
+      {
+        title: "Businesses",
+        href: "/businesses",
+        icon: Briefcase,
+        description: "Every business and its journey through the pipeline.",
       },
       {
         title: "Experience Studio",

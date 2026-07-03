@@ -14,7 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useBusinessIntake } from "../hooks/use-business-intake";
+import { createBusinessFromIntake } from "../api/actions";
 import {
   BUSINESS_GOALS,
   MARKETING_BUDGETS,
@@ -42,10 +42,10 @@ const EMPTY_DRAFT: BusinessIntakeDraft = {
 };
 
 export function BusinessIntakeForm() {
-  const { create } = useBusinessIntake();
   const [draft, setDraft] = useState<BusinessIntakeDraft>(EMPTY_DRAFT);
   const [error, setError] = useState<string | null>(null);
   const [justSaved, setJustSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   function setField<K extends keyof BusinessIntakeDraft>(
     key: K,
@@ -55,7 +55,7 @@ export function BusinessIntakeForm() {
     setJustSaved(false);
   }
 
-  function handleSubmit(event: FormEvent) {
+  async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     if (!draft.businessName.trim()) {
       setError("Business name is required.");
@@ -70,15 +70,18 @@ export function BusinessIntakeForm() {
       return;
     }
     setError(null);
-    create({
-      ...draft,
-      businessName: draft.businessName.trim(),
-      trade: draft.trade.trim(),
-      location: draft.location.trim(),
-      currentWebsiteUrl: draft.currentWebsiteUrl.trim(),
-    });
-    setDraft(EMPTY_DRAFT);
-    setJustSaved(true);
+    setSaving(true);
+    try {
+      // Server action → Business Spine repository (ADR-023). The saved
+      // intake IS the Business record, created as a lead.
+      await createBusinessFromIntake(draft);
+      setDraft(EMPTY_DRAFT);
+      setJustSaved(true);
+    } catch {
+      setError("Saving failed — check the server logs and try again.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
@@ -224,12 +227,14 @@ export function BusinessIntakeForm() {
           {justSaved && (
             <p className="flex items-center gap-1.5 text-sm text-emerald-400">
               <Check className="size-4" />
-              Intake saved — see it in the list.
+              Business saved as a lead — generate its strategy from the list.
             </p>
           )}
 
           <div className="flex items-center justify-end">
-            <Button type="submit">Save intake</Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving…" : "Save intake"}
+            </Button>
           </div>
         </form>
       </CardContent>

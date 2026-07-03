@@ -3,8 +3,8 @@ import { SavedIntakesList } from "./saved-intakes-list";
 
 /**
  * Business Intake — the first step of the Business → Blueprint journey. A
- * premium onboarding surface: enter a business's details (saved to localStorage)
- * and review the saved intakes. No AI, no database, no external APIs.
+ * premium onboarding surface: enter a business's details and it becomes a
+ * durable Business record (stage: lead) in the Business Spine (ADR-023).
  */
 export function BusinessIntakePage() {
   return (
@@ -24,8 +24,8 @@ export function BusinessIntakePage() {
         </h1>
         <p className="max-w-2xl text-muted-foreground">
           Enter the essentials TITAN needs before generating a strategy and a
-          website blueprint. Everything is saved locally for now — the beginning
-          of the Business → Blueprint journey.
+          website blueprint. Saving creates the Business record — the spine
+          every strategy, blueprint, and website hangs off.
         </p>
       </header>
 

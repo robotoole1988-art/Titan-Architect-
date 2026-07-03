@@ -12,8 +12,10 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      // next/font only works inside the Next.js build; see tests/stubs/.
+      // next/font and server-only only work inside the Next.js build; stubs
+      // let tests exercise the same modules directly. See tests/stubs/.
       "next/font/google": path.resolve(__dirname, "tests/stubs/next-font-google.ts"),
+      "server-only": path.resolve(__dirname, "tests/stubs/empty.ts"),
       "@": path.resolve(__dirname, "src"),
     },
   },

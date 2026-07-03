@@ -1,118 +1,102 @@
-"use client";
-
 import Link from "next/link";
-import { ClipboardList, Trash2, Wand2 } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Route } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import { useBusinessIntake } from "../hooks/use-business-intake";
+import { Card, CardContent } from "@/components/ui/card";
+import { resolveBusinessSpine, type Business } from "@/core/business";
+import { removeBusiness } from "../api/actions";
 import { formatDate } from "../model/format";
-import type { UrgencyLevel } from "../model/types";
 
-const URGENCY_STYLES: Record<UrgencyLevel, string> = {
-  Low: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
-  Medium: "border-sky-500/30 bg-sky-500/10 text-sky-400",
-  High: "border-amber-500/30 bg-amber-500/10 text-amber-400",
-  Critical: "border-red-500/30 bg-red-500/10 text-red-400",
-};
-
-export function SavedIntakesList() {
-  const { intakes, hydrated, remove } = useBusinessIntake();
-
-  function handleRemove(id: string, name: string) {
-    if (window.confirm(`Remove the intake for "${name}"?`)) {
-      remove(id);
-    }
-  }
-
-  if (!hydrated) {
-    return (
-      <div className="flex flex-col gap-3">
-        {Array.from({ length: 2 }).map((_, index) => (
-          <Skeleton key={index} className="h-40 w-full rounded-xl" />
-        ))}
-      </div>
-    );
-  }
-
-  if (intakes.length === 0) {
-    return (
-      <Card className="flex min-h-[220px] flex-col items-center justify-center gap-3 border-dashed bg-card/40 text-center">
-        <div className="flex size-12 items-center justify-center rounded-2xl border bg-muted/40">
-          <ClipboardList className="size-6 text-muted-foreground" />
+/**
+ * The saved businesses (server-rendered from the Business Spine). Each entry
+ * links onward into its journey — Generate Strategy resolves the STORED
+ * record by id (ADR-023 evolution of the ADR-019 URL boundary).
+ */
+function BusinessRow({ business }: { business: Business }) {
+  return (
+    <li
+      className="flex flex-col gap-3 rounded-xl border border-border/60 bg-background/40 p-4"
+      data-business-id={business.id}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate font-medium">{business.name}</p>
+          <p className="truncate text-sm text-muted-foreground">
+            {business.trade} · {business.location}
+          </p>
         </div>
-        <p className="text-sm font-medium">No saved intakes yet</p>
-        <p className="max-w-xs text-sm text-muted-foreground">
-          Complete the form to save your first business intake.
-        </p>
+        <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[11px] capitalize text-emerald-300/90">
+          {business.stage}
+        </span>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {business.goal && (
+          <span className="rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[11px] text-muted-foreground">
+            {business.goal}
+          </span>
+        )}
+        {business.budget && (
+          <span className="rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[11px] text-muted-foreground">
+            {business.budget}
+          </span>
+        )}
+        <span className="text-[11px] text-muted-foreground">
+          {formatDate(business.createdAt)}
+        </span>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            render={<Link href={`/experience-studio?businessId=${business.id}`} />}
+            className="gap-1.5"
+          >
+            Generate Strategy
+            <ArrowRight className="size-3.5" />
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            render={<Link href={`/businesses/${business.id}`} />}
+            className="gap-1.5"
+          >
+            <Route className="size-3.5" />
+            Journey
+          </Button>
+        </div>
+        <form
+          action={async () => {
+            "use server";
+            await removeBusiness(business.id);
+          }}
+        >
+          <Button size="sm" variant="ghost" type="submit">
+            Remove
+          </Button>
+        </form>
+      </div>
+    </li>
+  );
+}
+
+export async function SavedIntakesList() {
+  const spine = await resolveBusinessSpine();
+  const businesses = await spine.businesses.list();
+
+  if (businesses.length === 0) {
+    return (
+      <Card className="border-border/60 bg-card/40 backdrop-blur-xl">
+        <CardContent className="py-6 text-sm text-muted-foreground">
+          No businesses yet — save an intake and it becomes the first Business
+          record in the pipeline.
+        </CardContent>
       </Card>
     );
   }
 
   return (
     <ul className="flex flex-col gap-3">
-      {intakes.map((intake) => (
-        <li key={intake.id}>
-          <Card className="flex flex-col gap-3 border-border/60 bg-card/40 p-5 backdrop-blur-xl">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex min-w-0 flex-col gap-1">
-                <span className="truncate font-medium">
-                  {intake.businessName}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {intake.trade} · {intake.location} · Saved{" "}
-                  {formatDate(intake.createdAt)}
-                </span>
-              </div>
-              <Badge
-                variant="outline"
-                className={cn("shrink-0 font-medium", URGENCY_STYLES[intake.urgencyLevel])}
-              >
-                {intake.urgencyLevel}
-              </Badge>
-            </div>
-
-            <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
-              <span>
-                <span className="text-foreground/70">Goal:</span> {intake.mainGoal}
-              </span>
-              <span>
-                <span className="text-foreground/70">Budget:</span>{" "}
-                {intake.monthlyMarketingBudget}
-              </span>
-            </div>
-
-            <div className="mt-1 flex items-center justify-between gap-2">
-              <Button
-                size="sm"
-                className="gap-1.5"
-                render={
-                  <Link
-                    href={`/experience-studio?${new URLSearchParams({
-                      businessName: intake.businessName,
-                      trade: intake.trade,
-                      location: intake.location,
-                    }).toString()}`}
-                  />
-                }
-              >
-                <Wand2 className="size-3.5" />
-                Generate Strategy
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="gap-1.5 text-muted-foreground hover:text-destructive"
-                onClick={() => handleRemove(intake.id, intake.businessName)}
-              >
-                <Trash2 className="size-3.5" />
-                Remove
-              </Button>
-            </div>
-          </Card>
-        </li>
+      {businesses.map((business) => (
+        <BusinessRow key={business.id} business={business} />
       ))}
     </ul>
   );

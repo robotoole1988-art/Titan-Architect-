@@ -15,10 +15,13 @@ import {
   Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { resolveBusinessSpine, type Business } from "@/core/business";
 import {
   generateExperienceStrategy,
+  type ExperienceStrategy,
   type ExperienceStrategyRequest,
 } from "@/core/experience-strategy";
+import { generateBlueprintArtifact, generateStrategyArtifact } from "../api/actions";
 import { MOCK_STUDIO_REQUEST } from "../model/mock-request";
 import {
   BulletList,
@@ -36,22 +39,68 @@ import {
  * no website generation.
  */
 interface ExperienceStudioPageProps {
+  /** Stored Business record id (ADR-023) — the primary path. */
+  businessId?: string;
   businessName?: string;
   trade?: string;
   location?: string;
 }
 
+/** First-visit view for a stored business with no strategy artifact yet. */
+function GenerateStrategyPrompt({ business }: { business: Business }) {
+  return (
+    <div className="flex flex-1 flex-col items-center justify-center gap-5 py-24 text-center">
+      <Eyebrow>Experience Studio</Eyebrow>
+      <h1 className="text-3xl font-semibold tracking-tight">{business.name}</h1>
+      <p className="max-w-md text-sm text-muted-foreground">
+        {business.trade} · {business.location} — no strategy has been generated
+        for this business yet. Version 1 will be saved to its record.
+      </p>
+      <form
+        action={async () => {
+          "use server";
+          await generateStrategyArtifact(business.id);
+        }}
+      >
+        <Button type="submit" className="gap-2">
+          <Wand2 className="size-4" />
+          Generate Strategy
+        </Button>
+      </form>
+    </div>
+  );
+}
+
 /**
- * When business details are provided (from a Business Intake, via the URL), the
- * studio renders a strategy generated for that business. When they are absent or
- * incomplete it falls back to the sample business, so a missing or invalid
- * intake reference degrades gracefully.
+ * Resolution order (ADR-023 evolution of the ADR-019 URL boundary):
+ * 1. `businessId` → the STORED business and its LATEST strategy artifact.
+ * 2. Legacy `businessName/trade/location` params → ephemeral generation.
+ * 3. Neither (or unknown id) → the sample business. Always graceful.
  */
-export function ExperienceStudioPage({
+export async function ExperienceStudioPage({
+  businessId,
   businessName,
   trade,
   location,
 }: ExperienceStudioPageProps = {}) {
+  let business: Business | null = null;
+  let artifactVersion: number | null = null;
+  let storedStrategy: ExperienceStrategy | null = null;
+
+  if (businessId) {
+    const spine = await resolveBusinessSpine();
+    business = await spine.businesses.get(businessId);
+    if (business) {
+      const artifact = await spine.artifacts.latest<ExperienceStrategy>(
+        business.id,
+        "strategy",
+      );
+      if (!artifact) return <GenerateStrategyPrompt business={business} />;
+      storedStrategy = artifact.payload;
+      artifactVersion = artifact.version;
+    }
+  }
+
   const name = businessName?.trim();
   const tradeValue = trade?.trim();
   const locationValue = location?.trim();
@@ -60,12 +109,15 @@ export function ExperienceStudioPage({
     name && tradeValue && locationValue
       ? { businessName: name, trade: tradeValue, location: locationValue }
       : MOCK_STUDIO_REQUEST;
-  const strategy = generateExperienceStrategy(request);
-  // Push the business context forward through the URL (ADR-019 pattern) so the
-  // Blueprint Viewer regenerates the same strategy deterministically.
-  const blueprintHref = fromIntake
-    ? `/experience-studio/blueprint?businessName=${encodeURIComponent(request.businessName)}&trade=${encodeURIComponent(request.trade)}&location=${encodeURIComponent(request.location)}`
-    : "/experience-studio/blueprint";
+  const strategy = storedStrategy ?? generateExperienceStrategy(request);
+  // Push the business context forward through the URL (ADR-019 pattern):
+  // stored records travel by id; the legacy query-string form remains the
+  // ephemeral fallback.
+  const blueprintHref = business
+    ? `/experience-studio/blueprint?businessId=${business.id}`
+    : fromIntake
+      ? `/experience-studio/blueprint?businessName=${encodeURIComponent(request.businessName)}&trade=${encodeURIComponent(request.trade)}&location=${encodeURIComponent(request.location)}`
+      : "/experience-studio/blueprint";
   const {
     meta,
     visualDirection,
@@ -100,29 +152,64 @@ export function ExperienceStudioPage({
             <span aria-hidden>·</span>
             <span>{meta.location}</span>
             <span className="ml-1 inline-flex items-center rounded-full border border-border/60 bg-muted/30 px-2 py-0.5 text-[11px]">
-              {fromIntake ? "From Business Intake" : "Sample business"} · v
-              {meta.version}
+              {business
+                ? "Stored record"
+                : fromIntake
+                  ? "From Business Intake"
+                  : "Sample business"}{" "}
+              · v{meta.version}
             </span>
+            {artifactVersion !== null && (
+              <span className="inline-flex items-center rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[11px] text-emerald-300/90">
+                strategy artifact v{artifactVersion}
+              </span>
+            )}
           </div>
         </div>
 
         <div className="flex flex-col items-start gap-1.5 sm:items-end">
           <div className="flex items-center gap-2">
-            <Button
-              render={<Link href={blueprintHref} />}
-              nativeButton={false}
-              className="gap-2"
-            >
-              <Wand2 className="size-4" />
-              Generate Blueprint
-            </Button>
-            <Button variant="outline" disabled className="gap-2">
-              <Check className="size-4" />
-              Approve Strategy
-            </Button>
+            {business ? (
+              <>
+                <form
+                  action={async () => {
+                    "use server";
+                    await generateBlueprintArtifact(business.id);
+                  }}
+                >
+                  <Button type="submit" className="gap-2">
+                    <Wand2 className="size-4" />
+                    Generate Blueprint
+                  </Button>
+                </form>
+                <form
+                  action={async () => {
+                    "use server";
+                    await generateStrategyArtifact(business.id);
+                  }}
+                >
+                  <Button variant="outline" type="submit" className="gap-2">
+                    Regenerate Strategy
+                  </Button>
+                </form>
+              </>
+            ) : (
+              <>
+                <Button render={<Link href={blueprintHref} />} className="gap-2">
+                  <Wand2 className="size-4" />
+                  Generate Blueprint
+                </Button>
+                <Button variant="outline" disabled className="gap-2">
+                  <Check className="size-4" />
+                  Approve Strategy
+                </Button>
+              </>
+            )}
           </div>
           <span className="text-[11px] text-muted-foreground">
-            Approve Strategy coming soon
+            {business
+              ? "Regenerating saves a new version — nothing is overwritten"
+              : "Approve Strategy coming soon"}
           </span>
         </div>
       </header>
