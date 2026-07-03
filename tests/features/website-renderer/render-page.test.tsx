@@ -2,11 +2,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { generateExperienceStrategy } from "@/core/experience-strategy";
 import { buildWebsiteBlueprint } from "@/core/website-blueprint";
-import {
-  PRIMITIVE_COMPONENT_MAP,
-  renderPage,
-  type PrimitiveComponentMap,
-} from "@/features/website-renderer";
+import { renderPage } from "@/features/website-renderer";
 
 // "Drainage" keeps this in the emergency archetype (ADR-020 keywords).
 const strategy = generateExperienceStrategy({
@@ -20,11 +16,15 @@ function markup(): string {
   return renderToStaticMarkup(renderPage(blueprint));
 }
 
-/** The component map minus one primitive — for unmapped-behaviour tests. */
-function withoutPrimitive(id: string): PrimitiveComponentMap {
-  return Object.fromEntries(
-    Object.entries(PRIMITIVE_COMPONENT_MAP).filter(([key]) => key !== id),
-  );
+/**
+ * A blueprint whose hero identifier is OUTSIDE the registry — registry
+ * primitives always resolve (crafted or placeholder), so only a non-registry
+ * identifier exercises the throw/skip behaviour.
+ */
+function withUnknownHero(): typeof blueprint {
+  const doctored = structuredClone(blueprint);
+  doctored.pages.pages[0].sections[0].identifier = "hero.not-in-registry";
+  return doctored;
 }
 
 /** React escapes text nodes; assertions must compare escaped copy. */
@@ -113,21 +113,19 @@ describe("renderPage", () => {
     }
   });
 
-  it("fails loudly on an unmapped primitive when asked to throw", () => {
-    const partial = withoutPrimitive("hero.rapid-response");
+  it("fails loudly on a non-registry identifier when asked to throw", () => {
     expect(() =>
       renderToStaticMarkup(
-        renderPage(blueprint, { map: partial, onUnmapped: "throw" }),
+        renderPage(withUnknownHero(), { onUnmapped: "throw" }),
       ),
-    ).toThrowError(/hero\.rapid-response/);
+    ).toThrowError(/hero\.not-in-registry/);
   });
 
-  it("degrades gracefully on an unmapped primitive when asked to skip", () => {
-    const partial = withoutPrimitive("hero.rapid-response");
+  it("degrades gracefully on a non-registry identifier when asked to skip", () => {
     const html = renderToStaticMarkup(
-      renderPage(blueprint, { map: partial, onUnmapped: "skip" }),
+      renderPage(withUnknownHero(), { onUnmapped: "skip" }),
     );
-    expect(html).not.toContain('data-primitive="hero.rapid-response"');
+    expect(html).not.toContain('data-primitive="hero.not-in-registry"');
     expect(html).toContain('data-primitive="conversion.emergency-cta"');
     expect(html).toContain("<footer");
   });
