@@ -60,9 +60,9 @@ works, but data lasts only until the dev server restarts. To make businesses,
 strategies, and blueprints durable (synced across devices, backed up):
 
 1. Create a free project at [supabase.com](https://supabase.com) (any region).
-2. Open the project's **SQL Editor**, paste the contents of
-   [`supabase/migrations/20260703010000_business_spine.sql`](./supabase/migrations/20260703010000_business_spine.sql),
-   and run it once.
+2. Open the project's **SQL Editor** and run each file in
+   [`supabase/migrations/`](./supabase/migrations/) once, oldest first
+   (business spine → CRM → selling tools → publishing).
 3. Copy `.env.example` to `.env.local` and fill in both values from
    **Project Settings → API**:
    - `SUPABASE_URL` — the Project URL
@@ -73,4 +73,32 @@ strategies, and blueprints durable (synced across devices, backed up):
 
 That's it — a business saved today is still there after a restart and from any
 other machine. (`supabase db push` with the Supabase CLI applies the same
-migration if you prefer the CLI.)
+migrations if you prefer the CLI.)
+
+## Going live on a real domain (ADR-027)
+
+Published sites are served by this one app (multi-tenant, v1). Every
+publication is reachable at `/sites/<slug>` immediately; a customer domain is
+a mapping on top:
+
+1. **Host the app.** Deploy to Vercel (or any Node host). Set
+   `TITAN_APP_HOST` to the app's own hostname (e.g. `app.titan.example`) so
+   the middleware knows which requests are the TITAN UI — every other
+   hostname is treated as a published site.
+2. **Point the customer's DNS at the deployment.** On Vercel: add the domain
+   (e.g. `kerbsidekings.co.uk`) to the project — Vercel tells the customer
+   exactly which A/CNAME records to set. A wildcard domain
+   (`*.yourserving.example`) also works for giving every customer an instant
+   subdomain.
+3. **Map the hostname to the business** — one row in `site_domains`:
+   ```sql
+   insert into site_domains (hostname, business_id)
+   values ('kerbsidekings.co.uk', '<business uuid>');
+   ```
+   `www.` and apex are separate hostnames — insert both if both should serve.
+4. Done. The middleware rewrites requests on that hostname to the business's
+   **live publication** (the pinned snapshot — regenerating a blueprint never
+   changes the live site until a republish passes the review gate).
+
+Local demo without DNS: any `<slug>.localhost:<port>` URL serves that slug —
+e.g. `http://kerbside-kings.localhost:4100`.

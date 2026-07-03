@@ -7,6 +7,12 @@ import type { ComponentType } from "react";
 import type { SectionBlueprint, WebsiteBlueprint } from "@/core/website-blueprint";
 import type { SlotMap } from "./slots";
 
+/** Present only on PUBLISHED sites: wires forms to real enquiry capture. */
+export interface ServingContext {
+  publicationId: string;
+  slug: string;
+}
+
 /** Everything a primitive component may draw from. */
 export interface PrimitiveSectionProps {
   section: SectionBlueprint;
@@ -16,6 +22,8 @@ export interface PrimitiveSectionProps {
   slots: SlotMap;
   /** The whole blueprint, for cross-cutting context (identity, conversion). */
   blueprint: WebsiteBlueprint;
+  /** Set when serving a live publication (ADR-027); absent in previews. */
+  serving?: ServingContext;
 }
 
 export type PrimitiveComponent = ComponentType<PrimitiveSectionProps>;
@@ -31,4 +39,6 @@ export interface RenderPageOptions {
   map?: PrimitiveComponentMap;
   /** Defaults by NODE_ENV: throw in development, skip (+warn) in production. */
   onUnmapped?: UnmappedPrimitiveBehaviour;
+  /** Live-publication context — enables real enquiry capture (ADR-027). */
+  serving?: ServingContext;
 }

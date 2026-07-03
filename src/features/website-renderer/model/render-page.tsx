@@ -57,6 +57,7 @@ export function renderPage(
         variant={sectionVariant(section)}
         slots={parseSlots(section)}
         blueprint={blueprint}
+        serving={options.serving}
       />
     );
   });

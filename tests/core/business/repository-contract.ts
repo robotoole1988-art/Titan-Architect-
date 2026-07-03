@@ -340,5 +340,110 @@ export function runRepositoryContract(
         expect(await builds.getForBusiness(business.id)).toBeNull();
       });
     });
+
+    it("publishes immutable, versioned snapshots with a stable slug (ADR-027)", async () => {
+      await withRepos(async ({ businesses, publications }) => {
+        const business = await businesses.create(DRAFT);
+        const v1 = await publications.publish(business.id, 2, "summit-roofing-rescue");
+        expect(v1.version).toBe(1);
+        expect(v1.blueprintVersion).toBe(2);
+        expect(v1.status).toBe("live");
+        expect(v1.slug).toBe("summit-roofing-rescue");
+
+        const v2 = await publications.publish(business.id, 3, "summit-roofing-rescue");
+        expect(v2.version).toBe(2);
+        // The new publication takes over; the old one is superseded, never mutated.
+        const current = await publications.current(business.id);
+        expect(current?.version).toBe(2);
+        expect(current?.blueprintVersion).toBe(3);
+        const history = await publications.history(business.id);
+        expect(history.map((p) => p.version)).toEqual([2, 1]);
+        expect(history[1].status).toBe("superseded");
+        expect(history[1].blueprintVersion).toBe(2); // pinned, untouched
+      });
+    });
+
+    it("resolves live publications by slug and by hostname", async () => {
+      await withRepos(async ({ businesses, publications }) => {
+        const business = await businesses.create(DRAFT);
+        await publications.publish(business.id, 1, "summit-roofing-rescue");
+        expect(
+          (await publications.currentBySlug("summit-roofing-rescue"))?.businessId,
+        ).toBe(business.id);
+        expect(await publications.currentBySlug("nope")).toBeNull();
+
+        await publications.addDomain("summitroofing.co.uk", business.id);
+        expect(
+          (await publications.currentByHostname("summitroofing.co.uk"))?.businessId,
+        ).toBe(business.id);
+        expect(await publications.currentByHostname("unknown.example")).toBeNull();
+      });
+    });
+
+    it("unpublishes (site offline) and republish starts a new version", async () => {
+      await withRepos(async ({ businesses, publications }) => {
+        const business = await businesses.create(DRAFT);
+        await publications.publish(business.id, 1, "summit-roofing-rescue");
+        await publications.unpublish(business.id);
+        expect(await publications.current(business.id)).toBeNull();
+        expect(await publications.currentBySlug("summit-roofing-rescue")).toBeNull();
+
+        const again = await publications.publish(business.id, 1, "summit-roofing-rescue");
+        expect(again.version).toBe(2);
+        expect((await publications.current(business.id))?.version).toBe(2);
+      });
+    });
+
+    it("reports slug ownership for uniqueness checks", async () => {
+      await withRepos(async ({ businesses, publications }) => {
+        const business = await businesses.create(DRAFT);
+        await publications.publish(business.id, 1, "summit-roofing-rescue");
+        expect(await publications.slugOwner("summit-roofing-rescue")).toBe(business.id);
+        expect(await publications.slugOwner("free-slug")).toBeNull();
+      });
+    });
+
+    it("captures enquiries against the account, newest first, cascading", async () => {
+      await withRepos(async ({ businesses, publications, enquiries }) => {
+        const business = await businesses.create(DRAFT);
+        const publication = await publications.publish(business.id, 1, "summit-roofing-rescue");
+        await enquiries.create({
+          businessId: business.id,
+          publicationId: publication.id,
+          name: "Dave Homeowner",
+          contact: "07700 900456",
+          message: "Leak over the bay window after the storm",
+          sourcePage: "/",
+        });
+        await enquiries.create({
+          businessId: business.id,
+          publicationId: publication.id,
+          name: "Sue Homeowner",
+          contact: "sue@example.com",
+          message: "Quote for a full re-roof",
+          sourcePage: "/",
+        });
+
+        const listed = await enquiries.listForBusiness(business.id);
+        expect(listed).toHaveLength(2);
+        expect(listed[0].name).toBe("Sue Homeowner");
+        expect(listed[1].message).toContain("bay window");
+        expect(listed[1].publicationId).toBe(publication.id);
+
+        await expect(
+          enquiries.create({
+            businessId: "nope",
+            publicationId: publication.id,
+            name: "X",
+            contact: "x",
+            message: "x",
+            sourcePage: "/",
+          }),
+        ).rejects.toBeInstanceOf(BusinessNotFoundError);
+
+        await businesses.remove(business.id);
+        expect(await enquiries.listForBusiness(business.id)).toEqual([]);
+      });
+    });
   });
 }

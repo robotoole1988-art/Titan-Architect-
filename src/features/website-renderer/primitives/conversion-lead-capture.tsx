@@ -4,11 +4,12 @@
  * conversion.lead-capture — the committed next step. Anchor target of every
  * CTA on the page (#callback).
  *
- * Renders a real, keyboard-operable callback form. Submission is not wired to
- * a backend yet — submitting reveals an explicit annotation instead of faking
- * success (honesty over theatre, ADR-022). Variants: "callback-request" /
- * "short-form" / "multi-step" / "consultation-booking" (v1: one crafted
- * callback form; the variant is recorded in the markup for the future flows).
+ * Renders a real, keyboard-operable callback form. On a PUBLISHED site
+ * (serving context present, ADR-027) it submits to the public enquiry
+ * endpoint — honeypot-guarded — and the enquiry lands in the customer's
+ * account. In previews it stays an honest annotation (no faked success).
+ * Variants: "callback-request" / "short-form" / "multi-step" /
+ * "consultation-booking" (v1: one crafted callback form).
  */
 
 import { useState, type FormEvent } from "react";
@@ -34,14 +35,45 @@ function extractQuote(text: string | undefined): string | undefined {
 const FIELD_CLASS =
   "w-full rounded-xl border bg-transparent px-4 py-3.5 text-base outline-none transition-colors focus-visible:border-[var(--wr-accent)]";
 
-export function ConversionLeadCapture({ section, slots, blueprint }: PrimitiveSectionProps) {
+export function ConversionLeadCapture({
+  section,
+  slots,
+  blueprint,
+  serving,
+}: PrimitiveSectionProps) {
+  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">(
+    "idle",
+  );
   const [submitted, setSubmitted] = useState(false);
   const objection = extractQuote(slots.objective);
   const ctaLabel = slots["cta-label"] ?? "";
 
-  function onSubmit(event: FormEvent<HTMLFormElement>) {
+  async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitted(true);
+    if (!serving) {
+      // Preview: no backend theatre — the annotation says exactly that.
+      setSubmitted(true);
+      return;
+    }
+    const form = new FormData(event.currentTarget);
+    setStatus("sending");
+    try {
+      const response = await fetch("/api/enquiries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug: serving.slug,
+          name: String(form.get("name") ?? ""),
+          contact: String(form.get("phone") ?? ""),
+          message: String(form.get("message") ?? ""),
+          sourcePage: window.location.pathname,
+          website: String(form.get("website") ?? ""), // honeypot
+        }),
+      });
+      setStatus(response.ok ? "sent" : "failed");
+    } catch {
+      setStatus("failed");
+    }
   }
 
   return (
@@ -122,29 +154,77 @@ export function ConversionLeadCapture({ section, slots, blueprint }: PrimitiveSe
                   style={{ borderColor: "var(--wr-line)", color: "var(--wr-ink)" }}
                 />
               </div>
-              <button
-                type="submit"
-                className="mt-2 w-full rounded-xl px-6 py-4 text-base font-semibold transition-transform focus-visible:outline-2 focus-visible:outline-offset-4 active:scale-[0.99]"
-                style={{
-                  background:
-                    "linear-gradient(180deg, var(--wr-accent), var(--wr-accent-strong))",
-                  color: "var(--wr-accent-ink)",
-                  outlineColor: "var(--wr-accent)",
-                }}
-              >
-                {ctaLabel}
-              </button>
-              {submitted ? (
-                <AnnotationTag>
-                  lead-capture slot · flow wiring lands with the Growth Engine
-                </AnnotationTag>
+              <div className="flex flex-col gap-1.5">
+                <label
+                  htmlFor={`${section.id}-message`}
+                  className="text-xs uppercase tracking-[0.16em]"
+                  style={{ ...monoFont, color: "var(--wr-ink-faint)" }}
+                >
+                  What needs doing? (optional)
+                </label>
+                <textarea
+                  id={`${section.id}-message`}
+                  name="message"
+                  rows={3}
+                  className={FIELD_CLASS}
+                  style={{ borderColor: "var(--wr-line)", color: "var(--wr-ink)" }}
+                />
+              </div>
+              {/* Honeypot — hidden from humans, irresistible to bots */}
+              <div aria-hidden className="absolute left-[-9999px] top-auto h-px w-px overflow-hidden">
+                <label htmlFor={`${section.id}-website`}>Website</label>
+                <input
+                  id={`${section.id}-website`}
+                  name="website"
+                  type="text"
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
+              </div>
+              {serving && status === "sent" ? (
+                <p
+                  className="rounded-xl border px-4 py-4 text-center text-base font-medium"
+                  style={{
+                    borderColor: "var(--wr-ok)",
+                    color: "var(--wr-ok)",
+                  }}
+                  data-enquiry-sent
+                >
+                  Request received — expect a call back shortly.
+                </p>
               ) : (
-                slots.fields && (
-                  <p className="text-[11px] leading-relaxed" style={{ ...monoFont, color: "var(--wr-ink-faint)" }}>
-                    {slots.fields}
-                  </p>
-                )
+                <button
+                  type="submit"
+                  disabled={status === "sending"}
+                  className="mt-2 w-full rounded-xl px-6 py-4 text-base font-semibold transition-transform focus-visible:outline-2 focus-visible:outline-offset-4 active:scale-[0.99] disabled:opacity-60"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, var(--wr-accent), var(--wr-accent-strong))",
+                    color: "var(--wr-accent-ink)",
+                    outlineColor: "var(--wr-accent)",
+                  }}
+                >
+                  {status === "sending" ? "Sending…" : ctaLabel}
+                </button>
               )}
+              {serving && status === "failed" && (
+                <p className="text-sm" style={{ color: "var(--wr-ink-muted)" }}>
+                  That didn&apos;t send — please try again, or call instead.
+                </p>
+              )}
+              {!serving &&
+                (submitted ? (
+                  <AnnotationTag>
+                    lead-capture slot · live submission activates when the site
+                    is published
+                  </AnnotationTag>
+                ) : (
+                  slots.fields && (
+                    <p className="text-[11px] leading-relaxed" style={{ ...monoFont, color: "var(--wr-ink-faint)" }}>
+                      {slots.fields}
+                    </p>
+                  )
+                ))}
             </form>
           </Reveal>
         </div>

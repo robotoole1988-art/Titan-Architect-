@@ -54,6 +54,7 @@ ADR that supersedes the old one and update the old one's status.
 | [024](./adr-024-crm-three-level-views.md) | CRM v1 — three views of one record, and the approval gate | Accepted |
 | [025](./adr-025-market-intelligence.md) | Market Intelligence — CPL economics behind a provider seam | Accepted |
 | [026](./adr-026-selling-tools.md) | Selling tools — trade taxonomy, Deal Builder, ROI calculator | Accepted |
+| [027](./adr-027-publishing.md) | Publishing — multi-tenant serving, snapshots, enquiry capture | Accepted |
 
 ### Writing a new ADR
 

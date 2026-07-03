@@ -79,7 +79,9 @@ export type ActivityKind =
   | "stage_change"
   | "artifact_generated"
   | "build_created"
-  | "build_item_update";
+  | "build_item_update"
+  | "publication"
+  | "enquiry";
 
 export interface ActivityEntry {
   id: string;
@@ -149,10 +151,76 @@ export interface BuildRepository {
   ): Promise<Build>;
 }
 
+/** A published website: an immutable snapshot pinned to a blueprint version (ADR-027). */
+export type PublicationStatus = "live" | "superseded" | "unpublished";
+
+export interface Publication {
+  id: string;
+  businessId: string;
+  /** Stable public path segment, e.g. "summit-roofing-rescue". */
+  slug: string;
+  /** 1-based publication number per business. */
+  version: number;
+  /** The EXACT blueprint artifact version being served. Never mutated. */
+  blueprintVersion: number;
+  status: PublicationStatus;
+  createdAt: string;
+  statusChangedAt: string;
+}
+
+export interface PublicationRepository {
+  /**
+   * Create the next publication version (live), superseding the previous
+   * live one. The caller supplies the (stable) slug and the pinned blueprint
+   * version. Throws {@link BusinessNotFoundError}.
+   */
+  publish(
+    businessId: string,
+    blueprintVersion: number,
+    slug: string,
+  ): Promise<Publication>;
+  /** The live publication, or null when unpublished/never published. */
+  current(businessId: string): Promise<Publication | null>;
+  currentBySlug(slug: string): Promise<Publication | null>;
+  /** Custom-domain resolution via the site_domains mapping. */
+  currentByHostname(hostname: string): Promise<Publication | null>;
+  /** All versions, newest first. */
+  history(businessId: string): Promise<Publication[]>;
+  /** Take the live publication offline (live → unpublished). */
+  unpublish(businessId: string): Promise<void>;
+  /** Which business owns a slug (any status), for uniqueness checks. */
+  slugOwner(slug: string): Promise<string | null>;
+  /** Map a custom hostname to a business (table-driven, ADR-027). */
+  addDomain(hostname: string, businessId: string): Promise<void>;
+}
+
+/** A visitor enquiry from a PUBLISHED site — belongs to the account (ADR-027). */
+export interface Enquiry {
+  id: string;
+  businessId: string;
+  publicationId: string;
+  name: string;
+  contact: string;
+  message: string;
+  sourcePage: string;
+  createdAt: string;
+}
+
+export type EnquiryDraft = Omit<Enquiry, "id" | "createdAt">;
+
+export interface EnquiryRepository {
+  /** Throws {@link BusinessNotFoundError} for unknown businesses. */
+  create(draft: EnquiryDraft): Promise<Enquiry>;
+  /** Newest first. */
+  listForBusiness(businessId: string): Promise<Enquiry[]>;
+}
+
 /** Everything the spine persists, resolved together. */
 export interface BusinessSpineRepositories {
   businesses: BusinessRepository;
   artifacts: ArtifactRepository;
   activity: ActivityRepository;
   builds: BuildRepository;
+  publications: PublicationRepository;
+  enquiries: EnquiryRepository;
 }
