@@ -52,6 +52,7 @@ ADR that supersedes the old one and update the old one's status.
 | [022](./adr-022-website-renderer.md) | Website Renderer — the React realisation of the Blueprint | Accepted |
 | [023](./adr-023-business-spine-persistence.md) | Business Spine — durable persistence and the Business record | Accepted |
 | [024](./adr-024-crm-three-level-views.md) | CRM v1 — three views of one record, and the approval gate | Accepted |
+| [025](./adr-025-market-intelligence.md) | Market Intelligence — CPL economics behind a provider seam | Accepted |
 
 ### Writing a new ADR
 

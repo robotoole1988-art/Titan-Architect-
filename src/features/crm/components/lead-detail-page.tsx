@@ -9,7 +9,12 @@ import {
   stageLabel,
   type Business,
 } from "@/core/business";
+import {
+  resolveCplEstimate,
+  resolveMarketDataProvider,
+} from "@/core/market-intelligence";
 import { resolveTradePitch } from "@/core/pitch-intelligence";
+import { EstimateCard } from "@/features/market";
 import { addBusinessNote, moveBusinessStage } from "../api/actions";
 import { ActivityLog, CrmChrome, StageBadge } from "./crm-atoms";
 
@@ -132,7 +137,16 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
   const spine = await resolveBusinessSpine();
   const business = await spine.businesses.get(businessId);
   if (!business) notFound();
-  const entries = await spine.activity.list(businessId);
+  const [entries, marketProvider] = await Promise.all([
+    spine.activity.list(businessId),
+    resolveMarketDataProvider(),
+  ]);
+  // The founder pitches with this lead's own economics on screen (ADR-025).
+  const cplEstimate = await resolveCplEstimate(
+    marketProvider,
+    business.trade,
+    business.location,
+  );
 
   return (
     <CrmChrome active="Pipeline">
@@ -177,6 +191,7 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <div className="flex flex-col gap-6">
+          <EstimateCard estimate={cplEstimate} />
           <PitchPanel business={business} />
         </div>
 
