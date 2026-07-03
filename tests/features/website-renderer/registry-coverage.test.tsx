@@ -103,14 +103,30 @@ describe("registry coverage", () => {
     expect(() => renderPage(multi, { pageId: "page.nope" })).toThrowError(/page/i);
   });
 
-  it("labels unbuilt primitives honestly — never passes one off as crafted", () => {
+  it("premium/project sequences resolve to CRAFTED components — never the placeholder (ADR-029)", () => {
+    for (const blueprint of [drivewaysBlueprint]) {
+      for (const page of blueprint.pages.pages) {
+        for (const section of page.sections) {
+          expect(
+            resolvePrimitiveComponent(section.identifier),
+            `${section.identifier} resolves to the placeholder`,
+          ).toBe(PRIMITIVE_COMPONENT_MAP[section.identifier]);
+        }
+      }
+    }
     const html = renderToStaticMarkup(renderPage(drivewaysBlueprint));
-    // hero.cinematic-reveal has no crafted component yet.
-    expect(html).toContain('data-placeholder="hero.cinematic-reveal"');
+    expect(html).not.toContain("data-placeholder=");
+    expect(html).toContain('data-theme="titan-project"');
+  });
+
+  it("labels unbuilt primitives honestly — never passes one off as crafted", () => {
+    // The care set is next in line; its primitives still placeholder.
+    const html = renderToStaticMarkup(renderPage(dentalBlueprint));
+    expect(html).toContain('data-placeholder="story.gentle-welcome"');
     expect(html.toLowerCase()).toContain("crafted component in production");
     // Its registry name appears as the structural eyebrow.
     expect(html).toContain(
-      SECTION_PRIMITIVE_REGISTRY["hero.cinematic-reveal"].name,
+      SECTION_PRIMITIVE_REGISTRY["story.gentle-welcome"].name,
     );
   });
 });

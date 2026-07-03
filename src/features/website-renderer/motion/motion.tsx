@@ -31,12 +31,15 @@ export function Reveal({
   children,
   delay = 0,
   y = 28,
+  duration = 0.7,
   className,
   style,
 }: {
   children: ReactNode;
   delay?: number;
   y?: number;
+  /** Premium primitives reveal more slowly than emergency's urgency (ADR-029). */
+  duration?: number;
   className?: string;
   style?: CSSProperties;
 }) {
@@ -47,7 +50,7 @@ export function Reveal({
       initial={{ opacity: 0, y }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.7, delay, ease: EASE_OUT }}
+      transition={{ duration, delay, ease: EASE_OUT }}
     >
       {children}
     </motion.div>

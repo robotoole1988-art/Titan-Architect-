@@ -28,12 +28,15 @@ import {
   primitiveName,
 } from "./atoms";
 
+// Theme-aware scenes (ADR-029): BEFORE is the tired, desaturated ground;
+// AFTER carries the theme's scene tones (storm blues on emergency, golden
+// stone on premium) — the mood changes with the archetype, mechanics don't.
 const BEFORE_SCENE =
-  "linear-gradient(155deg, #241a1c 0%, #1a1416 40%, var(--wr-bg) 100%)";
+  "linear-gradient(155deg, color-mix(in oklab, var(--wr-ink) 20%, var(--wr-bg)) 0%, color-mix(in oklab, var(--wr-ink) 32%, var(--wr-bg)) 55%, var(--wr-bg) 100%)";
 const AFTER_SCENE =
-  "linear-gradient(155deg, #12253b 0%, var(--wr-storm-1) 45%, #0e2033 100%)";
+  "linear-gradient(155deg, var(--wr-storm-1) 0%, var(--wr-storm-2) 55%, color-mix(in oklab, var(--wr-storm-2) 70%, var(--wr-bg)) 100%)";
 
-function Comparison({ mediaDirection }: { mediaDirection?: string }) {
+export function Comparison({ mediaDirection }: { mediaDirection?: string }) {
   const [value, setValue] = useState(18);
   const containerRef = useRef<HTMLDivElement>(null);
   const inView = useInView(containerRef, { once: true, margin: "-25%" });
@@ -58,7 +61,7 @@ function Comparison({ mediaDirection }: { mediaDirection?: string }) {
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(90% 70% at 75% 20%, rgba(127,180,232,0.18), transparent 60%)",
+                "radial-gradient(90% 70% at 75% 20%, var(--wr-accent-glow), transparent 60%)",
             }}
           />
           <div className="absolute bottom-4 right-5">
@@ -82,7 +85,7 @@ function Comparison({ mediaDirection }: { mediaDirection?: string }) {
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(80% 60% at 25% 30%, rgba(180,83,60,0.16), transparent 60%)",
+                "radial-gradient(80% 60% at 25% 30%, color-mix(in oklab, var(--wr-ink) 14%, transparent), transparent 60%)",
             }}
           />
           <div className="absolute bottom-4 left-5">

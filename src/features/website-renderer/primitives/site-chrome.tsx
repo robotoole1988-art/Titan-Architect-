@@ -70,10 +70,18 @@ export function SiteHeader({
           <NavLinks nav={nav} />
         </div>
         {header.cta?.label && (
-          <SignalCTA href="#callback" size="sm">
-            <Phone className="size-3.5" aria-hidden />
-            {header.cta.label}
-          </SignalCTA>
+          // Long labels wrap into a clumsy pill at phone widths; the hero's
+          // own CTA carries conversion there. Short labels ("Call now") stay.
+          <span
+            className={
+              header.cta.label.length > 14 ? "hidden sm:inline-flex" : "inline-flex"
+            }
+          >
+            <SignalCTA href="#callback" size="sm">
+              <Phone className="size-3.5" aria-hidden />
+              {header.cta.label}
+            </SignalCTA>
+          </span>
         )}
       </Container>
     </header>
