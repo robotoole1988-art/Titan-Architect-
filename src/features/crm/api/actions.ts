@@ -8,6 +8,12 @@
 
 import { revalidatePath } from "next/cache";
 import {
+  generateCampaignPlan,
+  validateCampaignPlan,
+} from "@/core/ads-intelligence";
+import type { Deal } from "@/core/pricing";
+import type { WebsiteBlueprint } from "@/core/website-blueprint";
+import {
   ALL_LIFECYCLE_STATES,
   BusinessNotFoundError,
   buildItemLabel,
@@ -175,5 +181,75 @@ export async function saveOwnerEmail(
   await spine.businesses.updateDetails(businessId, {
     ownerEmail: ownerEmail.trim() || undefined,
   });
+  revalidateCrm(businessId);
+}
+
+
+/**
+ * Generate the Google Ads campaign plan (ADR-031): deterministic assembly
+ * from the deal, the live publication's pages, and the taxonomy. Lands the
+ * google_ads build item in review — the founder gate approves the DESIGN;
+ * execution stays manual.
+ */
+export async function generateAdsPlan(businessId: string): Promise<void> {
+  const spine = await resolveBusinessSpine();
+  const business = await spine.businesses.get(businessId);
+  if (!business) throw new BusinessNotFoundError(businessId);
+
+  const dealArtifact = await spine.artifacts.latest<Deal>(businessId, "deal");
+  if (!dealArtifact) {
+    throw new Error("No deal yet — the plan's budget comes from the deal's lead target × CPL.");
+  }
+  const publication = await spine.publications.current(businessId);
+  if (!publication) {
+    throw new Error("No live site yet — every ad group must land on a live page.");
+  }
+  const blueprint = await spine.artifacts.getVersion<WebsiteBlueprint>(
+    businessId,
+    "blueprint",
+    publication.blueprintVersion,
+  );
+  if (!blueprint) throw new Error("The publication's blueprint version is missing.");
+
+  const baseUrl = `${process.env.TITAN_APP_ORIGIN ?? "http://localhost:4100"}/sites/${publication.slug}`;
+  const pages = blueprint.payload.pages.pages.map((page) => ({
+    path: page.suggestedUrl ?? "/",
+    name: page.name,
+  }));
+  const deal = dealArtifact.payload;
+  const plan = generateCampaignPlan({
+    business: {
+      name: business.name,
+      trade: business.trade,
+      tradeId: business.tradeId,
+      location: business.location,
+      coverageAreas: business.coverageAreas,
+    },
+    deal: {
+      leadTargetPerMonth: deal.leadTargetPerMonth,
+      cplUsed: deal.cplUsed,
+      cplSource: deal.cplSource,
+      monthlyAdSpend: deal.monthlyAdSpend,
+    },
+    site: { baseUrl, pages },
+  });
+  const validation = validateCampaignPlan(plan, {
+    validUrls: pages.map((page) => `${baseUrl}${page.path === "/" ? "" : page.path}`),
+  });
+  if (!validation.valid) {
+    // The generator is deterministic — a violation here is a bug, said loudly.
+    throw new Error(`Generated plan failed validation:\n${validation.errors.join("\n")}`);
+  }
+  const artifact = await spine.artifacts.save({
+    businessId,
+    kind: "campaign_plan",
+    payload: plan,
+    meta: {
+      dealVersion: dealArtifact.version,
+      blueprintVersion: publication.blueprintVersion,
+      publicationVersion: publication.version,
+    },
+  });
+  await recordArtifactGenerated(spine, businessId, "campaign_plan", artifact.version);
   revalidateCrm(businessId);
 }

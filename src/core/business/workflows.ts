@@ -4,6 +4,7 @@
  * actions call these; they never contain Next.js concerns themselves.
  */
 
+import { type BuildItemKind } from "./build-model";
 import { isLostStage, stageLabel, type Business, type LifecycleStage } from "./model";
 import { BusinessNotFoundError,
   type Enquiry,
@@ -82,20 +83,27 @@ export async function recordArtifactGenerated(
     meta: { artifactKind: kind, version },
   });
 
-  if (kind !== "blueprint") return;
+  // Artifacts that stage a build item for the founder's gate (ADR-024/031):
+  // a blueprint stages the website; a campaign plan stages google_ads.
+  const STAGES: Partial<Record<ArtifactKind, { item: BuildItemKind; label: string }>> = {
+    blueprint: { item: "website", label: "Website" },
+    campaign_plan: { item: "google_ads", label: "Google Ads" },
+  };
+  const stage = STAGES[kind];
+  if (!stage) return;
   const build = await repos.builds.getForBusiness(businessId);
-  const website = build?.items.find((item) => item.kind === "website");
+  const item = build?.items.find((entry) => entry.kind === stage.item);
   if (
     build &&
-    website &&
-    (website.status === "queued" || website.status === "building")
+    item &&
+    (item.status === "queued" || item.status === "building")
   ) {
-    await repos.builds.setItemStatus(build.id, "website", "review");
+    await repos.builds.setItemStatus(build.id, stage.item, "review");
     await repos.activity.log({
       businessId,
       kind: "build_item_update",
-      message: `Website moved to review — blueprint v${version} ready`,
-      meta: { kind: "website", status: "review" },
+      message: `${stage.label} moved to review — ${kind} v${version} ready`,
+      meta: { kind: stage.item, status: "review" },
     });
   }
 }
