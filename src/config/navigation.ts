@@ -2,6 +2,7 @@ import {
   Bot,
   Briefcase,
   Handshake,
+  TrendingUp,
   Boxes,
   BookText,
   BrainCircuit,
@@ -65,6 +66,12 @@ export const primaryNavigation: NavSection[] = [
         href: "/crm",
         icon: Handshake,
         description: "The command centre: Pipeline, Build Queue, Accounts.",
+      },
+      {
+        title: "Market",
+        href: "/market",
+        icon: TrendingUp,
+        description: "Lead economics: CPL by trade and location.",
       },
       {
         title: "Experience Studio",
