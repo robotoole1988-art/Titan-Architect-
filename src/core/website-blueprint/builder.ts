@@ -662,6 +662,13 @@ export function buildWebsiteBlueprint(
       deviceOrder: ["mobile", "tablet", "desktop"],
       behaviour: strategy.mobileStrategy.principles,
     },
+    designSystem: {
+      id: "design-system",
+      confidence: strategyConfidence(
+        "Theme reference chosen deterministically from the trade archetype; renderers resolve it to a token set.",
+      ),
+      themeRef: `titan-${archetype}`,
+    },
     futureExpansion: {
       id: "future-expansion",
       confidence: strategyConfidence("Explicit growth points for later engine versions."),

@@ -20,6 +20,9 @@ rendering. The studio renders the
   section cards showing each registered primitive, its variant, intent,
   content slots, aspects, and the experience arc. Business context arrives via
   the URL (ADR-019 pattern) and degrades gracefully to the sample business.
+- The viewer's **Preview Website** action opens `/experience-studio/preview`
+  (the [Website Renderer](../website-renderer/) feature), carrying the same
+  URL context forward.
 
 ## Public API (`index.ts`)
 

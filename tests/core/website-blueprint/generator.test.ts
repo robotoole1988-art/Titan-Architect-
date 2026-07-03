@@ -162,6 +162,13 @@ describe("buildWebsiteBlueprint", () => {
     }
   });
 
+  it("emits a deterministic design-system theme reference per archetype", () => {
+    const emergency = buildWebsiteBlueprint({ strategy: strategyFor("emergency") });
+    const care = buildWebsiteBlueprint({ strategy: strategyFor("care") });
+    expect(emergency.designSystem?.themeRef).toBe("titan-emergency");
+    expect(care.designSystem?.themeRef).toBe("titan-care");
+  });
+
   it("carries the experience arc for the viewer", () => {
     const strategy = strategyFor("project");
     const blueprint = buildWebsiteBlueprint({ strategy });
