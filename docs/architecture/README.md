@@ -56,6 +56,7 @@ ADR that supersedes the old one and update the old one's status.
 | [026](./adr-026-selling-tools.md) | Selling tools — trade taxonomy, Deal Builder, ROI calculator | Accepted |
 | [027](./adr-027-publishing.md) | Publishing — multi-tenant serving, snapshots, enquiry capture | Accepted |
 | [028](./adr-028-multipage-area-schema.md) | Experience v2 — multi-page sites, area pages, schema markup | Accepted |
+| [029](./adr-029-premium-primitive-set.md) | Premium Primitive Set — Golden Hour theme, project/premium craft | Accepted |
 
 ### Writing a new ADR
 

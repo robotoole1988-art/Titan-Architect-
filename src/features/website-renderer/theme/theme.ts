@@ -68,6 +68,38 @@ const TITAN_EMERGENCY: RendererTheme = {
   },
 };
 
+/**
+ * "Golden Hour" — the project/premium archetypes (ADR-029). These trades sell
+ * aspiration: premium home transformation at golden hour. Warm limestone
+ * light (the first LIGHT theme), espresso editorial ink, generous whitespace,
+ * ONE confident burnt-bronze accent. Scene tones are golden-hour stone so
+ * every art-directed media frame carries the mood without photography.
+ */
+const TITAN_PREMIUM: RendererTheme = {
+  ref: "titan-premium",
+  name: "Golden Hour",
+  vars: {
+    ...SCALE_VARS,
+    "--wr-bg": "#f6f2ea",
+    "--wr-bg-raised": "#efe8db",
+    "--wr-storm-1": "#e8d5b5",
+    "--wr-storm-2": "#c9a97e",
+    "--wr-ink": "#241f18",
+    "--wr-ink-muted": "rgba(62, 52, 39, 0.72)",
+    "--wr-ink-faint": "rgba(62, 52, 39, 0.46)",
+    "--wr-line": "rgba(90, 74, 54, 0.15)",
+    "--wr-line-strong": "rgba(90, 74, 54, 0.3)",
+    "--wr-surface": "rgba(38, 30, 20, 0.04)",
+    "--wr-surface-raised": "rgba(38, 30, 20, 0.07)",
+    "--wr-accent": "#b4602f",
+    "--wr-accent-strong": "#9c4e22",
+    "--wr-accent-ink": "#fdf6ec",
+    "--wr-accent-glow": "rgba(180, 96, 47, 0.24)",
+    "--wr-calm": "#7d8b74",
+    "--wr-ok": "#3f7d54",
+  },
+};
+
 /** Restrained fallback for archetypes without a crafted theme yet. */
 const TITAN_DEFAULT: RendererTheme = {
   ref: "titan-general",
@@ -96,6 +128,10 @@ const TITAN_DEFAULT: RendererTheme = {
 
 const THEMES: Readonly<Record<string, RendererTheme>> = {
   [TITAN_EMERGENCY.ref]: TITAN_EMERGENCY,
+  [TITAN_PREMIUM.ref]: TITAN_PREMIUM,
+  // Two archetypes, one emotional register (ADR-029): project shares the
+  // Golden Hour mood, keeping its own ref for data-theme targeting.
+  "titan-project": { ...TITAN_PREMIUM, ref: "titan-project" },
   [TITAN_DEFAULT.ref]: TITAN_DEFAULT,
 };
 

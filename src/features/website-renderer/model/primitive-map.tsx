@@ -1,9 +1,9 @@
 /**
  * The PrimitiveComponentMap: registry primitive id → the hand-crafted React
  * component that realises it (ADR-022). The Renderer composes 1:1 from these
- * ids and never free-generates layout (ADR-021). v1 maps the emergency-
- * archetype homepage sequence plus the transformation arc; other primitives
- * fail loudly in development until their crafted components land.
+ * ids and never free-generates layout (ADR-021). The emergency (ADR-022) and
+ * premium/project (ADR-029) sets are crafted; the care/recurring primitives
+ * resolve to the labelled placeholder until their crafted components land.
  */
 
 import {
@@ -11,6 +11,9 @@ import {
   getSectionPrimitive,
 } from "@/core/website-blueprint";
 import { ConversionEmergencyCta } from "../primitives/conversion-emergency-cta";
+import { GalleryImmersiveGrid } from "../primitives/gallery-immersive-grid";
+import { HeroCinematicReveal } from "../primitives/hero-cinematic-reveal";
+import { ProofPortfolioShowcase } from "../primitives/proof-portfolio-showcase";
 import { ConversionLeadCapture } from "../primitives/conversion-lead-capture";
 import { FaqReassuranceAccordion } from "../primitives/faq-reassurance-accordion";
 import { HeroRapidResponse } from "../primitives/hero-rapid-response";
@@ -25,6 +28,9 @@ import type { PrimitiveComponent, PrimitiveComponentMap } from "./types";
 
 export const PRIMITIVE_COMPONENT_MAP: PrimitiveComponentMap = {
   "hero.rapid-response": HeroRapidResponse,
+  "hero.cinematic-reveal": HeroCinematicReveal,
+  "proof.portfolio-showcase": ProofPortfolioShowcase,
+  "gallery.immersive-grid": GalleryImmersiveGrid,
   "conversion.emergency-cta": ConversionEmergencyCta,
   "conversion.lead-capture": ConversionLeadCapture,
   "trust.review-wall": TrustReviewWall,

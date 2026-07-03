@@ -21,6 +21,7 @@ import {
   type ExperienceStrategy,
   type TradeArchetype,
 } from "@/core/experience-strategy";
+import { getTradeDefinition, matchTradeId } from "@/core/trade-taxonomy";
 import type {
   AnimationBlueprint,
   CallToActionBlueprint,
@@ -209,11 +210,19 @@ function contentFor(
         `portfolio-direction: ${mediaDirection.photographyStyle}`,
         `captions-direction: Caption each piece with the outcome, not the task — reinforce "${storytelling.keyMessages[0]}".`,
       ];
-    case "services.interactive-explorer":
+    case "services.interactive-explorer": {
+      // The explorable offer is the trade's REAL services/surfaces from the
+      // canonical taxonomy (ADR-026/029) — what customers actually choose
+      // between — falling back to the SEO pillars for unclassified trades.
+      const tradeId = matchTradeId(meta.trade);
+      const services = (tradeId && getTradeDefinition(tradeId)?.services) || [];
+      const anchors =
+        services.length >= 2 ? services : seoStrategy.contentPillars;
       return [
-        `services: The core ${trade} services in ${meta.location}, organised around the content pillars: ${seoStrategy.contentPillars.join(" · ")}.`,
+        `services: The core ${trade} services in ${meta.location}, organised around the surfaces and services customers choose: ${anchors.join(" · ")}.`,
         `service-explainers: Explain each service through the key messages — ${storytelling.keyMessages.join(" · ")}.`,
       ];
+    }
     case "conversion.emergency-cta":
       return [
         `cta-label: ${conversionStrategy.primaryCta}`,

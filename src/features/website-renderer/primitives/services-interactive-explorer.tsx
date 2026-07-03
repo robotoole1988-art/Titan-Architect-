@@ -3,15 +3,17 @@
  *
  * Cards built from the blueprint's key-message explainers with the content
  * pillars as supporting anchors; every card is a live route to help (#callback)
- * with decisive hover/focus motion. Variants: "card-grid" / "tabbed" /
- * "guided-accordion" (v1 renders all as the crafted card grid — one crafted
- * implementation, variant recorded for the blueprint's intent).
+ * with decisive hover/focus motion. Variants: "card-grid" / "guided-accordion"
+ * render the crafted card grid; "tabbed" is the SURFACE SELECTOR (ADR-029) —
+ * visitors explore surfaces/materials with texture-suggestive panels and a
+ * pricing-guide CTA per surface.
  */
 
 import { ArrowUpRight } from "lucide-react";
 import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal, Stagger, StaggerItem } from "../motion/motion";
 import { afterFirstDash, splitList } from "../model/slots";
+import { SurfaceSelector } from "./services-surface-selector";
 import {
   Container,
   CopyChip,
@@ -42,10 +44,25 @@ function explainers(direction: string | undefined): string[] {
   return splitList(afterFirstDash(direction));
 }
 
-export function ServicesInteractiveExplorer({ section, slots }: PrimitiveSectionProps) {
+export function ServicesInteractiveExplorer({ section, variant, slots }: PrimitiveSectionProps) {
   const heading = leadSentence(slots.services);
   const cards = explainers(slots["service-explainers"]);
   const anchors = pillars(slots.services);
+
+  // The surface selector needs surfaces to explore; with fewer than two it
+  // degrades gracefully to the crafted card grid.
+  if (variant === "tabbed" && anchors.length >= 2) {
+    return (
+      <SectionShell section={section}>
+        <SurfaceSelector
+          sectionId={section.id}
+          heading={heading}
+          surfaces={anchors}
+          explainers={cards}
+        />
+      </SectionShell>
+    );
+  }
 
   return (
     <SectionShell section={section}>
