@@ -33,6 +33,14 @@ export interface BusinessRepository {
     stage: LifecycleStage,
     reason?: string,
   ): Promise<Business>;
+  /**
+   * Update notification/measurement settings (ADR-030). Undefined clears.
+   * Throws {@link BusinessNotFoundError}.
+   */
+  updateDetails(
+    id: string,
+    patch: Partial<Pick<BusinessDraft, "ownerEmail" | "ga4MeasurementId">>,
+  ): Promise<Business>;
   /** Delete the business and (cascade) its artifacts. */
   remove(id: string): Promise<void>;
 }
@@ -194,6 +202,20 @@ export interface PublicationRepository {
   addDomain(hostname: string, businessId: string): Promise<void>;
 }
 
+/**
+ * The speed-to-lead lifecycle (ADR-030): forward-only.
+ * new → seen → contacted → qualified | disqualified.
+ */
+export const ENQUIRY_STATUSES = [
+  "new",
+  "seen",
+  "contacted",
+  "qualified",
+  "disqualified",
+] as const;
+
+export type EnquiryStatus = (typeof ENQUIRY_STATUSES)[number];
+
 /** A visitor enquiry from a PUBLISHED site — belongs to the account (ADR-027). */
 export interface Enquiry {
   id: string;
@@ -204,15 +226,59 @@ export interface Enquiry {
   message: string;
   sourcePage: string;
   createdAt: string;
+  /** Lifecycle state (ADR-030). New enquiries are born "new". */
+  status: EnquiryStatus;
+  seenAt?: string;
+  /** First contact — the speed-to-lead timestamp. */
+  contactedAt?: string;
+  /** When the enquiry was qualified/disqualified. */
+  outcomeAt?: string;
 }
 
-export type EnquiryDraft = Omit<Enquiry, "id" | "createdAt">;
+export type EnquiryDraft = Omit<
+  Enquiry,
+  "id" | "createdAt" | "status" | "seenAt" | "contactedAt" | "outcomeAt"
+>;
 
 export interface EnquiryRepository {
   /** Throws {@link BusinessNotFoundError} for unknown businesses. */
   create(draft: EnquiryDraft): Promise<Enquiry>;
+  get(id: string): Promise<Enquiry | null>;
+  /**
+   * Set the lifecycle status, stamping the matching timestamp field
+   * (seen→seenAt, contacted→contactedAt, outcome→outcomeAt). Transition
+   * RULES live in the workflow — the repository stores.
+   */
+  setStatus(id: string, status: EnquiryStatus, atIso: string): Promise<Enquiry>;
   /** Newest first. */
   listForBusiness(businessId: string): Promise<Enquiry[]>;
+  /** Newest first across ALL businesses — the in-app inbox (ADR-030). */
+  listRecent(limit: number): Promise<Enquiry[]>;
+}
+
+/** First-party measurement events (ADR-030). */
+export type MetricEventKind = "view" | "form_start" | "form_submit";
+
+/** One daily aggregate row: business × path × date. Never per-visitor. */
+export interface SiteMetricRow {
+  businessId: string;
+  path: string;
+  /** ISO date, e.g. "2026-07-09". */
+  date: string;
+  views: number;
+  formStarts: number;
+  formSubmits: number;
+}
+
+export interface MetricsRepository {
+  /** Increment one event counter. Throws {@link BusinessNotFoundError}. */
+  record(
+    businessId: string,
+    path: string,
+    kind: MetricEventKind,
+    date: string,
+  ): Promise<void>;
+  listForBusiness(businessId: string): Promise<SiteMetricRow[]>;
 }
 
 /** Everything the spine persists, resolved together. */
@@ -223,4 +289,5 @@ export interface BusinessSpineRepositories {
   builds: BuildRepository;
   publications: PublicationRepository;
   enquiries: EnquiryRepository;
+  metrics: MetricsRepository;
 }

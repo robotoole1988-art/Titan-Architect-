@@ -63,7 +63,8 @@ strategies, and blueprints durable (synced across devices, backed up):
 1. Create a free project at [supabase.com](https://supabase.com) (any region).
 2. Open the project's **SQL Editor** and run each file in
    [`supabase/migrations/`](./supabase/migrations/) once, oldest first
-   (business spine → CRM → selling tools → publishing).
+   (business spine → CRM → selling tools → publishing → experience v2 →
+   lead flow).
 3. Copy `.env.example` to `.env.local` and fill in both values from
    **Project Settings → API**:
    - `SUPABASE_URL` — the Project URL

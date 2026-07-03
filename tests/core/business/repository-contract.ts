@@ -418,6 +418,82 @@ export function runRepositoryContract(
       });
     });
 
+    it("enquiries carry the speed-to-lead lifecycle (ADR-030)", async () => {
+      await withRepos(async ({ businesses, publications, enquiries }) => {
+        const business = await businesses.create(DRAFT);
+        const publication = await publications.publish(business.id, 1, "lead-flow-co");
+        const enquiry = await enquiries.create({
+          businessId: business.id,
+          publicationId: publication.id,
+          name: "Sandra",
+          contact: "07700 1",
+          message: "quote please",
+          sourcePage: "/sale",
+        });
+        // Born new, no lifecycle timestamps yet.
+        expect(enquiry.status).toBe("new");
+        expect(enquiry.seenAt).toBeUndefined();
+        // seen → timestamps land on the right fields.
+        const seen = await enquiries.setStatus(enquiry.id, "seen", "2026-07-09T10:00:00.000Z");
+        expect(seen.status).toBe("seen");
+        expect(seen.seenAt).toBe("2026-07-09T10:00:00.000Z");
+        const contacted = await enquiries.setStatus(enquiry.id, "contacted", "2026-07-09T10:05:00.000Z");
+        expect(contacted.contactedAt).toBe("2026-07-09T10:05:00.000Z");
+        expect(contacted.seenAt).toBe("2026-07-09T10:00:00.000Z");
+        const won = await enquiries.setStatus(enquiry.id, "qualified", "2026-07-09T11:00:00.000Z");
+        expect(won.status).toBe("qualified");
+        expect(won.outcomeAt).toBe("2026-07-09T11:00:00.000Z");
+        // get + recent listing across businesses (the in-app inbox).
+        expect((await enquiries.get(enquiry.id))?.status).toBe("qualified");
+        const recent = await enquiries.listRecent(10);
+        expect(recent.some((entry) => entry.id === enquiry.id)).toBe(true);
+      });
+    });
+
+    it("aggregates site metrics daily per business × path × event (ADR-030)", async () => {
+      await withRepos(async ({ businesses, metrics }) => {
+        const business = await businesses.create(DRAFT);
+        await metrics.record(business.id, "/", "view", "2026-07-09");
+        await metrics.record(business.id, "/", "view", "2026-07-09");
+        await metrics.record(business.id, "/", "form_start", "2026-07-09");
+        await metrics.record(business.id, "/sale", "view", "2026-07-09");
+        await metrics.record(business.id, "/sale", "form_submit", "2026-07-09");
+        await metrics.record(business.id, "/", "view", "2026-07-10");
+        const rows = await metrics.listForBusiness(business.id);
+        const homeDay1 = rows.find((row) => row.path === "/" && row.date === "2026-07-09");
+        expect(homeDay1).toMatchObject({ views: 2, formStarts: 1, formSubmits: 0 });
+        const saleDay1 = rows.find((row) => row.path === "/sale" && row.date === "2026-07-09");
+        expect(saleDay1).toMatchObject({ views: 1, formSubmits: 1 });
+        expect(rows.find((row) => row.date === "2026-07-10")?.views).toBe(1);
+        // Unknown business: fail loudly like every other repository.
+        await expect(
+          metrics.record("missing", "/", "view", "2026-07-09"),
+        ).rejects.toThrow(BusinessNotFoundError);
+      });
+    });
+
+    it("round-trips ownerEmail and ga4MeasurementId (ADR-030)", async () => {
+      await withRepos(async ({ businesses }) => {
+        const created = await businesses.create({
+          ...DRAFT,
+          ownerEmail: "owner@kerbside.example",
+          ga4MeasurementId: "G-TEST123",
+        });
+        expect(created.ownerEmail).toBe("owner@kerbside.example");
+        expect((await businesses.get(created.id))?.ga4MeasurementId).toBe("G-TEST123");
+        // updateDetails patches and clears.
+        const patched = await businesses.updateDetails(created.id, {
+          ownerEmail: "new@kerbside.example",
+        });
+        expect(patched.ownerEmail).toBe("new@kerbside.example");
+        expect(patched.ga4MeasurementId).toBe("G-TEST123");
+        const cleared = await businesses.updateDetails(created.id, {
+          ownerEmail: undefined,
+        });
+        expect(cleared.ownerEmail).toBeUndefined();
+      });
+    });
+
     it("captures enquiries against the account, newest first, cascading", async () => {
       await withRepos(async ({ businesses, publications, enquiries }) => {
         const business = await businesses.create(DRAFT);

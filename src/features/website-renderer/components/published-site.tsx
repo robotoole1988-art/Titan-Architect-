@@ -8,6 +8,7 @@ import {
 } from "@/core/website-blueprint";
 import { renderPage } from "../model/render-page";
 import { rendererFontClass } from "../theme/fonts";
+import { SiteMetricsBeacon } from "./site-metrics-beacon";
 
 /**
  * The PUBLISHED site (ADR-027/028): the preview pipeline minus chrome. One
@@ -22,6 +23,8 @@ export interface ResolvedPublication {
   /** The specific page of the collection this request resolves to. */
   page: PageBlueprint;
   businessName: string;
+  /** Optional per-site GA4 hook (ADR-030); absent → no script injected. */
+  ga4MeasurementId?: string;
   /** How the site is being served — drives internal link hrefs. */
   servingMode: "slug" | "hostname";
 }
@@ -74,6 +77,9 @@ export async function resolvePublishedSite(
     blueprint: artifact.payload,
     page,
     businessName: business.name,
+    ...(business.ga4MeasurementId
+      ? { ga4MeasurementId: business.ga4MeasurementId }
+      : {}),
     servingMode: "slug" in lookup ? "slug" : "hostname",
   };
 }
@@ -124,6 +130,25 @@ export function PublishedSitePage({
 
   return (
     <div className={rendererFontClass}>
+      {/* First-party view beacon (ADR-030) — published pages only. */}
+      <SiteMetricsBeacon
+        slug={publication.slug}
+        path={page.suggestedUrl ?? "/"}
+      />
+      {resolved.ga4MeasurementId && (
+        <>
+          {/* Optional per-site GA4 hook — off unless the founder set an id. */}
+          <script
+            async
+            src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(resolved.ga4MeasurementId)}`}
+          />
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config',${JSON.stringify(resolved.ga4MeasurementId)});`,
+            }}
+          />
+        </>
+      )}
       {jsonLd.map((item) => (
         <script
           key={String(item["@type"])}

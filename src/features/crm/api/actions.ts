@@ -11,6 +11,7 @@ import {
   ALL_LIFECYCLE_STATES,
   BusinessNotFoundError,
   buildItemLabel,
+  markEnquiryStatus,
   publishWebsite,
   recordArtifactGenerated,
   resolveBusinessSpine,
@@ -151,5 +152,28 @@ export async function setBuildItemStatus(
 export async function unpublishBusinessSite(businessId: string): Promise<void> {
   const spine = await resolveBusinessSpine();
   await unpublishWebsite(spine, businessId);
+  revalidateCrm(businessId);
+}
+
+
+/** Move an enquiry through the speed-to-lead lifecycle (ADR-030). */
+export async function markEnquiry(
+  enquiryId: string,
+  status: "seen" | "contacted" | "qualified" | "disqualified",
+): Promise<void> {
+  const spine = await resolveBusinessSpine();
+  const enquiry = await markEnquiryStatus(spine, enquiryId, status);
+  revalidateCrm(enquiry.businessId);
+}
+
+/** Where enquiry notifications for this account go (ADR-030). */
+export async function saveOwnerEmail(
+  businessId: string,
+  ownerEmail: string,
+): Promise<void> {
+  const spine = await resolveBusinessSpine();
+  await spine.businesses.updateDetails(businessId, {
+    ownerEmail: ownerEmail.trim() || undefined,
+  });
   revalidateCrm(businessId);
 }

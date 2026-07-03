@@ -57,6 +57,7 @@ ADR that supersedes the old one and update the old one's status.
 | [027](./adr-027-publishing.md) | Publishing — multi-tenant serving, snapshots, enquiry capture | Accepted |
 | [028](./adr-028-multipage-area-schema.md) | Experience v2 — multi-page sites, area pages, schema markup | Accepted |
 | [029](./adr-029-premium-primitive-set.md) | Premium Primitive Set — Golden Hour theme, project/premium craft | Accepted |
+| [030](./adr-030-lead-flow.md) | Lead Flow v1 — instant notifications, speed-to-lead, measurement | Accepted |
 
 ### Writing a new ADR
 

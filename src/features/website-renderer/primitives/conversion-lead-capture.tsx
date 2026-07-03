@@ -15,6 +15,7 @@
 import { useState, type FormEvent } from "react";
 import { Phone } from "lucide-react";
 import type { PrimitiveSectionProps } from "../model/types";
+import { sendSiteMetric, siteRelativePath } from "../components/site-metrics-beacon";
 import { Reveal } from "../motion/motion";
 import {
   AnnotationTag,
@@ -45,8 +46,16 @@ export function ConversionLeadCapture({
     "idle",
   );
   const [submitted, setSubmitted] = useState(false);
+  const [started, setStarted] = useState(false);
   const objection = extractQuote(slots.objective);
   const ctaLabel = slots["cta-label"] ?? "";
+
+  // Measurement (ADR-030): form_start once on first interaction, published only.
+  function onFormInteract() {
+    if (!serving || started) return;
+    setStarted(true);
+    sendSiteMetric(serving.slug, siteRelativePath(serving.slug, window.location.pathname), "form_start");
+  }
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -71,6 +80,9 @@ export function ConversionLeadCapture({
         }),
       });
       setStatus(response.ok ? "sent" : "failed");
+      if (response.ok) {
+        sendSiteMetric(serving.slug, siteRelativePath(serving.slug, window.location.pathname), "form_submit");
+      }
     } catch {
       setStatus("failed");
     }
@@ -109,7 +121,7 @@ export function ConversionLeadCapture({
 
           <Reveal delay={0.08}>
             <form
-              onSubmit={onSubmit}
+              onSubmit={onSubmit} onFocusCapture={onFormInteract}
               className="flex flex-col gap-4 rounded-[var(--wr-radius-lg)] border p-7 sm:p-9"
               style={{
                 borderColor: "var(--wr-line-strong)",

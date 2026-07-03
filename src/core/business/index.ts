@@ -62,7 +62,12 @@ export type {
   Enquiry,
   EnquiryDraft,
   EnquiryRepository,
+  EnquiryStatus,
+  MetricEventKind,
+  MetricsRepository,
+  SiteMetricRow,
 } from "./repository";
+export { ENQUIRY_STATUSES } from "./repository";
 
 export {
   transitionBusinessStage,
@@ -71,6 +76,10 @@ export {
   unpublishWebsite,
   uniqueSlugFor,
   processEnquiry,
+  markEnquiryStatus,
+  responseTimeMs,
+  averageResponseTimeMs,
+  formatResponseTime,
 } from "./workflows";
 export type { EnquiryInput, EnquiryOutcome } from "./workflows";
 

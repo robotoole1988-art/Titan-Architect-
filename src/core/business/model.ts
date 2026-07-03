@@ -91,6 +91,10 @@ export interface BusinessDraft {
    */
   coverageAreas?: ReadonlyArray<string>;
   contact?: BusinessContact;
+  /** Where enquiry notifications go (ADR-030); contact email is the fallback. */
+  ownerEmail?: string;
+  /** Optional per-site GA4 hook (ADR-030) — absent by default, no script. */
+  ga4MeasurementId?: string;
   services?: string;
   targetCustomer?: string;
   goal?: string;
