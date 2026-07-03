@@ -22,19 +22,42 @@ export const LIFECYCLE_STAGES = [
   "account",
 ] as const;
 
-export type LifecycleStage = (typeof LIFECYCLE_STAGES)[number];
+export type ProgressStage = (typeof LIFECYCLE_STAGES)[number];
 
-/** Position of a stage in the lifecycle (0-based). */
-export function stageIndex(stage: LifecycleStage): number {
-  return LIFECYCLE_STAGES.indexOf(stage);
+/**
+ * Lost states (ADR-024): off the progression ladder, terminal but always
+ * reopenable — a lost business can be moved back to any pipeline stage.
+ */
+export const LOST_STAGES = ["not_interested", "not_going_ahead"] as const;
+
+export type LostStage = (typeof LOST_STAGES)[number];
+
+/** Every state a Business can be in: the ladder plus the lost states. */
+export const ALL_LIFECYCLE_STATES = [...LIFECYCLE_STAGES, ...LOST_STAGES] as const;
+
+export type LifecycleStage = (typeof ALL_LIFECYCLE_STATES)[number];
+
+export function isLostStage(stage: LifecycleStage): stage is LostStage {
+  return (LOST_STAGES as readonly string[]).includes(stage);
 }
 
-/** Has `stage` reached (or passed) `threshold`? */
+/** Position of a stage on the progression ladder (-1 for lost states). */
+export function stageIndex(stage: LifecycleStage): number {
+  return (LIFECYCLE_STAGES as readonly string[]).indexOf(stage);
+}
+
+/** Has `stage` reached (or passed) `threshold`? Lost states never have. */
 export function isStageAtLeast(
   stage: LifecycleStage,
   threshold: LifecycleStage,
 ): boolean {
-  return stageIndex(stage) >= stageIndex(threshold);
+  const index = stageIndex(stage);
+  return index !== -1 && index >= stageIndex(threshold);
+}
+
+/** Human label ("not_interested" → "not interested"). */
+export function stageLabel(stage: LifecycleStage): string {
+  return stage.replaceAll("_", " ");
 }
 
 /** One recorded lifecycle transition. */
@@ -42,6 +65,8 @@ export interface StageTransition {
   stage: LifecycleStage;
   /** ISO-8601 timestamp. */
   enteredAt: string;
+  /** Optional context — e.g. why a business was lost. */
+  reason?: string;
 }
 
 export interface BusinessContact {

@@ -6,6 +6,8 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  BUILD_ITEM_KINDS,
+  BuildTransitionError,
   BusinessNotFoundError,
   type BusinessDraft,
   type BusinessSpineRepositories,
@@ -179,6 +181,130 @@ export function runRepositoryContract(
         await businesses.remove(business.id);
         expect(await businesses.get(business.id)).toBeNull();
         expect(await artifacts.latest(business.id, "strategy")).toBeNull();
+      });
+    });
+
+    it("records a lost stage with its reason, and reopens", async () => {
+      await withRepos(async ({ businesses }) => {
+        const created = await businesses.create(DRAFT);
+        const lost = await businesses.updateStage(
+          created.id,
+          "not_interested",
+          "Budget spent for the year",
+        );
+        expect(lost.stage).toBe("not_interested");
+        expect(lost.stageHistory.at(-1)?.reason).toBe("Budget spent for the year");
+
+        const reopened = await businesses.updateStage(created.id, "lead");
+        expect(reopened.stage).toBe("lead");
+        expect(reopened.stageHistory).toHaveLength(3);
+      });
+    });
+
+    it("logs activity newest-first and cascades on remove", async () => {
+      await withRepos(async ({ businesses, activity }) => {
+        const business = await businesses.create(DRAFT);
+        await activity.log({
+          businessId: business.id,
+          kind: "note",
+          message: "Spoke to Dave — call back Tuesday",
+        });
+        await activity.log({
+          businessId: business.id,
+          kind: "stage_change",
+          message: "Moved to qualified",
+          meta: { stage: "qualified" },
+        });
+
+        const entries = await activity.list(business.id);
+        expect(entries).toHaveLength(2);
+        expect(entries[0].kind).toBe("stage_change");
+        expect(entries[0].meta?.stage).toBe("qualified");
+        expect(entries[1].message).toContain("Dave");
+
+        await expect(
+          activity.log({ businessId: "nope", kind: "note", message: "x" }),
+        ).rejects.toBeInstanceOf(BusinessNotFoundError);
+
+        await businesses.remove(business.id);
+        expect(await activity.list(business.id)).toEqual([]);
+      });
+    });
+
+    it("creates a build exactly once per business, seeded with every item", async () => {
+      await withRepos(async ({ businesses, builds }) => {
+        const business = await businesses.create(DRAFT);
+        const first = await builds.createForBusiness(business.id);
+        expect(first.created).toBe(true);
+        expect(first.build.items.map((item) => item.kind)).toEqual([
+          ...BUILD_ITEM_KINDS,
+        ]);
+        expect(first.build.items.every((item) => item.status === "queued")).toBe(true);
+        const website = first.build.items.find((item) => item.kind === "website");
+        expect(website?.manual).toBe(false);
+        expect(
+          first.build.items
+            .filter((item) => item.kind !== "website")
+            .every((item) => item.manual),
+        ).toBe(true);
+
+        const second = await builds.createForBusiness(business.id);
+        expect(second.created).toBe(false);
+        expect(second.build.id).toBe(first.build.id);
+
+        await expect(builds.createForBusiness("nope")).rejects.toBeInstanceOf(
+          BusinessNotFoundError,
+        );
+      });
+    });
+
+    it("enforces the approval gate on build item transitions", async () => {
+      await withRepos(async ({ businesses, builds }) => {
+        const business = await businesses.create(DRAFT);
+        const { build } = await builds.createForBusiness(business.id);
+
+        // Nothing goes live without approval, and approval only from review.
+        await expect(
+          builds.setItemStatus(build.id, "website", "live"),
+        ).rejects.toBeInstanceOf(BuildTransitionError);
+        await expect(
+          builds.setItemStatus(build.id, "website", "approved"),
+        ).rejects.toBeInstanceOf(BuildTransitionError);
+
+        // The lawful path: queued → review → approved → live.
+        await builds.setItemStatus(build.id, "website", "review");
+        const approved = await builds.setItemStatus(build.id, "website", "approved");
+        expect(
+          approved.items.find((item) => item.kind === "website")?.status,
+        ).toBe("approved");
+        const live = await builds.setItemStatus(build.id, "website", "live");
+        expect(live.items.find((item) => item.kind === "website")?.status).toBe("live");
+      });
+    });
+
+    it("sends an item back from review with a note", async () => {
+      await withRepos(async ({ businesses, builds }) => {
+        const business = await businesses.create(DRAFT);
+        const { build } = await builds.createForBusiness(business.id);
+        await builds.setItemStatus(build.id, "seo", "review");
+        const sentBack = await builds.setItemStatus(
+          build.id,
+          "seo",
+          "building",
+          "Meta descriptions read as filler — tighten them",
+        );
+        const seo = sentBack.items.find((item) => item.kind === "seo");
+        expect(seo?.status).toBe("building");
+        expect(seo?.note).toContain("tighten");
+      });
+    });
+
+    it("removing a business cascades to its build and activity", async () => {
+      await withRepos(async ({ businesses, builds }) => {
+        const business = await businesses.create(DRAFT);
+        await builds.createForBusiness(business.id);
+        await businesses.remove(business.id);
+        expect(await builds.getForBusiness(business.id)).toBeNull();
       });
     });
   });

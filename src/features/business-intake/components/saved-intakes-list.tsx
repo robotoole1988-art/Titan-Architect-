@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Route } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { resolveBusinessSpine, type Business } from "@/core/business";
+import { resolveBusinessSpine, stageLabel, type Business } from "@/core/business";
 import { removeBusiness } from "../api/actions";
 import { formatDate } from "../model/format";
 
@@ -25,7 +25,7 @@ function BusinessRow({ business }: { business: Business }) {
           </p>
         </div>
         <span className="inline-flex shrink-0 items-center rounded-full border border-emerald-400/25 bg-emerald-400/10 px-2 py-0.5 text-[11px] capitalize text-emerald-300/90">
-          {business.stage}
+          {stageLabel(business.stage)}
         </span>
       </div>
       <div className="flex flex-wrap items-center gap-2">

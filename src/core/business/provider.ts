@@ -19,7 +19,14 @@ export function resolvePersistenceBackend(
   return env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY ? "supabase" : "memory";
 }
 
-const GLOBAL_KEY = Symbol.for("titan.business-spine");
+/**
+ * Bump when BusinessSpineRepositories gains a repository: the version is part
+ * of the cache key, so a dev server that survived the upgrade via HMR cannot
+ * serve a stale, incomplete spine.
+ */
+const SPINE_SHAPE_VERSION = 2;
+
+const GLOBAL_KEY = Symbol.for(`titan.business-spine.v${SPINE_SHAPE_VERSION}`);
 
 interface SpineGlobal {
   backend: PersistenceBackend;

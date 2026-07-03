@@ -9,8 +9,9 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
-  LIFECYCLE_STAGES,
+  ALL_LIFECYCLE_STATES,
   resolveBusinessSpine,
+  stageLabel,
   type ArtifactRecord,
   type Business,
 } from "@/core/business";
@@ -217,9 +218,9 @@ export async function BusinessJourneyPage({ businessId }: { businessId: string }
             defaultValue={business.stage}
             className="h-8 rounded-lg border border-border/60 bg-background px-2 text-sm capitalize"
           >
-            {LIFECYCLE_STAGES.map((stage) => (
+            {ALL_LIFECYCLE_STATES.map((stage) => (
               <option key={stage} value={stage} className="capitalize">
-                {stage}
+                {stageLabel(stage)}
               </option>
             ))}
           </select>
