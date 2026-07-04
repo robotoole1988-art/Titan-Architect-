@@ -32,3 +32,26 @@ export type {
   RenderPageOptions,
   UnmappedPrimitiveBehaviour,
 } from "./model/types";
+
+// Morph Lab (ADR-035): the Tier-3 choreography core + device tiering.
+// Pure maths — the heavy three.js scene loads ONLY via the lab's dynamic
+// import, never through this index.
+export {
+  BEAT_ORDER,
+  beatAt,
+  buildStormVortex,
+  particleState,
+  stormLightAt,
+  vortexParams,
+} from "./morph-lab/choreography";
+export type {
+  MorphBeat,
+  ParticleState,
+  StormLight,
+  VortexIntensity,
+  VortexParams,
+  VortexParticle,
+} from "./morph-lab/choreography";
+export { classifyGpuTier, detectDeviceTier } from "./webgl/device-tier";
+export type { DeviceCapabilities, DeviceTier } from "./webgl/device-tier";
+export { MorphLabPage } from "./morph-lab/lab-page";
