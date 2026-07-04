@@ -242,8 +242,13 @@
 | Moment | Status |
 | --- | --- |
 | Everything above, unless listed below | Concept |
-| Roofing — Storm Cloud → New Roof | **v1 — next build** |
-| Roofing — Tile Cascade | **v1 — next build** |
-| Driveways — Gravel → Resin | **v1 — next build** |
-| Driveways — Headlight Sweep | **v1 — next build** |
-| The Magic Wipe | **Flagship interactive primitive — v1 candidate** |
+| Roofing — Storm Cloud → New Roof | **SHIPPED — ADR-032** (emergency-archetype homepage hero) |
+| Roofing — Tile Cascade | v1 — next build |
+| Driveways — Gravel → Resin | **SHIPPED — ADR-032** (project/premium homepage hero) |
+| Driveways — Headlight Sweep | v1 — next build |
+| The Magic Wipe | Flagship interactive primitive — v1 candidate |
+
+The morph engine lives in `src/features/website-renderer/moments/`
+(ADR-032): selection is stamped by the blueprint builder from the catalogue
+— trade AND archetype gated, one moment per site, reduced-motion designed
+stills, Lighthouse re-verified ≥90 with the morphs live.

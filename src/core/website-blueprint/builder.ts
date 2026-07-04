@@ -725,6 +725,26 @@ function enforceAreaDifferentiation(
   }
 }
 
+/**
+ * Signature-moment selection (ADR-032, the SIGNATURE-MOMENTS.md laws):
+ * ONE per site — the homepage hero, the opening act. Catalogue ids only;
+ * trades without a crafted moment get none. Each moment is also gated to
+ * the archetypes whose ATMOSPHERE it was designed for — a storm morph over
+ * a golden-hour sky would break Act I ("every moment tells the trade's
+ * story"). The renderer holds the craft; a future Experience Engine
+ * parameterises this SAME catalogue.
+ */
+const SIGNATURE_MOMENT_BY_TRADE: Record<
+  string,
+  { moment: string; archetypes: ReadonlyArray<TradeArchetype> }
+> = {
+  roofing: { moment: "storm-cloud-new-roof", archetypes: ["emergency"] },
+  "driveways-paving": {
+    moment: "gravel-to-resin",
+    archetypes: ["project", "premium"],
+  },
+};
+
 function buildHomePage(
   strategy: ExperienceStrategy,
   archetype: TradeArchetype,
@@ -732,6 +752,14 @@ function buildHomePage(
   const sections = ARCHETYPE_SEQUENCES[archetype].map((plan, index) =>
     buildSection(plan, index, strategy, archetype),
   );
+  const tradeId = matchTradeId(strategy.meta.trade);
+  const entry = tradeId ? SIGNATURE_MOMENT_BY_TRADE[tradeId] : undefined;
+  if (entry && entry.archetypes.includes(archetype) && sections[0]) {
+    sections[0] = {
+      ...sections[0],
+      extensions: { ...sections[0].extensions, signatureMoment: entry.moment },
+    };
+  }
   const { conversionStrategy, seoStrategy, mobileStrategy } = strategy;
 
   return {

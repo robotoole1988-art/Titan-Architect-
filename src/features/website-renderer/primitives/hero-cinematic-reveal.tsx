@@ -16,6 +16,8 @@
 
 import { ArrowDown } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
+import { createElement } from "react";
+import { resolveSignatureMoment } from "../moments/registry";
 import type { PrimitiveSectionProps } from "../model/types";
 import {
   AnnotationTag,
@@ -181,6 +183,9 @@ export function HeroCinematicReveal({
     </div>
   );
 
+  const momentId = section.extensions?.signatureMoment as string | undefined;
+  const signatureMoment = resolveSignatureMoment(momentId);
+
   return (
     // Top-anchored (never vertically centred): late layout cannot re-centre
     // the block (CLS 0 discipline from Renderer v1).
@@ -192,6 +197,16 @@ export function HeroCinematicReveal({
     >
       <style dangerouslySetInnerHTML={{ __html: HERO_CSS }} />
       <GoldenAtmosphere dim={split} />
+      {signatureMoment && (
+        // The site's ONE signature moment — the opening act (ADR-032).
+        <div
+          data-signature-moment={momentId}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          {createElement(signatureMoment)}
+        </div>
+      )}
 
       {video && (
         <div
