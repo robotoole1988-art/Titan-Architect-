@@ -12,8 +12,10 @@ import {
   validateCampaignPlan,
 } from "@/core/ads-intelligence";
 import {
+  commissionFilm,
   createLocalDiskStorage,
   createSupabaseStorage,
+  deriveMediaPlan,
   generateMissingMedia,
   resolveMediaProvider,
 } from "@/core/media";
@@ -313,6 +315,58 @@ export async function generateBusinessMedia(businessId: string): Promise<void> {
     kind: "note",
     message: `Media generation: ${summary.generated} generated, ${summary.skipped} already present, ${summary.failed.length} failed — $${summary.totalCostUsd.toFixed(2)} total`,
     meta: { ...summary, failed: summary.failed.slice(0, 10) },
+  });
+  revalidateCrm(businessId);
+}
+
+/**
+ * Commission ONE hero ambience film from a creative brief (ADR-036) — born
+ * in review under the founder gate. Called twice per demo (two takes) so the
+ * founder can exercise taste. Reusable for any business + any brief.
+ */
+export async function commissionHeroFilm(
+  businessId: string,
+  brief: string,
+  durationSeconds = 5,
+): Promise<void> {
+  const provider = resolveMediaProvider();
+  if (!provider) {
+    throw new Error(
+      "REPLICATE_API_TOKEN is not set — add it to .env.local to generate film (ADR-036).",
+    );
+  }
+  const spine = await resolveBusinessSpine();
+  const business = await spine.businesses.get(businessId);
+  if (!business) throw new BusinessNotFoundError(businessId);
+  const artifact = await spine.artifacts.latest<WebsiteBlueprint>(
+    businessId,
+    "blueprint",
+  );
+  if (!artifact) throw new Error("Generate a blueprint first — the hero slot comes from it.");
+  // The hero image slot the film sits over is the first plan item.
+  const heroSlotRef = deriveMediaPlan(artifact.payload).find(
+    (item) => item.modality === "image" && item.slotRef.includes("hero"),
+  )?.slotRef;
+  if (!heroSlotRef) throw new Error("No hero slot found in the blueprint.");
+
+  const storage =
+    process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? createSupabaseStorage({
+          url: process.env.SUPABASE_URL,
+          serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        })
+      : createLocalDiskStorage();
+
+  const result = await commissionFilm(spine, provider, storage, business, {
+    heroSlotRef,
+    brief: brief.trim(),
+    durationSeconds,
+  });
+  await spine.activity.log({
+    businessId,
+    kind: "note",
+    message: `Hero film commissioned ($${result.costUsd.toFixed(2)}) — awaiting founder review: "${brief.trim().slice(0, 80)}"`,
+    meta: { slotRef: result.slotRef, costUsd: result.costUsd },
   });
   revalidateCrm(businessId);
 }

@@ -7,7 +7,7 @@
 
 import type { PageBlueprint, WebsiteBlueprint } from "@/core/website-blueprint";
 import type { MediaModality } from "./model";
-import { buildMediaPrompt, buildPairPrompts, seedFrom } from "./prompt";
+import { buildFilmPrompt, buildMediaPrompt, buildPairPrompts, seedFrom } from "./prompt";
 
 export interface MediaPlanItem {
   slotRef: string;
@@ -19,6 +19,8 @@ export interface MediaPlanItem {
   height: number;
   /** Present on before/after pairs — both halves share it. */
   pairSeed?: number;
+  /** Video only (ADR-036): clip length in seconds. */
+  durationSeconds?: number;
 }
 
 function slugify(text: string): string {
@@ -74,6 +76,21 @@ export function deriveMediaPlan(blueprint: WebsiteBlueprint): MediaPlanItem[] {
           width: 1344,
           height: 768,
         });
+        // ONE ambience film per site — the homepage hero only (ADR-036).
+        if (page.type !== "landing") {
+          push({
+            slotRef: `${baseRef}.film`,
+            brief,
+            prompt: buildFilmPrompt(
+              `${brief} Cinematic hero ambience for a ${context.trade} business — the property and setting, moody and premium.`,
+              context,
+            ),
+            modality: "video",
+            width: 1344,
+            height: 768,
+            durationSeconds: 5,
+          });
+        }
       }
 
       if (section.identifier === "story.transformation-arc") {
