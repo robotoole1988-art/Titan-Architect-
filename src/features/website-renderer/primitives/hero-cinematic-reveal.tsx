@@ -18,7 +18,7 @@ import { ArrowDown } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { createElement } from "react";
 import { CinematicImage } from "./cinematic-image";
-import { resolveSignatureMoment } from "../moments/registry";
+import { resolveSignatureMoment, signatureMomentsEnabled } from "../moments/registry";
 import type { PrimitiveSectionProps } from "../model/types";
 import {
   AnnotationTag,
@@ -187,7 +187,11 @@ export function HeroCinematicReveal({
   );
 
   const momentId = section.extensions?.signatureMoment as string | undefined;
-  const signatureMoment = resolveSignatureMoment(momentId);
+  // Morph retreat (ADR-032 addendum): never on public pages; preview only
+  // behind the reference flag — the cinematic hero stands alone.
+  const signatureMoment = signatureMomentsEnabled(mode)
+    ? resolveSignatureMoment(momentId)
+    : null;
   const backdropAsset =
     mediaAssets?.[media?.generationRef ?? `media/${section.id}`];
 
@@ -212,21 +216,28 @@ export function HeroCinematicReveal({
             className="h-full w-full"
           />
           {/* golden-hour mood grade — the theme is literally named for it:
-              warm low sun from the right, faint violet in the sky */}
+              warm low sun from the right, faint violet in the sky. Deepened
+              (ADR-032-addendum polish): the flat overcast master must read
+              as true golden hour until a regenerated hero lands. */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(15deg, rgba(255, 138, 46, 0.32), rgba(255, 206, 130, 0.12) 55%, rgba(84, 62, 128, 0.14))",
+                "linear-gradient(15deg, rgba(255, 132, 40, 0.5), rgba(255, 200, 120, 0.22) 55%, rgba(84, 62, 128, 0.22))",
               mixBlendMode: "overlay",
             }}
           />
           <div
             className="absolute inset-0"
             style={{
-              background: "rgba(255, 170, 80, 0.10)",
+              background:
+                "radial-gradient(85% 70% at 78% 30%, rgba(255, 190, 100, 0.34), transparent 65%)",
               mixBlendMode: "soft-light",
             }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{ background: "rgba(255, 160, 70, 0.08)" }}
           />
           {/* directional dusk scrim — headlines never fight the photograph */}
           <div

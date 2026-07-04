@@ -56,6 +56,11 @@ export function CinematicImage({
         loading={eager ? "eager" : "lazy"}
         quality={45}
         sizes={sizes}
+        // Blurred micro-preview (ADR-033): a photograph is visible from the
+        // first paint — a cold optimizer cache never shows a bare gradient.
+        {...(asset.lqip
+          ? { placeholder: "blur" as const, blurDataURL: asset.lqip }
+          : {})}
         className={`object-cover ${kenBurns ? "wr-kenburns" : ""}`}
       />
     </div>

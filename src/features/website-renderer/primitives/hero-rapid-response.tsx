@@ -15,7 +15,7 @@ import { Phone } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { createElement } from "react";
 import { CinematicImage } from "./cinematic-image";
-import { resolveSignatureMoment } from "../moments/registry";
+import { resolveSignatureMoment, signatureMomentsEnabled } from "../moments/registry";
 import type { PrimitiveSectionProps } from "../model/types";
 import {
   AnnotationTag,
@@ -167,7 +167,11 @@ export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAss
   const promise = promiseOf(slots["response-promise"]);
 
   const momentId = section.extensions?.signatureMoment as string | undefined;
-  const signatureMoment = resolveSignatureMoment(momentId);
+  // Morph retreat (ADR-032 addendum): never on public pages; preview only
+  // behind the reference flag — the cinematic hero stands alone.
+  const signatureMoment = signatureMomentsEnabled(mode)
+    ? resolveSignatureMoment(momentId)
+    : null;
   const backdropAsset =
     mediaAssets?.[media?.generationRef ?? `media/${section.id}`];
 

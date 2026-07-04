@@ -29,3 +29,4 @@ export {
   generateMissingMedia,
 } from "./generate";
 export type { GenerateMediaSummary, MediaStorage } from "./generate";
+export { createLqip } from "./lqip";

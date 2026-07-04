@@ -242,16 +242,77 @@
 
 ---
 
+## Tier 3 — 3D Particle Morphs (WebGL)
+
+The next class of signature moment: **real-time particle deconstruction and
+reconstruction** (Three.js/WebGL). Two 3D forms — the problem and the
+promise — are represented as particle clouds and interpolated between, live
+in the browser. Scroll drives the morph; **drag-to-orbit** gives the
+visitor the full 360° — they can walk around the transformation.
+
+**Design law: the particles are the trade's material; the morph is the
+trade's promise.** Roof tiles, paving blocks, water droplets, sparks —
+never abstract confetti. Every particle system must answer "what is this
+trade made of, and what does it promise?"
+
+**Performance law holds via device tiering:**
+
+1. **Full 3D** — capable devices: WebGL particle morph, scroll-driven,
+   orbitable.
+2. **2D fallback** — constrained devices: a flat rendering of the same
+   choreography.
+3. **Designed still** — reduced motion / no WebGL: the finished state,
+   art-directed (the existing law).
+
+**Founder reference (the idea's origin):** EV Chargers — a car
+deconstructs into particles and reassembles as a wall charger, in five
+stages: the car → deconstruction → the particle cloud → reassembly → the
+charger, mounted.
+
+### The Tier-3 Catalogue
+
+- 🏠 **Roofing — The Storm Vortex** *(flagship — build first)*: storm-torn
+  tiles swirl in the vortex, the weather calms, and the tiles fly home
+  course by course into the finished roof; fully orbitable.
+- 🚗 **Driveways — The Laying Wave**: a cloud of paving blocks lays itself
+  in a rolling herringbone wave across the ground plane.
+- 🚰 **Plumbing — Frozen Water**: suspended droplets hang in the air, then
+  coalesce into a chrome tap / boiler.
+- ⚡ **Electricians — The Current**: sparks race the house's wiring; rooms
+  light one by one as the current completes the circuit.
+- 🪟 **Windows — The Reverse Shatter**: shards fly inward and assemble into
+  a flawless pane.
+- 🧹 **Cleaning — The Lift-Off**: dust rises off the rug in a particle veil,
+  revealing the pattern beneath.
+- 🚛 **Clearance — The Extraction**: the room's objects stream into the
+  skip; light floods the emptied space.
+- 🧱 **Builders/Extensions — The Rise**: bricks and beams assemble from the
+  ground up into the extension; orbitable.
+- 🔧 **Mechanics — The Assembly, orbital**: the exploded engine rebuilds
+  itself as you circle it.
+
+All Tier-3 moments are **concept** except the Storm Vortex, which is the
+flagship and builds first (milestone forthcoming).
+
+**Cross-references:** ADR-029 deliberately deferred 3D/WebGL ("recorded
+here, not promised") — Tier 3 is that flag being called in. The ADR-032
+addendum retires the v1 2D vector morphs from public output; Tier 3 is
+their successor in direction. The scroll-morph engine, registry law
+(catalogue ids only, never free-generated), one-moment-per-site, and
+archetype gating all carry forward unchanged.
+
+---
+
 ## Status & Roadmap
 
 | Moment | Status |
 | --- | --- |
 | Everything above, unless listed below | Concept |
-| Roofing — Storm Cloud → New Roof | **SHIPPED — ADR-032** (emergency-archetype homepage hero) |
-| Roofing — Tile Cascade | v1 — next build |
-| Driveways — Gravel → Resin | **SHIPPED — ADR-032** (project/premium homepage hero) |
-| Driveways — Headlight Sweep | v1 — next build |
-| The Magic Wipe | Flagship interactive primitive — v1 candidate |
+| Roofing — Storm Cloud → New Roof | SHIPPED (ADR-032), then **RETIRED from public output** (ADR-032 addendum) — preview reference behind `NEXT_PUBLIC_PREVIEW_SIGNATURE_MOMENTS=1` |
+| Driveways — Gravel → Resin | SHIPPED (ADR-032), then **RETIRED from public output** (ADR-032 addendum) — preview reference behind the same flag |
+| **Tier 3 — Roofing — The Storm Vortex** | **Flagship — build FIRST** (milestone forthcoming) |
+| Tier 3 — all other particle morphs | Concept |
+| The Magic Wipe | Flagship interactive primitive — candidate after Tier 3 lands |
 
 The morph engine lives in `src/features/website-renderer/moments/`
 (ADR-032): selection is stamped by the blueprint builder from the catalogue

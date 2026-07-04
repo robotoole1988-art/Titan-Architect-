@@ -82,3 +82,22 @@ moment. Area pages never carry one.
   ADR-021/022/029.
 - `src/features/website-renderer/moments/`,
   `src/core/website-blueprint/builder.ts`.
+
+## Addendum (2026-07-04, founder decision): v1 vector morphs retired from public output
+
+A strategy-partner review judged the v1 2D vector morphs (the gravel
+pebbles, the storm cloud) below the £10k quality bar. Founder decision:
+
+- **Public renders carry NO signature-moment layer** — the clean cinematic
+  hero stands alone. Enforced in code (`signatureMomentsEnabled` gates both
+  heroes) and in CI (the public-render denylist includes
+  `data-signature-moment`).
+- **Preview keeps the moments renderable for reference ONLY behind a
+  flag** — `NEXT_PUBLIC_PREVIEW_SIGNATURE_MOMENTS=1`.
+- **The scroll-morph engine, catalogue, registry law, and builder stamping
+  remain intact.** This is a retreat of the v1 *renderings*, not of the
+  moment system.
+- **Superseded in DIRECTION by Tier-3 WebGL particle morphs** — real-time
+  particle deconstruction/reconstruction, scroll-driven and orbitable,
+  device-tiered (see `docs/experience/SIGNATURE-MOMENTS.md` § Tier 3;
+  milestone forthcoming, Storm Vortex flagship first).

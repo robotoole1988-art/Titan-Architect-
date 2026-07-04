@@ -7,6 +7,7 @@
 import type { Business, BusinessSpineRepositories } from "@/core/business";
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
 import type { MediaGenerationProvider } from "./model";
+import { createLqip } from "./lqip";
 import { deriveMediaPlan, type MediaPlanItem } from "./plan";
 
 export interface MediaStorage {
@@ -86,9 +87,11 @@ export interface GenerateMediaSummary {
 }
 
 /**
- * Generate every planned slot that has no record yet. Existing records
- * (any status — including rejected, which the founder can regenerate by
- * deleting later) are skipped, so re-runs are cheap and idempotent.
+ * Generate every planned slot that has no LIVE record. Review/approved
+ * records are skipped (re-runs stay cheap and idempotent); a slot whose
+ * only records are REJECTED regenerates — rejecting an asset in the gate
+ * is exactly how the founder asks for another attempt. New attempts are
+ * born in review like everything else.
  */
 export async function generateMissingMedia(
   spine: BusinessSpineRepositories,
@@ -99,11 +102,21 @@ export async function generateMissingMedia(
   options: { onProgress?: (item: MediaPlanItem, index: number, total: number) => void } = {},
 ): Promise<GenerateMediaSummary> {
   const plan = deriveMediaPlan(blueprint);
+  const records = await spine.media.listForBusiness(business.id);
   const existing = new Set(
-    (await spine.media.listForBusiness(business.id)).map(
-      (record) => record.slotRef,
-    ),
+    records
+      .filter((record) => record.status !== "rejected")
+      .map((record) => record.slotRef),
   );
+  // Rejected attempts keep their own stored object; the next take gets a
+  // fresh path so the gate always shows exactly what was judged.
+  const attemptsBySlot = new Map<string, number>();
+  for (const record of records) {
+    attemptsBySlot.set(
+      record.slotRef,
+      (attemptsBySlot.get(record.slotRef) ?? 0) + 1,
+    );
+  }
   const summary: GenerateMediaSummary = {
     planned: plan.length,
     generated: 0,
@@ -134,18 +147,23 @@ export async function generateMissingMedia(
         throw new Error(`asset download failed HTTP ${response.status}`);
       }
       const bytes = new Uint8Array(await response.arrayBuffer());
+      const attempt = attemptsBySlot.get(item.slotRef) ?? 0;
       const stored = await storage.save(
         business.id,
-        item.slotRef,
+        attempt > 0 ? `${item.slotRef}.take-${attempt + 1}` : item.slotRef,
         bytes,
         generated.format,
       );
+      // Blurred micro-preview inlined on the record — the renderer paints
+      // it instantly, so a cold optimizer cache never shows a bare gradient.
+      const lqip = await createLqip(Buffer.from(bytes));
       await spine.media.create({
         businessId: business.id,
         slotRef: item.slotRef,
         brief: item.brief,
         modality: item.modality,
         url: stored.url,
+        ...(lqip ? { lqip } : {}),
         width: item.width,
         height: item.height,
         provenance: {
