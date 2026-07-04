@@ -62,7 +62,7 @@ describe("estimateCpl (workbook fixtures)", () => {
     const estimate = await resolveCplEstimate(provider, "Roofing", "London");
     expect(estimate.provenance.provider).toBe("seeded-benchmarks");
     expect(estimate.provenance.confidence).toBe("sourced");
-    expect(estimate.provenance.asOf).toBe("2026-07-02");
+    expect(estimate.provenance.asOf).toBe("2026-07-04");
     expect(estimate.provenance.sources.length).toBeGreaterThan(0);
     expect(estimate.provenance.locationLabel).toBe("London");
   });

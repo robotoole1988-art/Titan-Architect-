@@ -8,8 +8,8 @@ import { runMarketProviderContract } from "./provider-contract";
 
 runMarketProviderContract("seeded", () => createSeededMarketDataProvider());
 
-describe("seeded dataset integrity (TITAN-CPL-Benchmarks-v1)", () => {
-  it("carries all twenty workbook trades verbatim", () => {
+describe("seeded dataset integrity (TITAN-CPL-Benchmarks-v2)", () => {
+  it("carries all thirty-five workbook trades verbatim", () => {
     const labels = TRADE_BENCHMARKS.map((benchmark) => benchmark.tradeLabel);
     expect(labels).toEqual([
       "Roofing",
@@ -32,6 +32,21 @@ describe("seeded dataset integrity (TITAN-CPL-Benchmarks-v1)", () => {
       "House Clearance",
       "Garage Clearance",
       "Waste Removal (man & van)",
+      "Electricians",
+      "Builders (General)",
+      "Extensions & Renovations",
+      "Windows & Doors (Double Glazing)",
+      "Conservatories",
+      "Dentists (Private)",
+      "Solicitors",
+      "Car Detailing",
+      "Brickwork",
+      "Swimming Pools",
+      "Tarmac & Surfacing",
+      "Artificial Grass",
+      "Chimney & Fireplaces",
+      "Damp Proofing",
+      "HVAC / Air Conditioning",
     ]);
   });
 
@@ -110,5 +125,20 @@ describe("seeded dataset integrity (TITAN-CPL-Benchmarks-v1)", () => {
     const unknown = await provider.getLocationFactor("Nether Wallop");
     expect(unknown.multiplier).toBe(1);
     expect(unknown.matched).toBe(false);
+  });
+});
+
+describe("v2 workbook expansion (15 new trades)", () => {
+  it("serves the new benchmarks with provenance", async () => {
+    const provider = createSeededMarketDataProvider();
+    const solicitors = await provider.getBenchmark("solicitors");
+    expect(solicitors.cpc).toEqual({ low: 8, high: 20 });
+    expect(solicitors.conversionRate).toBe(0.05);
+    expect(solicitors.confidence).toBe("sourced");
+    const dentists = await provider.getBenchmark("dentists-private");
+    expect(dentists.jobValue).toEqual({ low: 100, high: 3000 });
+    const hvac = await provider.getBenchmark("hvac-air-conditioning");
+    expect(hvac.confidence).toBe("partial");
+    expect(hvac.sources.join(" ")).toMatch(/heat pump|Searchlight/i);
   });
 });
