@@ -31,6 +31,10 @@ import {
   type MetricEventKind,
   type MetricsRepository,
   type SiteMetricRow,
+  type MediaRecord,
+  type MediaRecordDraft,
+  type MediaRepository,
+  type MediaReviewStatus,
   type EnquiryRepository,
   type LogActivityInput,
   type Publication,
@@ -50,6 +54,7 @@ interface MemoryState {
   sequence: Map<string, number>;
   nextSequence: number;
   metrics: Map<string, SiteMetricRow>;
+  media: MediaRecord[];
 }
 
 function nowIso(): string {
@@ -138,6 +143,12 @@ class MemoryBusinessRepository implements BusinessRepository {
     );
     this.state.enquiries = this.state.enquiries.filter(
       (enquiry) => enquiry.businessId !== id,
+    );
+    for (const key of [...this.state.metrics.keys()]) {
+      if (key.startsWith(`${id}|`)) this.state.metrics.delete(key);
+    }
+    this.state.media = this.state.media.filter(
+      (record) => record.businessId !== id,
     );
     for (const [hostname, owner] of this.state.domains) {
       if (owner === id) this.state.domains.delete(hostname);
@@ -283,6 +294,49 @@ class MemoryEnquiryRepository implements EnquiryRepository {
       .slice(-limit)
       .reverse()
       .map((enquiry) => structuredClone(enquiry));
+  }
+}
+
+class MemoryMediaRepository implements MediaRepository {
+  constructor(private readonly state: MemoryState) {}
+
+  async create(draft: MediaRecordDraft): Promise<MediaRecord> {
+    if (!this.state.businesses.has(draft.businessId)) {
+      throw new BusinessNotFoundError(draft.businessId);
+    }
+    const record: MediaRecord = {
+      ...structuredClone(draft),
+      id: crypto.randomUUID(),
+      createdAt: nowIso(),
+      status: "review",
+    };
+    this.state.media.push(record);
+    return structuredClone(record);
+  }
+
+  async get(id: string): Promise<MediaRecord | null> {
+    const record = this.state.media.find((entry) => entry.id === id);
+    return record ? structuredClone(record) : null;
+  }
+
+  async setStatus(id: string, status: MediaReviewStatus): Promise<MediaRecord> {
+    const record = this.state.media.find((entry) => entry.id === id);
+    if (!record) throw new Error(`Unknown media record "${id}"`);
+    record.status = status;
+    return structuredClone(record);
+  }
+
+  async listForBusiness(businessId: string): Promise<MediaRecord[]> {
+    return this.state.media
+      .filter((record) => record.businessId === businessId)
+      .reverse()
+      .map((record) => structuredClone(record));
+  }
+
+  async listApprovedForBusiness(businessId: string): Promise<MediaRecord[]> {
+    return (await this.listForBusiness(businessId)).filter(
+      (record) => record.status === "approved",
+    );
   }
 }
 
@@ -478,6 +532,7 @@ export function createMemoryBusinessSpine(): BusinessSpineRepositories {
     domains: new Map(),
     enquiries: [],
     metrics: new Map(),
+    media: [],
     sequence: new Map(),
     nextSequence: 1,
   };
@@ -489,5 +544,6 @@ export function createMemoryBusinessSpine(): BusinessSpineRepositories {
     publications: new MemoryPublicationRepository(state),
     enquiries: new MemoryEnquiryRepository(state),
     metrics: new MemoryMetricsRepository(state),
+    media: new MemoryMediaRepository(state),
   };
 }

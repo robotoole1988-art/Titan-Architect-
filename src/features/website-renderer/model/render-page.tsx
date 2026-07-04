@@ -90,6 +90,7 @@ export function renderPage(
         slots={parseSlots(section)}
         blueprint={blueprint}
         serving={options.serving}
+        mediaAssets={options.media}
       />
     );
   });

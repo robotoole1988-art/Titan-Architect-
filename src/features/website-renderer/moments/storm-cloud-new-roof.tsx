@@ -24,22 +24,22 @@ import {
 /* Both paths: M + 6 cubic segments + Z — identical structure, so framer
    interpolates them number-for-number. */
 const CLOUD_MASS =
-  "M 130,300 C 190,215 330,175 430,205 C 530,235 575,165 675,178 C 775,191 870,240 885,315 C 900,390 795,425 690,412 C 585,399 490,445 385,432 C 280,419 70,385 130,300 Z";
+  "M 60,320 C 130,200 320,140 450,180 C 580,220 640,120 770,140 C 900,160 990,230 995,330 C 1000,430 860,480 720,460 C 580,440 460,500 320,480 C 180,460 -10,440 60,320 Z";
 const ROOF_MASS =
-  "M 245,332 C 300,290 420,200 500,152 C 580,200 700,290 755,332 C 768,342 766,352 752,352 C 668,352 584,352 500,352 C 416,352 332,352 248,352 C 234,352 232,342 245,332 Z";
+  "M 160,400 C 240,330 400,205 500,140 C 600,205 760,330 840,400 C 858,416 854,432 834,432 C 722,432 611,432 500,432 C 389,432 278,432 166,432 C 146,432 142,416 160,400 Z";
 
 const CLOUD_WISP =
   "M 560,120 C 610,95 700,90 750,110 C 800,130 810,160 770,172 C 730,184 660,180 610,170 C 560,160 510,145 560,120 Z";
 const RIDGE_CAP =
   "M 468,150 C 478,142 522,142 532,150 C 542,158 542,166 532,166 C 522,166 478,166 468,166 C 458,166 458,158 468,150 Z";
 
-const RAIN = Array.from({ length: 14 }, (_, index) => ({
+const RAIN = Array.from({ length: 26 }, (_, index) => ({
   x: 90 + ((index * 137) % 840),
   delay: (index * 53) % 200,
   length: 26 + ((index * 29) % 22),
 }));
 
-export function StormCloudNewRoof() {
+export function StormCloudNewRoof({ hasBackdrop = false }: { hasBackdrop?: boolean } = {}) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useReducedMotion();
   const { scrollYProgress } = useScroll({
@@ -63,9 +63,11 @@ export function StormCloudNewRoof() {
   const rainOpacity = useTransform(progress, [0, 0.45], [0.5, 0]);
   const houseOpacity = useTransform(progress, [0.55, 0.85], [0, 1]);
   const houseRise = useTransform(progress, [0.55, 0.85], [26, 0]);
-  const stormTint = useTransform(progress, [0.2, 0.85], [0.45, 0]);
+  const stormTint = useTransform(progress, [0.15, 0.85], [0.72, 0]);
   const porchLight = useTransform(progress, [0.86, 0.97], [0, 0.9]);
-  const ridgeGlow = useTransform(progress, [0.78, 0.95], [0, 0.7]);
+  // A held flash at the storm's peak — Act I punctuation, gone by mid-morph.
+  const flash = useTransform(progress, [0.08, 0.14, 0.2, 0.3], [0, 0.5, 0.1, 0]);
+  const ridgeGlow = useTransform(progress, [0.78, 0.95], [0, 0.95]);
 
   const house = (
     <g>
@@ -86,8 +88,8 @@ export function StormCloudNewRoof() {
           preserveAspectRatio="xMidYMax slice"
           className="h-full w-full"
         >
-          {house}
-          <path d={ROOF_MASS} fill="rgba(15, 26, 42, 1)" />
+          {!hasBackdrop && house}
+          {!hasBackdrop && <path d={ROOF_MASS} fill="rgba(15, 26, 42, 1)" />}
           <path d={RIDGE_CAP} fill="var(--wr-accent)" opacity="0.7" />
           <circle cx="500" cy="470" r="7" fill="var(--wr-accent)" opacity="0.9" />
         </svg>
@@ -111,8 +113,18 @@ export function StormCloudNewRoof() {
           fill="rgba(8, 12, 20, 1)"
           style={{ opacity: stormTint }}
         />
+        <motion.rect
+          x="0"
+          y="0"
+          width="1000"
+          height="620"
+          fill="rgba(214, 230, 250, 1)"
+          style={{ opacity: flash }}
+        />
 
-        <motion.g style={{ opacity: houseOpacity, y: houseRise }}>{house}</motion.g>
+        {!hasBackdrop && (
+      <motion.g style={{ opacity: houseOpacity, y: houseRise }}>{house}</motion.g>
+    )}
 
         {/* rain — dissolves as the threat becomes the protection */}
         <motion.g

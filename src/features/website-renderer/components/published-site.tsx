@@ -7,6 +7,7 @@ import {
   type WebsiteBlueprint,
 } from "@/core/website-blueprint";
 import { renderPage } from "../model/render-page";
+import type { ResolvedMediaAsset } from "../model/types";
 import { rendererFontClass } from "../theme/fonts";
 import { SiteMetricsBeacon } from "./site-metrics-beacon";
 
@@ -25,6 +26,8 @@ export interface ResolvedPublication {
   businessName: string;
   /** Optional per-site GA4 hook (ADR-030); absent → no script injected. */
   ga4MeasurementId?: string;
+  /** APPROVED media by slotRef (ADR-033). */
+  media: Readonly<Record<string, ResolvedMediaAsset>>;
   /** How the site is being served — drives internal link hrefs. */
   servingMode: "slug" | "hostname";
 }
@@ -54,15 +57,27 @@ export async function resolvePublishedSite(
   }
   if (!publication) return null;
 
-  const [artifact, business] = await Promise.all([
+  const [artifact, business, approved] = await Promise.all([
     spine.artifacts.getVersion<WebsiteBlueprint>(
       publication.businessId,
       "blueprint",
       publication.blueprintVersion,
     ),
     spine.businesses.get(publication.businessId),
+    spine.media.listApprovedForBusiness(publication.businessId),
   ]);
   if (!artifact || !business) return null;
+  const media: Record<string, ResolvedMediaAsset> = {};
+  for (const record of approved) {
+    media[record.slotRef] = {
+      url: record.url,
+      modality: record.modality,
+      ...(record.width !== undefined ? { width: record.width } : {}),
+      ...(record.height !== undefined ? { height: record.height } : {}),
+      ...(record.posterUrl !== undefined ? { posterUrl: record.posterUrl } : {}),
+      ...(record.lqip !== undefined ? { lqip: record.lqip } : {}),
+    };
+  }
 
   const pages = artifact.payload.pages.pages;
   const page = lookup.pagePath
@@ -77,6 +92,7 @@ export async function resolvePublishedSite(
     blueprint: artifact.payload,
     page,
     businessName: business.name,
+    media,
     ...(business.ga4MeasurementId
       ? { ga4MeasurementId: business.ga4MeasurementId }
       : {}),
@@ -130,6 +146,13 @@ export function PublishedSitePage({
 
   return (
     <div className={rendererFontClass}>
+      {/* Warm the media origin before the hero image request (ADR-033). */}
+      {Object.values(resolved.media)[0]?.url.startsWith("http") && (
+        <link
+          rel="preconnect"
+          href={new URL(Object.values(resolved.media)[0].url).origin}
+        />
+      )}
       {/* First-party view beacon (ADR-030) — published pages only. */}
       <SiteMetricsBeacon
         slug={publication.slug}
@@ -165,6 +188,7 @@ export function PublishedSitePage({
           publicationId: publication.id,
           slug: publication.slug,
         },
+        media: resolved.media,
       })}
     </div>
   );

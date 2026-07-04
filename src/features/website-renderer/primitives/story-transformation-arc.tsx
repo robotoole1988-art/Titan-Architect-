@@ -16,6 +16,8 @@ import { motion, useInView, useReducedMotion } from "framer-motion";
 import { MoveHorizontal } from "lucide-react";
 import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal, Stagger, StaggerItem } from "../motion/motion";
+import { CinematicImage } from "./cinematic-image";
+import type { ResolvedMediaAsset } from "../model/types";
 import { splitArc, splitList } from "../model/slots";
 import {
   AnnotationTag,
@@ -36,7 +38,15 @@ const BEFORE_SCENE =
 const AFTER_SCENE =
   "linear-gradient(155deg, var(--wr-storm-1) 0%, var(--wr-storm-2) 55%, color-mix(in oklab, var(--wr-storm-2) 70%, var(--wr-bg)) 100%)";
 
-export function Comparison({ mediaDirection }: { mediaDirection?: string }) {
+export function Comparison({
+  mediaDirection,
+  beforeAsset,
+  afterAsset,
+}: {
+  mediaDirection?: string;
+  beforeAsset?: ResolvedMediaAsset;
+  afterAsset?: ResolvedMediaAsset;
+}) {
   const [value, setValue] = useState(18);
   const containerRef = useRef<HTMLDivElement>(null);
   const inView = useInView(containerRef, { once: true, margin: "-25%" });
@@ -56,6 +66,9 @@ export function Comparison({ mediaDirection }: { mediaDirection?: string }) {
       >
         {/* AFTER — the restored state, underneath */}
         <div className="absolute inset-0" style={{ background: AFTER_SCENE }}>
+          {afterAsset && (
+            <CinematicImage asset={afterAsset} alt="After the work — the finished result" className="absolute inset-0" />
+          )}
           <div
             aria-hidden
             className="absolute inset-0"
@@ -64,9 +77,11 @@ export function Comparison({ mediaDirection }: { mediaDirection?: string }) {
                 "radial-gradient(90% 70% at 75% 20%, var(--wr-accent-glow), transparent 60%)",
             }}
           />
-          <div className="absolute bottom-4 right-5">
-            <AnnotationTag>after · media slot</AnnotationTag>
-          </div>
+          {!afterAsset && (
+            <div className="absolute bottom-4 right-5">
+              <AnnotationTag>after · media slot</AnnotationTag>
+            </div>
+          )}
         </div>
 
         {/* BEFORE — clipped by the divider */}
@@ -88,9 +103,14 @@ export function Comparison({ mediaDirection }: { mediaDirection?: string }) {
                 "radial-gradient(80% 60% at 25% 30%, color-mix(in oklab, var(--wr-ink) 14%, transparent), transparent 60%)",
             }}
           />
-          <div className="absolute bottom-4 left-5">
-            <AnnotationTag>before · media slot</AnnotationTag>
-          </div>
+          {beforeAsset && (
+            <CinematicImage asset={beforeAsset} alt="Before the work" className="absolute inset-0" />
+          )}
+          {!beforeAsset && (
+            <div className="absolute bottom-4 left-5">
+              <AnnotationTag>before · media slot</AnnotationTag>
+            </div>
+          )}
         </motion.div>
 
         {/* divider + handle */}
@@ -142,10 +162,13 @@ export function Comparison({ mediaDirection }: { mediaDirection?: string }) {
   );
 }
 
-export function StoryTransformationArc({ section, slots }: PrimitiveSectionProps) {
+export function StoryTransformationArc({ section, slots, mediaAssets }: PrimitiveSectionProps) {
   const stages = splitArc(slots["narrative-arc"]);
   const milestones = splitList(slots["key-messages"]);
   const media = section.media?.[0];
+  const baseRef = media?.generationRef ?? `media/${section.id}`;
+  const beforeAsset = mediaAssets?.[`${baseRef}.before`];
+  const afterAsset = mediaAssets?.[`${baseRef}.after`];
 
   return (
     <SectionShell section={section}>
@@ -158,7 +181,11 @@ export function StoryTransformationArc({ section, slots }: PrimitiveSectionProps
         </Reveal>
 
         <div className="mt-12">
-          <Comparison mediaDirection={media?.direction} />
+          <Comparison
+            mediaDirection={beforeAsset ? undefined : media?.direction}
+            beforeAsset={beforeAsset}
+            afterAsset={afterAsset}
+          />
         </div>
 
         {stages.length > 1 && (

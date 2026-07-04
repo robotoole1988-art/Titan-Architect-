@@ -13,6 +13,8 @@
 import { useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { CinematicImage } from "./cinematic-image";
+import type { ResolvedMediaAsset } from "../model/types";
 import { Reveal } from "../motion/motion";
 import {
   AnnotationTag,
@@ -59,16 +61,26 @@ const BG_SIZES = [
   "40px 40px, 52px 52px, 33px 33px, auto",
 ];
 
+function surfaceSlug(name: string): string {
+  return name
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 export function SurfaceSelector({
   sectionId,
   heading,
   surfaces,
   explainers,
+  mediaAssets,
 }: {
   sectionId: string;
   heading: string;
   surfaces: string[];
   explainers: string[];
+  mediaAssets?: Readonly<Record<string, ResolvedMediaAsset>>;
 }) {
   const [active, setActive] = useState(0);
   const reduced = useReducedMotion();
@@ -153,6 +165,14 @@ export function SurfaceSelector({
                 backgroundSize: BG_SIZES[active % BG_SIZES.length],
               }}
             >
+              {mediaAssets?.[`surfaces/${surfaceSlug(surface)}`] && (
+                // The REAL material — texture photography over the suggestion.
+                <CinematicImage
+                  asset={mediaAssets[`surfaces/${surfaceSlug(surface)}`]}
+                  alt={`${surface} surface texture`}
+                  className="absolute inset-0"
+                />
+              )}
               <div
                 aria-hidden
                 className="absolute inset-0"
@@ -162,7 +182,9 @@ export function SurfaceSelector({
                 }}
               />
               <div className="absolute inset-x-6 bottom-6 flex flex-col items-start gap-3">
-                <AnnotationTag>surface texture · suggestive, real media slot</AnnotationTag>
+                {!mediaAssets?.[`surfaces/${surfaceSlug(surface)}`] && (
+                  <AnnotationTag>surface texture · suggestive, real media slot</AnnotationTag>
+                )}
                 <h3
                   className="text-balance font-semibold capitalize"
                   style={{ ...displayFont, fontSize: "var(--wr-text-xl)", color: "#fdf6ec" }}

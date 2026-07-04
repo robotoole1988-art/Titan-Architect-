@@ -19,6 +19,11 @@
 3. **Performance is law: Lighthouse ≥90.** SVG/canvas vector morphs, never
    video files ([ADR-022](../architecture/adr-022-website-renderer.md),
    [ADR-029](../architecture/adr-029-premium-primitive-set.md)).
+   *Scoping (founder-approved, [ADR-033](../architecture/adr-033-media-pipeline.md)):
+   the vector-only rule applies to MORPH TRANSITIONS; AI-generated cinematic
+   footage is permitted as atmosphere under a strict budget — poster-first
+   paint, lazy compressed loop, reduced-motion/reduced-data resolve to the
+   designed still, Lighthouse ≥90 holds.*
 4. **Reduced-motion always resolves to a designed still.**
 5. **Every moment tells the trade's story. Decoration gets cut.**
 6. **Intelligence composes crafted moments, never free-generates** (registry

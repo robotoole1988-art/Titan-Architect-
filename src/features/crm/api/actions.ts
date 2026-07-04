@@ -11,6 +11,12 @@ import {
   generateCampaignPlan,
   validateCampaignPlan,
 } from "@/core/ads-intelligence";
+import {
+  createLocalDiskStorage,
+  createSupabaseStorage,
+  generateMissingMedia,
+  resolveMediaProvider,
+} from "@/core/media";
 import type { Deal } from "@/core/pricing";
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
 import {
@@ -263,4 +269,60 @@ export async function generateAdsPlan(businessId: string): Promise<void> {
   });
   await recordArtifactGenerated(spine, businessId, "campaign_plan", artifact.version);
   revalidateCrm(businessId);
+}
+
+
+/**
+ * Generate every missing media asset for a business (ADR-033). Founder-
+ * triggered, env-gated: without REPLICATE_API_TOKEN this throws a helpful
+ * error and never touches the network. Every asset lands in REVIEW.
+ */
+export async function generateBusinessMedia(businessId: string): Promise<void> {
+  const provider = resolveMediaProvider();
+  if (!provider) {
+    throw new Error(
+      "REPLICATE_API_TOKEN is not set — add it to .env.local to enable media generation (ADR-033).",
+    );
+  }
+  const spine = await resolveBusinessSpine();
+  const business = await spine.businesses.get(businessId);
+  if (!business) throw new BusinessNotFoundError(businessId);
+  const artifact = await spine.artifacts.latest<WebsiteBlueprint>(
+    businessId,
+    "blueprint",
+  );
+  if (!artifact) throw new Error("Generate a blueprint first — media briefs come from it.");
+
+  const storage =
+    process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+      ? createSupabaseStorage({
+          url: process.env.SUPABASE_URL,
+          serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+        })
+      : createLocalDiskStorage();
+
+  const summary = await generateMissingMedia(
+    spine,
+    provider,
+    storage,
+    business,
+    artifact.payload,
+  );
+  await spine.activity.log({
+    businessId,
+    kind: "note",
+    message: `Media generation: ${summary.generated} generated, ${summary.skipped} already present, ${summary.failed.length} failed — $${summary.totalCostUsd.toFixed(2)} total`,
+    meta: { ...summary, failed: summary.failed.slice(0, 10) },
+  });
+  revalidateCrm(businessId);
+}
+
+/** The founder's per-asset review gate (ADR-033). */
+export async function setMediaStatus(
+  mediaId: string,
+  status: "approved" | "rejected",
+): Promise<void> {
+  const spine = await resolveBusinessSpine();
+  const record = await spine.media.setStatus(mediaId, status);
+  revalidateCrm(record.businessId);
 }

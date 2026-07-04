@@ -281,6 +281,55 @@ export interface MetricsRepository {
   listForBusiness(businessId: string): Promise<SiteMetricRow[]>;
 }
 
+/** Generated-media modality (ADR-033) — image now, video next. */
+export type MediaModality = "image" | "video";
+
+/** The founder review gate for generated media (ADR-033). */
+export type MediaReviewStatus = "review" | "approved" | "rejected";
+
+export interface MediaProvenance {
+  provider: string;
+  model: string;
+  prompt: string;
+  costUsd: number;
+  generatedAt: string;
+}
+
+/** One generated asset: asset → business → slot → brief + provenance. */
+export interface MediaRecord {
+  id: string;
+  businessId: string;
+  /** The blueprint's stable slot reference (generationRef or derived). */
+  slotRef: string;
+  brief: string;
+  modality: MediaModality;
+  /** Permanent-storage URL/path. */
+  url: string;
+  /** Base64 micro-preview for first paint (optional). */
+  lqip?: string;
+  /** Video: poster frame. */
+  posterUrl?: string;
+  durationSeconds?: number;
+  width?: number;
+  height?: number;
+  status: MediaReviewStatus;
+  provenance: MediaProvenance;
+  createdAt: string;
+}
+
+export type MediaRecordDraft = Omit<MediaRecord, "id" | "createdAt" | "status">;
+
+export interface MediaRepository {
+  /** Born in "review" — the founder gate. Throws {@link BusinessNotFoundError}. */
+  create(draft: MediaRecordDraft): Promise<MediaRecord>;
+  get(id: string): Promise<MediaRecord | null>;
+  setStatus(id: string, status: MediaReviewStatus): Promise<MediaRecord>;
+  /** Newest first. */
+  listForBusiness(businessId: string): Promise<MediaRecord[]>;
+  /** ONLY approved assets ever reach a published site. */
+  listApprovedForBusiness(businessId: string): Promise<MediaRecord[]>;
+}
+
 /** Everything the spine persists, resolved together. */
 export interface BusinessSpineRepositories {
   businesses: BusinessRepository;
@@ -290,4 +339,5 @@ export interface BusinessSpineRepositories {
   publications: PublicationRepository;
   enquiries: EnquiryRepository;
   metrics: MetricsRepository;
+  media: MediaRepository;
 }

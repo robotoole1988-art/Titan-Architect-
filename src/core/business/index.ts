@@ -66,6 +66,12 @@ export type {
   MetricEventKind,
   MetricsRepository,
   SiteMetricRow,
+  MediaModality,
+  MediaProvenance,
+  MediaRecord,
+  MediaRecordDraft,
+  MediaRepository,
+  MediaReviewStatus,
 } from "./repository";
 export { ENQUIRY_STATUSES } from "./repository";
 

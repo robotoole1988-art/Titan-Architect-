@@ -13,6 +13,16 @@ export interface ServingContext {
   slug: string;
 }
 
+/** An approved generated asset, resolved for rendering (ADR-033). */
+export interface ResolvedMediaAsset {
+  url: string;
+  modality: "image" | "video";
+  width?: number;
+  height?: number;
+  posterUrl?: string;
+  lqip?: string;
+}
+
 /** Everything a primitive component may draw from. */
 export interface PrimitiveSectionProps {
   section: SectionBlueprint;
@@ -24,6 +34,8 @@ export interface PrimitiveSectionProps {
   blueprint: WebsiteBlueprint;
   /** Set when serving a live publication (ADR-027); absent in previews. */
   serving?: ServingContext;
+  /** APPROVED media by slotRef (ADR-033); slots without one stay honest frames. */
+  mediaAssets?: Readonly<Record<string, ResolvedMediaAsset>>;
 }
 
 export type PrimitiveComponent = ComponentType<PrimitiveSectionProps>;
@@ -57,4 +69,6 @@ export interface RenderPageOptions {
   onUnmapped?: UnmappedPrimitiveBehaviour;
   /** Live-publication context — enables real enquiry capture (ADR-027). */
   serving?: ServingContext;
+  /** Approved media map (ADR-033). */
+  media?: Readonly<Record<string, ResolvedMediaAsset>>;
 }

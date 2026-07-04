@@ -17,6 +17,7 @@
 import { ArrowDown } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { createElement } from "react";
+import { CinematicImage } from "./cinematic-image";
 import { resolveSignatureMoment } from "../moments/registry";
 import type { PrimitiveSectionProps } from "../model/types";
 import {
@@ -125,6 +126,7 @@ export function HeroCinematicReveal({
   variant,
   slots,
   blueprint,
+  mediaAssets,
 }: PrimitiveSectionProps) {
   const split = variant === "split-editorial";
   const video = variant === "video-backdrop";
@@ -185,6 +187,8 @@ export function HeroCinematicReveal({
 
   const momentId = section.extensions?.signatureMoment as string | undefined;
   const signatureMoment = resolveSignatureMoment(momentId);
+  const backdropAsset =
+    mediaAssets?.[media?.generationRef ?? `media/${section.id}`];
 
   return (
     // Top-anchored (never vertically centred): late layout cannot re-centre
@@ -196,7 +200,30 @@ export function HeroCinematicReveal({
       className="isolate min-h-[92svh]"
     >
       <style dangerouslySetInnerHTML={{ __html: HERO_CSS }} />
-      <GoldenAtmosphere dim={split} />
+      {backdropAsset && (
+        // The real hero photograph — Ken Burns drift, warm legibility wash.
+        <div aria-hidden className="absolute inset-0">
+          <CinematicImage
+            asset={backdropAsset}
+            alt=""
+            kenBurns
+            eager
+            className="h-full w-full"
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(100deg, color-mix(in oklab, var(--wr-bg) 82%, transparent) 22%, color-mix(in oklab, var(--wr-bg) 35%, transparent) 55%, transparent 85%)",
+            }}
+          />
+          <div
+            className="absolute inset-x-0 bottom-0 h-44"
+            style={{ background: "linear-gradient(180deg, transparent, var(--wr-bg))" }}
+          />
+        </div>
+      )}
+      {!backdropAsset && <GoldenAtmosphere dim={split} />}
       {signatureMoment && (
         // The site's ONE signature moment — the opening act (ADR-032).
         <div
@@ -204,7 +231,7 @@ export function HeroCinematicReveal({
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 overflow-hidden"
         >
-          {createElement(signatureMoment)}
+          {createElement(signatureMoment, { hasBackdrop: Boolean(backdropAsset) })}
         </div>
       )}
 

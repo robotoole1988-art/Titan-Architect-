@@ -291,6 +291,15 @@ function BuildCard({
             <Eye className="size-3.5" />
             Preview site
           </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            render={<Link href={`/crm/${business.id}/media`} />}
+            className="gap-1.5"
+          >
+            <FileSpreadsheet className="size-3.5" />
+            Media
+          </Button>
         </div>
       </header>
 
