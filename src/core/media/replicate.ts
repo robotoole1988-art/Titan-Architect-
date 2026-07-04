@@ -21,12 +21,14 @@ import type {
 } from "./model";
 
 const DEFAULT_IMAGE_MODEL = "black-forest-labs/flux-1.1-pro";
-const DEFAULT_VIDEO_MODEL = "kwaivgi/kling-v2.1";
+// The text-to-video variant (kling-v2.1 base is image-to-video, needs a
+// start_image; the *-master* model is pure T2V, prompt-only — ADR-036).
+const DEFAULT_VIDEO_MODEL = "kwaivgi/kling-v2.1-master";
 
 /** Cost telemetry table (USD) — logged onto every record's provenance. */
 const COST_USD: Record<MediaModality, number> = {
   image: 0.04, // Flux 1.1 Pro list price per image
-  video: 0.25, // Kling v2.1 standard, ~5s (ADR-036)
+  video: 0.28, // Kling v2.1 Master, ~5s (ADR-036)
 };
 
 /** The authenticity law, expressed for a video negative prompt. */
@@ -138,7 +140,6 @@ export function createReplicateProvider(config: {
           input: {
             prompt: request.prompt,
             duration,
-            mode: "std",
             negative_prompt: VIDEO_NEGATIVE_PROMPT,
             ...(request.seed !== undefined ? { seed: request.seed } : {}),
           },

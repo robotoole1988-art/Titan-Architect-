@@ -27,17 +27,24 @@ clips, and the call:
 
 | Model | Duration | ~Cost | Why / why not |
 | --- | --- | --- | --- |
-| **kwaivgi/kling-v2.1** *(CHOSEN)* | native 5s / 10s | ~$0.25 (5s std), ~$0.45 (5s pro) | Highest-quality photoreal T2V widely available (4.1M runs); superb camera-move adherence (drone/aerial), `negative_prompt` to enforce the no-people/no-text law, `start_image` seed available for future brand-coherent shots. |
+| **kwaivgi/kling-v2.1-master** *(CHOSEN)* | native 5s / 10s | ~$0.28 (5s) | Premium **text-to-video** Kling (prompt-only; `negative_prompt` enforces the no-people/no-text law; optional `start_image`). Superb photoreal dynamics + camera-move adherence (drone/aerial). |
+| kwaivgi/kling-v2.1 (base) | 5s / 10s | ~$0.25 | **Image-to-video** — requires a `start_image` and a `mode` (`standard`/`pro`). Wrong shape for a brief-only film; kept in mind for a future "animate the approved hero photo" path. |
 | bytedance/seedance-1-lite | 5s (adj.) | ~$0.02/s | Cheapest, `camera_fixed` control, 3.5M runs — recorded as the **budget fallback**. |
 | luma/ray-flash-2-720p | 5s / 9s | ~$0.022/s | Native `loop` input (seamless ambience) — recorded as the **seamless-loop alternative**. |
 | google/veo-3 / veo-2 | — | high | Veo-3 ships audio (out of scope) and both are costly. Rejected. |
 
-**Decision: `kwaivgi/kling-v2.1`, standard mode, 5s default.** The model,
-mode, and duration are **injectable** on the adapter so the founder can
-swap to Seedance (cost) or Ray-Flash (native loop) without a code change.
-Quality is the point of this milestone — these clips are demo/sales
-collateral the founder judges on taste — so the default is the quality
-benchmark, not the cheapest.
+**Decision: `kwaivgi/kling-v2.1-master` (text-to-video), 5s default.** The
+model and duration are **injectable** on the adapter so the founder can swap
+to Seedance (cost), Ray-Flash (native loop), or the base image-to-video Kling
+with the approved hero photo as `start_image` — without a code change.
+Quality is the point of this milestone: these clips are demo/sales collateral
+the founder judges on taste, so the default is the quality benchmark, not the
+cheapest.
+
+> **Assessment note:** the base `kling-v2.1` was tried first and rejected in
+> practice — its API requires a `start_image` (it is image-to-video) and a
+> `mode` enum, which a brief-only commission does not supply. The `-master`
+> variant is the correct pure-T2V model.
 
 ### The video adapter (polling, not `Prefer: wait`)
 
