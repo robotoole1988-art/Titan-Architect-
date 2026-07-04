@@ -18,6 +18,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import Link from "next/link";
 import {
   buildStormVortex,
   vortexParams,
@@ -25,6 +26,8 @@ import {
 } from "./choreography";
 import { StormVortexFallback2d } from "./fallback-2d";
 import type { ParticleGeometryVariant } from "./storm-vortex-scene";
+import { generateLabDomes } from "./api";
+import type { DomeTimeOfDay, LabEnvironment } from "./environment";
 import { detectDeviceTier, type DeviceTier } from "../webgl/device-tier";
 
 const StormVortexScene = dynamic(
@@ -79,7 +82,14 @@ function Chip({
   );
 }
 
-export function MorphLabPage() {
+export function MorphLabPage({
+  environment,
+  canGenerate = false,
+}: {
+  /** Founder-gated dome assets (ADR-035 v2); absent domes → fallback sky. */
+  environment?: LabEnvironment;
+  canGenerate?: boolean;
+}) {
   const [presentation, setPresentation] = useState<Presentation>("fullscreen");
   const [drive, setDrive] = useState<Drive>("scroll");
   const [intensity, setIntensity] = useState<VortexIntensity>("dramatic");
@@ -90,6 +100,19 @@ export function MorphLabPage() {
   const [detectedTier, setDetectedTier] = useState<DeviceTier | null>(null);
   const [controlsOpen, setControlsOpen] = useState(true);
   const [autoplaying, setAutoplaying] = useState(false);
+  const [environmentOn, setEnvironmentOn] = useState(true);
+  const [timeOfDay, setTimeOfDay] = useState<DomeTimeOfDay>("golden-hour");
+
+  const stormDome = environment?.domes.find((dome) => dome.kind === "storm");
+  const calmDome =
+    environment?.domes.find((dome) => dome.timeOfDay === timeOfDay) ??
+    environment?.domes.find((dome) => dome.kind === "calm");
+  const domes =
+    stormDome || calmDome
+      ? { storm: stormDome?.url, calm: calmDome?.url }
+      : undefined;
+  const domesInReview =
+    environment?.domes.filter((dome) => dome.status === "review").length ?? 0;
 
   const params = useMemo(
     () => vortexParams({ intensity, hoverDuration }),
@@ -176,6 +199,8 @@ export function MorphLabPage() {
           geometry={geometry}
           glow={glow}
           tRef={tRef}
+          domes={domes}
+          environment={environmentOn}
           orbit
           onStats={(fps, frameMs) => {
             if (fpsRef.current) fpsRef.current.textContent = `${fps} fps · ${frameMs} ms`;
@@ -294,6 +319,58 @@ export function MorphLabPage() {
                 {level}
               </Chip>
             ))}
+          </ControlGroup>
+          <ControlGroup label="Environment (v2)">
+            <Chip active={environmentOn} onClick={() => setEnvironmentOn(true)}>
+              World on
+            </Chip>
+            <Chip active={!environmentOn} onClick={() => setEnvironmentOn(false)}>
+              World off (delta)
+            </Chip>
+          </ControlGroup>
+          <ControlGroup label="Time of day">
+            {(["golden-hour", "dusk", "overcast"] as const).map((slot) => {
+              const available = environment?.domes.some(
+                (dome) => dome.timeOfDay === slot,
+              );
+              return (
+                <Chip
+                  key={slot}
+                  active={timeOfDay === slot && Boolean(available)}
+                  onClick={() => available && setTimeOfDay(slot)}
+                >
+                  {slot}
+                  {available ? "" : " · no dome yet"}
+                </Chip>
+              );
+            })}
+          </ControlGroup>
+          <ControlGroup label="Domes (founder gate)">
+            {environment && environment.missingSlotRefs.length > 0 && canGenerate && (
+              <form action={generateLabDomes}>
+                <button
+                  type="submit"
+                  className="rounded-full border border-sky-400/50 bg-sky-400/10 px-2.5 py-1 text-[11px] text-sky-200 hover:border-sky-300"
+                >
+                  Generate {environment.missingSlotRefs.length} dome
+                  {environment.missingSlotRefs.length > 1 ? "s" : ""} (~$
+                  {(environment.missingSlotRefs.length * 0.04).toFixed(2)})
+                </button>
+              </form>
+            )}
+            {domesInReview > 0 && environment && (
+              <Link
+                href={`/crm/${environment.businessId}/media`}
+                className="rounded-full border border-amber-400/40 bg-amber-400/10 px-2.5 py-1 text-[11px] text-amber-200"
+              >
+                {domesInReview} in review — open the gate ↗
+              </Link>
+            )}
+            {environment && environment.domes.length === 0 && !canGenerate && (
+              <span className="text-[11px] text-slate-500">
+                No domes yet — set REPLICATE_API_TOKEN to generate
+              </span>
+            )}
           </ControlGroup>
         </div>
       )}

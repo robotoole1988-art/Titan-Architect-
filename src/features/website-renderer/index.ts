@@ -55,3 +55,16 @@ export type {
 export { classifyGpuTier, detectDeviceTier } from "./webgl/device-tier";
 export type { DeviceCapabilities, DeviceTier } from "./webgl/device-tier";
 export { MorphLabPage } from "./morph-lab/lab-page";
+export {
+  DOME_SPECS,
+  ensureLabBusiness,
+  mapDomeRecords,
+  resolveLabEnvironment,
+  resolveMorphLab,
+} from "./morph-lab/environment";
+export type {
+  DomeSpec,
+  DomeTimeOfDay,
+  LabDome,
+  LabEnvironment,
+} from "./morph-lab/environment";
