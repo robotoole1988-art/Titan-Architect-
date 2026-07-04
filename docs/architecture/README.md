@@ -59,6 +59,7 @@ ADR that supersedes the old one and update the old one's status.
 | [029](./adr-029-premium-primitive-set.md) | Premium Primitive Set — Golden Hour theme, project/premium craft | Accepted |
 | [030](./adr-030-lead-flow.md) | Lead Flow v1 — instant notifications, speed-to-lead, measurement | Accepted |
 | [031](./adr-031-ads-intelligence.md) | Ads Intelligence — deterministic campaign build sheets | Accepted |
+| [032](./adr-032-signature-moments.md) | Signature Moments v1 — the scroll-morph engine | Accepted |
 
 ### Writing a new ADR
 

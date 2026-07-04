@@ -19,6 +19,7 @@ export { recordSiteMetric } from "./api/record-site-metric";
 export type { RecordSiteMetricResult } from "./api/record-site-metric";
 export type { SubmitEnquiryInput, SubmitEnquiryResult } from "./api/submit-enquiry";
 export { renderPage } from "./model/render-page";
+export { resolveSignatureMoment } from "./moments/registry";
 export {
   PRIMITIVE_COMPONENT_MAP,
   resolvePrimitiveComponent,

@@ -13,6 +13,8 @@
 
 import { Phone } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
+import { createElement } from "react";
+import { resolveSignatureMoment } from "../moments/registry";
 import type { PrimitiveSectionProps } from "../model/types";
 import {
   AnnotationTag,
@@ -162,12 +164,25 @@ export function HeroRapidResponse({ section, variant, slots, blueprint }: Primit
   const secondary = blueprint.pages.pages[0].conversion?.ctas?.[0];
   const promise = promiseOf(slots["response-promise"]);
 
+  const momentId = section.extensions?.signatureMoment as string | undefined;
+  const signatureMoment = resolveSignatureMoment(momentId);
+
   return (
     // Content is top-anchored (not vertically centred): late layout above or
     // within the hero cannot re-centre the whole block (CLS).
     <SectionShell section={section} flush defer={false} className="isolate min-h-[94svh]">
       <style dangerouslySetInnerHTML={{ __html: HERO_CSS }} />
       <StormAtmosphere />
+      {signatureMoment && (
+        // The site's ONE signature moment — the opening act (ADR-032).
+        <div
+          data-signature-moment={momentId}
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 overflow-hidden"
+        >
+          {createElement(signatureMoment)}
+        </div>
+      )}
       <Container wide className="relative pb-24 pt-[clamp(7rem,18svh,11rem)]">
         <div className="flex max-w-3xl flex-col items-start gap-6">
           {promise && (
