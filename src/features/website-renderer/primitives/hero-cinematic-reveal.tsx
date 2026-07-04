@@ -127,6 +127,7 @@ export function HeroCinematicReveal({
   slots,
   blueprint,
   mediaAssets,
+  mode,
 }: PrimitiveSectionProps) {
   const split = variant === "split-editorial";
   const video = variant === "video-backdrop";
@@ -210,11 +211,29 @@ export function HeroCinematicReveal({
             eager
             className="h-full w-full"
           />
+          {/* golden-hour mood grade — the theme is literally named for it:
+              warm low sun from the right, faint violet in the sky */}
           <div
             className="absolute inset-0"
             style={{
               background:
-                "linear-gradient(100deg, color-mix(in oklab, var(--wr-bg) 82%, transparent) 22%, color-mix(in oklab, var(--wr-bg) 35%, transparent) 55%, transparent 85%)",
+                "linear-gradient(15deg, rgba(255, 138, 46, 0.32), rgba(255, 206, 130, 0.12) 55%, rgba(84, 62, 128, 0.14))",
+              mixBlendMode: "overlay",
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: "rgba(255, 170, 80, 0.10)",
+              mixBlendMode: "soft-light",
+            }}
+          />
+          {/* directional dusk scrim — headlines never fight the photograph */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(100deg, color-mix(in oklab, var(--wr-bg) 88%, transparent) 24%, color-mix(in oklab, var(--wr-bg) 45%, transparent) 55%, transparent 85%)",
             }}
           />
           <div
@@ -256,6 +275,7 @@ export function HeroCinematicReveal({
                 label="hero frame · the finished space"
                 scene="linear-gradient(160deg, var(--wr-storm-1), var(--wr-storm-2) 60%, #8a6d47)"
                 minHeight="26rem"
+                mode={mode}
               />
             </CssSettle>
           </div>
@@ -263,7 +283,7 @@ export function HeroCinematicReveal({
           copy
         )}
 
-        {(video || (!split && backdrop)) && (
+        {mode === "preview" && (video || (!split && backdrop)) && (
           <div className="absolute bottom-6 right-[var(--wr-space-gutter)] hidden max-w-xs flex-col gap-1.5 sm:flex">
             <AnnotationTag>
               {video ? "video backdrop slot · awaiting real footage" : "backdrop direction"}

@@ -86,11 +86,15 @@ function ReviewSlot({
   );
 }
 
-export function TrustReviewWall({ section, variant, slots }: PrimitiveSectionProps) {
+export function TrustReviewWall({ section, variant, slots, mode }: PrimitiveSectionProps) {
   const themes = reviewThemes(slots["review-themes"]);
   const attribution = slots["attribution-direction"];
   const [headline, ...supporting] = themes;
   const spotlight = variant === "spotlight";
+
+  // Public mode (ADR-034): with no VERIFIED reviews, the section collapses
+  // entirely — never empty quote cards, never zero-star outlines.
+  if (mode === "public") return null;
 
   return (
     <SectionShell section={section}>

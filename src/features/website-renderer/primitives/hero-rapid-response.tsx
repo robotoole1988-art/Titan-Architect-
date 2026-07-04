@@ -160,7 +160,7 @@ function promiseOf(direction: string | undefined): string | undefined {
   return segments.length >= 2 ? segments[1] : direction;
 }
 
-export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAssets }: PrimitiveSectionProps) {
+export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAssets, mode }: PrimitiveSectionProps) {
   const callFirst = variant !== "quote-first";
   const media = section.media?.[0];
   const secondary = blueprint.pages.pages[0].conversion?.ctas?.[0];
@@ -180,6 +180,16 @@ export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAss
         // The real photograph beneath the storm — the property at stake.
         <div aria-hidden className="absolute inset-0">
           <CinematicImage asset={backdropAsset} alt="" kenBurns eager className="h-full w-full" />
+          {/* storm mood grade — cools the photograph into the theme */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(180deg, rgba(46, 66, 96, 0.5), rgba(18, 27, 42, 0.4))",
+              mixBlendMode: "color",
+            }}
+          />
+          {/* directional scrim — the headline column NEVER fights the photo */}
           <div
             className="absolute inset-0"
             style={{
@@ -260,7 +270,7 @@ export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAss
           </CssRise>
         </div>
 
-        {media && (
+        {media && mode === "preview" && (
           <div className="absolute bottom-6 right-[var(--wr-space-gutter)] hidden max-w-xs sm:block">
             <AnnotationTag>media brief · {media.kind}</AnnotationTag>
             <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed" style={{ color: "var(--wr-ink-faint)" }}>

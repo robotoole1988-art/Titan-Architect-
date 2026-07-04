@@ -44,7 +44,7 @@ function explainers(direction: string | undefined): string[] {
   return splitList(afterFirstDash(direction));
 }
 
-export function ServicesInteractiveExplorer({ section, variant, slots, mediaAssets }: PrimitiveSectionProps) {
+export function ServicesInteractiveExplorer({ section, variant, slots, mediaAssets, mode }: PrimitiveSectionProps) {
   const heading = leadSentence(slots.services);
   const cards = explainers(slots["service-explainers"]);
   const anchors = pillars(slots.services);
@@ -60,6 +60,7 @@ export function ServicesInteractiveExplorer({ section, variant, slots, mediaAsse
           surfaces={anchors}
           explainers={cards}
           mediaAssets={mediaAssets}
+          annotate={mode === "preview"}
         />
       </SectionShell>
     );

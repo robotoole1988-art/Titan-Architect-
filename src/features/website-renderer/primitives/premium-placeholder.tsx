@@ -24,12 +24,17 @@ export function PremiumSectionPlaceholder({
   section,
   variant,
   slots,
+  mode,
 }: PrimitiveSectionProps) {
   const primitive = getSectionPrimitive(
     SECTION_PRIMITIVE_REGISTRY,
     section.identifier,
   );
   const entries = Object.entries(slots);
+
+  // Public mode (ADR-034): a placeholder is internal scaffolding by
+  // definition — the customer's building simply doesn't have the room yet.
+  if (mode === "public") return null;
 
   return (
     <SectionShell section={section}>

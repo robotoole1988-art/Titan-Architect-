@@ -7,7 +7,7 @@ import {
   type WebsiteBlueprint,
 } from "@/core/website-blueprint";
 import { renderPage } from "../model/render-page";
-import type { ResolvedMediaAsset } from "../model/types";
+import type { RenderContact, ResolvedMediaAsset } from "../model/types";
 import { rendererFontClass } from "../theme/fonts";
 import { SiteMetricsBeacon } from "./site-metrics-beacon";
 
@@ -28,6 +28,8 @@ export interface ResolvedPublication {
   ga4MeasurementId?: string;
   /** APPROVED media by slotRef (ADR-033). */
   media: Readonly<Record<string, ResolvedMediaAsset>>;
+  /** Real contact details from the Business record (ADR-034). */
+  contact?: RenderContact;
   /** How the site is being served — drives internal link hrefs. */
   servingMode: "slug" | "hostname";
 }
@@ -93,6 +95,7 @@ export async function resolvePublishedSite(
     page,
     businessName: business.name,
     media,
+    ...(business.contact ? { contact: business.contact } : {}),
     ...(business.ga4MeasurementId
       ? { ga4MeasurementId: business.ga4MeasurementId }
       : {}),
@@ -189,6 +192,9 @@ export function PublishedSitePage({
           slug: publication.slug,
         },
         media: resolved.media,
+        // The customer's building — zero internal scaffolding (ADR-034).
+        mode: "public",
+        ...(resolved.contact ? { contact: resolved.contact } : {}),
       })}
     </div>
   );

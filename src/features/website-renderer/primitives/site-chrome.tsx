@@ -4,9 +4,9 @@
  * every page carries them.)
  */
 
-import { Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
-import type { SiteNavLink } from "../model/types";
+import type { RenderContact, RenderMode, SiteNavLink } from "../model/types";
 import { AnnotationTag, Container, SignalCTA, displayFont, monoFont } from "./atoms";
 
 /** Page-collection links (ADR-028) — blueprint navigation drives these. */
@@ -91,26 +91,68 @@ export function SiteHeader({
 export function SiteFooter({
   blueprint,
   nav = [],
+  mode = "preview",
+  contact,
 }: {
   blueprint: WebsiteBlueprint;
   nav?: SiteNavLink[];
+  mode?: RenderMode;
+  contact?: RenderContact;
 }) {
   const { identity, footer } = blueprint;
+  const isPublic = mode === "public";
   return (
     <footer className="border-t" style={{ borderColor: "var(--wr-line)", background: "var(--wr-bg-raised)" }}>
       <Container wide className="flex flex-col gap-8 py-14">
         <div className="flex flex-wrap items-start justify-between gap-8">
-          <span
-            className="text-xl font-bold tracking-tight"
-            style={{ ...displayFont, color: "var(--wr-ink)" }}
-          >
-            {identity.businessName}
-          </span>
-          <div className="flex max-w-md flex-col gap-2.5">
-            {(footer.contents ?? []).map((content) => (
-              <AnnotationTag key={content}>{content}</AnnotationTag>
-            ))}
+          <div className="flex flex-col gap-1.5">
+            <span
+              className="text-xl font-bold tracking-tight"
+              style={{ ...displayFont, color: "var(--wr-ink)" }}
+            >
+              {identity.businessName}
+            </span>
+            {identity.location && (
+              <span className="text-sm" style={{ color: "var(--wr-ink-muted)" }}>
+                {identity.trade} · {identity.location}
+              </span>
+            )}
           </div>
+          {isPublic ? (
+            // Public mode: REAL contact details where they exist, nothing
+            // where they don't (ADR-034 — honesty means absence).
+            (contact?.phone || contact?.email) && (
+              <div className="flex flex-col items-start gap-2.5">
+                {contact.phone && (
+                  <a
+                    href={`tel:${contact.phone.replace(/\s+/g, "")}`}
+                    className="inline-flex items-center gap-2 text-base font-semibold focus-visible:outline-2 focus-visible:outline-offset-4"
+                    style={{ color: "var(--wr-ink)", outlineColor: "var(--wr-accent)" }}
+                  >
+                    <Phone className="size-4" aria-hidden style={{ color: "var(--wr-accent)" }} />
+                    {contact.phone}
+                  </a>
+                )}
+                {contact.email && (
+                  <a
+                    href={`mailto:${contact.email}`}
+                    className="inline-flex items-center gap-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-4"
+                    style={{ color: "var(--wr-ink-muted)", outlineColor: "var(--wr-accent)" }}
+                  >
+                    <Mail className="size-4" aria-hidden style={{ color: "var(--wr-accent)" }} />
+                    {contact.email}
+                  </a>
+                )}
+              </div>
+            )
+          ) : (
+            // Preview mode: the drawing keeps its pencil marks.
+            <div className="flex max-w-md flex-col gap-2.5">
+              {(footer.contents ?? []).map((content) => (
+                <AnnotationTag key={content}>{content}</AnnotationTag>
+              ))}
+            </div>
+          )}
         </div>
         {nav.length > 0 && (
           <div className="flex flex-col gap-3 border-t pt-6" style={{ borderColor: "var(--wr-line)" }}>
@@ -123,15 +165,24 @@ export function SiteFooter({
             <NavLinks nav={nav} footer />
           </div>
         )}
-        {(footer.legal?.length ?? 0) > 0 && (
+        {isPublic ? (
           <div
-            className="flex flex-wrap gap-x-6 gap-y-2 border-t pt-6 text-[11px] uppercase tracking-[0.16em]"
+            className="border-t pt-6 text-[11px] uppercase tracking-[0.16em]"
             style={{ ...monoFont, borderColor: "var(--wr-line)", color: "var(--wr-ink-faint)" }}
           >
-            {footer.legal!.map((item) => (
-              <span key={item}>{item}</span>
-            ))}
+            © {new Date().getFullYear()} {identity.businessName}
           </div>
+        ) : (
+          (footer.legal?.length ?? 0) > 0 && (
+            <div
+              className="flex flex-wrap gap-x-6 gap-y-2 border-t pt-6 text-[11px] uppercase tracking-[0.16em]"
+              style={{ ...monoFont, borderColor: "var(--wr-line)", color: "var(--wr-ink-faint)" }}
+            >
+              {footer.legal!.map((item) => (
+                <span key={item}>{item}</span>
+              ))}
+            </div>
+          )
         )}
       </Container>
     </footer>

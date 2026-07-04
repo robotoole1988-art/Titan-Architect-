@@ -3,9 +3,10 @@
 /**
  * process.journey-map — the engagement made predictable.
  *
- * The strategy's narrative arc becomes numbered stages along a rail that
- * draws itself as you scroll — the visitor literally watches the path from
- * panic to resolution complete. Variants: "numbered-steps" / "timeline".
+ * The customer journey (real step names, ADR-034) becomes numbered stages
+ * along a rail that draws itself as you scroll — the visitor literally
+ * watches the path from enquiry to completion. Variants: "numbered-steps" /
+ * "timeline".
  */
 
 import { useRef } from "react";
@@ -13,7 +14,7 @@ import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
 import { CinematicImage } from "./cinematic-image";
 import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal, Stagger, StaggerItem } from "../motion/motion";
-import { splitArc, splitList } from "../model/slots";
+import { splitList } from "../model/slots";
 import {
   Container,
   CopyChip,
@@ -30,16 +31,15 @@ interface Stage {
   detail?: string;
 }
 
-/** "Panic (something has failed) → Relief (…)" → titled stages with detail. */
+/**
+ * Steps are real customer copy joined with "·" (ADR-034). Legacy blueprints
+ * carried the internal narrative arc ("… — Dream (…) → Doubt (…)") — that is
+ * framework metadata, never copy, so it parses to NOTHING and the primitive
+ * renders no framework language anywhere.
+ */
 function stagesOf(direction: string | undefined): Stage[] {
-  const raw = direction?.split("—").slice(1).join("—") ?? direction ?? "";
-  return splitArc(raw).map((stage) => {
-    const match = stage.match(/^([^(]+)(?:\(([^)]*)\))?/);
-    return {
-      title: (match?.[1] ?? stage).trim(),
-      detail: match?.[2]?.trim(),
-    };
-  });
+  if (!direction || direction.includes("→")) return [];
+  return splitList(direction).map((step) => ({ title: step }));
 }
 
 function guaranteesOf(direction: string | undefined): string[] {
@@ -68,7 +68,7 @@ export function ProcessJourneyMap({ section, slots, mediaAssets }: PrimitiveSect
         <Reveal>
           <Eyebrow>{primitiveName(section)}</Eyebrow>
           <SectionTitle id={`${section.id}-title`}>
-            {stages.map((stage) => stage.title).join(" → ")}
+            {slots["steps-headline"] ?? "How it works"}
           </SectionTitle>
         </Reveal>
 

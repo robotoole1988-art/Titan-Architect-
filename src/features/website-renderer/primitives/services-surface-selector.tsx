@@ -75,12 +75,15 @@ export function SurfaceSelector({
   surfaces,
   explainers,
   mediaAssets,
+  annotate = true,
 }: {
   sectionId: string;
   heading: string;
   surfaces: string[];
   explainers: string[];
   mediaAssets?: Readonly<Record<string, ResolvedMediaAsset>>;
+  /** Preview-only pencil marks (ADR-034); false on public pages. */
+  annotate?: boolean;
 }) {
   const [active, setActive] = useState(0);
   const reduced = useReducedMotion();
@@ -182,7 +185,7 @@ export function SurfaceSelector({
                 }}
               />
               <div className="absolute inset-x-6 bottom-6 flex flex-col items-start gap-3">
-                {!mediaAssets?.[`surfaces/${surfaceSlug(surface)}`] && (
+                {!mediaAssets?.[`surfaces/${surfaceSlug(surface)}`] && annotate && (
                   <AnnotationTag>surface texture · suggestive, real media slot</AnnotationTag>
                 )}
                 <h3

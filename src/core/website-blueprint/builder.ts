@@ -194,8 +194,12 @@ function contentFor(
         `response-promise: Lead with the response promise — ${conversionStrategy.trustSignals[0]} — stated plainly, above the fold.`,
       ];
     case "story.transformation-arc":
+      // narrative-arc stays as INTERNAL rationale; the renderer draws visible
+      // copy only from arc-headline + journey-steps (ADR-034).
       return [
         `narrative-arc: ${storytelling.narrativeArc}`,
+        `arc-headline: ${storytelling.keyMessages[0]}`,
+        `journey-steps: ${storytelling.customerJourney.join(" · ")}`,
         `key-messages: ${storytelling.keyMessages.join(" · ")}`,
       ];
     case "story.gentle-welcome":
@@ -250,8 +254,10 @@ function contentFor(
         `response-notes: ${mobileStrategy.summary}`,
       ];
     case "process.journey-map":
+      // Real customer step names — arc metadata is never copy (ADR-034).
       return [
-        `steps: Map the engagement to the narrative arc — ${storytelling.narrativeArc}`,
+        `steps: ${storytelling.customerJourney.join(" · ")}`,
+        `steps-headline: How it works — from first call to finished ${trade}`,
         `guarantees: Close each step with proof: ${conversionStrategy.trustSignals.join(" · ")}.`,
       ];
     case "faq.reassurance-accordion":

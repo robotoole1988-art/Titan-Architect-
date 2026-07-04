@@ -59,26 +59,36 @@ describe("buildPageJsonLd", () => {
     expect(service?.areaServed).toEqual(["Sale"]);
   });
 
-  it("emits FAQPage only where an FAQ primitive renders", () => {
+  it("emits FAQPage ONLY with complete Q&A copy — never placeholder answers (ADR-034)", () => {
+    // The builder emits direction, not answers — so no FAQPage anywhere:
     for (const page of blueprint.pages.pages) {
-      const hasFaq = page.sections.some((section) =>
-        section.identifier.startsWith("faq."),
-      );
-      const faq = ofType(ldFor(page.id), "FAQPage");
-      if (hasFaq) {
-        expect(faq, `${page.id} should carry FAQPage`).toBeDefined();
-        const entities = faq?.mainEntity as ReadonlyArray<
-          Record<string, unknown>
-        >;
-        expect(entities.length).toBeGreaterThan(0);
-        expect(entities[0]["@type"]).toBe("Question");
-        expect(
-          (entities[0].acceptedAnswer as Record<string, unknown>)["@type"],
-        ).toBe("Answer");
-      } else {
-        expect(faq).toBeUndefined();
-      }
+      expect(
+        ofType(ldFor(page.id), "FAQPage"),
+        `${page.id} must not fabricate FAQ answers`,
+      ).toBeUndefined();
     }
+
+    // Real `qa: question | answer` copy upgrades the markup:
+    const doctored = structuredClone(blueprint);
+    const faqSection = doctored.pages.pages[0].sections.find((section) =>
+      section.identifier.startsWith("faq."),
+    );
+    expect(faqSection).toBeDefined();
+    (faqSection as unknown as { contentRequirements: string[] }).contentRequirements = [
+      ...(faqSection!.contentRequirements ?? []),
+      "qa: How long does a resin driveway take? | Most installations complete in two to three days.",
+    ];
+    const faq = ofType(
+      buildPageJsonLd(doctored, "home", { baseUrl: BASE }),
+      "FAQPage",
+    );
+    expect(faq).toBeDefined();
+    const entities = faq?.mainEntity as ReadonlyArray<Record<string, unknown>>;
+    expect(entities).toHaveLength(1);
+    expect(entities[0].name).toBe("How long does a resin driveway take?");
+    expect(
+      (entities[0].acceptedAnswer as Record<string, unknown>).text,
+    ).toBe("Most installations complete in two to three days.");
   });
 
   it("emits BreadcrumbList on area pages only, Home → area", () => {

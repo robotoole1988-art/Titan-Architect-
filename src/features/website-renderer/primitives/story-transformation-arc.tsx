@@ -18,7 +18,7 @@ import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal, Stagger, StaggerItem } from "../motion/motion";
 import { CinematicImage } from "./cinematic-image";
 import type { ResolvedMediaAsset } from "../model/types";
-import { splitArc, splitList } from "../model/slots";
+import { splitList } from "../model/slots";
 import {
   AnnotationTag,
   Container,
@@ -42,11 +42,15 @@ export function Comparison({
   mediaDirection,
   beforeAsset,
   afterAsset,
+  mode = "preview",
 }: {
   mediaDirection?: string;
   beforeAsset?: ResolvedMediaAsset;
   afterAsset?: ResolvedMediaAsset;
+  /** Public mode: no slot annotations, ever (ADR-034). */
+  mode?: PrimitiveSectionProps["mode"];
 }) {
+  const annotate = mode === "preview";
   const [value, setValue] = useState(18);
   const containerRef = useRef<HTMLDivElement>(null);
   const inView = useInView(containerRef, { once: true, margin: "-25%" });
@@ -77,7 +81,7 @@ export function Comparison({
                 "radial-gradient(90% 70% at 75% 20%, var(--wr-accent-glow), transparent 60%)",
             }}
           />
-          {!afterAsset && (
+          {!afterAsset && annotate && (
             <div className="absolute bottom-4 right-5">
               <AnnotationTag>after · media slot</AnnotationTag>
             </div>
@@ -106,7 +110,7 @@ export function Comparison({
           {beforeAsset && (
             <CinematicImage asset={beforeAsset} alt="Before the work" className="absolute inset-0" />
           )}
-          {!beforeAsset && (
+          {!beforeAsset && annotate && (
             <div className="absolute bottom-4 left-5">
               <AnnotationTag>before · media slot</AnnotationTag>
             </div>
@@ -153,7 +157,7 @@ export function Comparison({
         />
       </div>
 
-      {mediaDirection && (
+      {mediaDirection && annotate && (
         <p className="mt-3 text-[11px] leading-relaxed" style={{ ...monoFont, color: "var(--wr-ink-faint)" }}>
           {mediaDirection}
         </p>
@@ -162,9 +166,12 @@ export function Comparison({
   );
 }
 
-export function StoryTransformationArc({ section, slots, mediaAssets }: PrimitiveSectionProps) {
-  const stages = splitArc(slots["narrative-arc"]);
+export function StoryTransformationArc({ section, slots, mediaAssets, mode }: PrimitiveSectionProps) {
+  // The narrative arc is INTERNAL framework language (ADR-034) — visible copy
+  // comes only from arc-headline + journey-steps (real customer steps).
+  const journey = splitList(slots["journey-steps"]);
   const milestones = splitList(slots["key-messages"]);
+  const headline = slots["arc-headline"] ?? milestones[0] ?? "";
   const media = section.media?.[0];
   const baseRef = media?.generationRef ?? `media/${section.id}`;
   const beforeAsset = mediaAssets?.[`${baseRef}.before`];
@@ -175,9 +182,7 @@ export function StoryTransformationArc({ section, slots, mediaAssets }: Primitiv
       <Container wide>
         <Reveal>
           <Eyebrow>{primitiveName(section)}</Eyebrow>
-          <SectionTitle id={`${section.id}-title`}>
-            {stages[0] ?? milestones[0] ?? ""}
-          </SectionTitle>
+          <SectionTitle id={`${section.id}-title`}>{headline}</SectionTitle>
         </Reveal>
 
         <div className="mt-12">
@@ -185,13 +190,14 @@ export function StoryTransformationArc({ section, slots, mediaAssets }: Primitiv
             mediaDirection={beforeAsset ? undefined : media?.direction}
             beforeAsset={beforeAsset}
             afterAsset={afterAsset}
+            mode={mode}
           />
         </div>
 
-        {stages.length > 1 && (
+        {journey.length > 1 && (
           <Stagger className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" gap={0.07}>
-            {stages.map((stage, index) => (
-              <StaggerItem key={stage}>
+            {journey.map((step, index) => (
+              <StaggerItem key={step}>
                 <div
                   className="flex h-full flex-col gap-2 rounded-[var(--wr-radius)] border p-5"
                   style={{ borderColor: "var(--wr-line)", background: "var(--wr-surface)" }}
@@ -200,7 +206,7 @@ export function StoryTransformationArc({ section, slots, mediaAssets }: Primitiv
                     {String(index + 1).padStart(2, "0")}
                   </span>
                   <span className="text-sm leading-relaxed" style={{ color: "var(--wr-ink-muted)" }}>
-                    {stage}
+                    {step}
                   </span>
                 </div>
               </StaggerItem>

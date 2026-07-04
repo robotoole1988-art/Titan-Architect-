@@ -97,7 +97,7 @@ function Radar({ place }: { place?: string }) {
   );
 }
 
-export function LocationServiceArea({ section, variant, slots, blueprint }: PrimitiveSectionProps) {
+export function LocationServiceArea({ section, variant, slots, blueprint, mode }: PrimitiveSectionProps) {
   const heading = headingOf(slots.coverage);
   const terms = areaTerms(slots.coverage);
   const radarFirst = variant !== "area-list";
@@ -130,7 +130,8 @@ export function LocationServiceArea({ section, variant, slots, blueprint }: Prim
                 ))}
               </Stagger>
             )}
-            {slots["response-notes"] && (
+            {/* response-notes is strategy direction, not customer copy */}
+            {slots["response-notes"] && mode === "preview" && (
               <Reveal delay={0.1}>
                 <div className="mt-8 flex flex-col gap-2">
                   <AnnotationTag>response note</AnnotationTag>

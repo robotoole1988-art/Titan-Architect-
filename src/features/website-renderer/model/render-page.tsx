@@ -33,6 +33,7 @@ export function renderPage(
   const onUnmapped =
     options.onUnmapped ??
     (process.env.NODE_ENV === "production" ? "skip" : "throw");
+  const mode = options.mode ?? "preview";
   const collection = blueprint.pages.pages;
   const page = options.pageId
     ? collection.find((candidate) => candidate.id === options.pageId)
@@ -91,6 +92,7 @@ export function renderPage(
         blueprint={blueprint}
         serving={options.serving}
         mediaAssets={options.media}
+        mode={mode}
       />
     );
   });
@@ -114,7 +116,7 @@ export function renderPage(
       <MotionConfig reducedMotion="user">
         <SiteHeader blueprint={blueprint} nav={nav} />
         <main>{sections}</main>
-        <SiteFooter blueprint={blueprint} nav={nav} />
+        <SiteFooter blueprint={blueprint} nav={nav} mode={mode} contact={options.contact} />
       </MotionConfig>
     </div>
   );

@@ -48,11 +48,14 @@ function ProjectFrame({
   caption,
   tall = false,
   asset,
+  annotate,
 }: {
   index: number;
   caption?: string;
   tall?: boolean;
   asset?: ResolvedMediaAsset;
+  /** Preview-only pencil marks (ADR-034). */
+  annotate?: boolean;
 }) {
   return (
     <figure
@@ -80,12 +83,12 @@ function ProjectFrame({
             "linear-gradient(120deg, transparent 35%, rgba(255, 236, 200, 0.28) 50%, transparent 65%)",
         }}
       />
-      {!asset && (
+      {!asset && annotate && (
         <div aria-hidden className="absolute inset-3 rounded-[calc(var(--wr-radius-lg)-0.6rem)] border border-dashed"
           style={{ borderColor: "var(--wr-line-strong)" }}
         />
       )}
-      {!asset && (
+      {!asset && annotate && (
         <figcaption className="absolute inset-x-5 bottom-4 flex flex-col gap-1.5">
           <AnnotationTag>
             project {String(index + 1).padStart(2, "0")} · media slot
@@ -109,7 +112,9 @@ export function ProofPortfolioShowcase({
   variant,
   slots,
   mediaAssets,
+  mode,
 }: PrimitiveSectionProps) {
+  const annotate = mode === "preview";
   const direction = slots["portfolio-direction"];
   const baseRef = section.media?.[0]?.generationRef ?? `media/${section.id}`;
   const frameAsset = (index: number) => mediaAssets?.[`${baseRef}.frame-${index + 1}`];
@@ -126,7 +131,8 @@ export function ProofPortfolioShowcase({
           <SectionTitle id={`${section.id}-title`}>
             The work speaks first
           </SectionTitle>
-          {direction && (
+          {/* portfolio-direction is photography DIRECTION, not customer copy */}
+          {direction && annotate && (
             <p
               className="mt-4 max-w-[var(--wr-measure)] leading-relaxed"
               style={{ color: "var(--wr-ink-muted)" }}
@@ -144,6 +150,7 @@ export function ProofPortfolioShowcase({
               }
               beforeAsset={mediaAssets?.[`${baseRef}.pair-before`]}
               afterAsset={mediaAssets?.[`${baseRef}.pair-after`]}
+              mode={mode}
             />
           </div>
         )}
@@ -157,7 +164,7 @@ export function ProofPortfolioShowcase({
             >
               {Array.from({ length: frameCount }, (_, index) => (
                 <div key={index} className="w-[min(78vw,34rem)] shrink-0 snap-center">
-                  <ProjectFrame index={index} caption={captionBrief} tall asset={frameAsset(index)} />
+                  <ProjectFrame index={index} caption={captionBrief} tall asset={frameAsset(index)} annotate={annotate} />
                 </div>
               ))}
             </div>
@@ -183,6 +190,7 @@ export function ProofPortfolioShowcase({
                     caption={captionBrief}
                     tall={!beforeAfter && index % 3 === 0}
                     asset={frameAsset(index)}
+                    annotate={annotate}
                   />
                 </StaggerItem>
               ),
@@ -190,7 +198,7 @@ export function ProofPortfolioShowcase({
           </Stagger>
         )}
 
-        {variant === "filterable-grid" && (
+        {variant === "filterable-grid" && annotate && (
           <Reveal delay={0.15}>
             <div className="mt-6">
               <AnnotationTag>
