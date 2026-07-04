@@ -58,7 +58,7 @@ const ARCHETYPE_KEYWORDS: Array<[TradeArchetype, ReadonlyArray<string>]> = [
   // Order matters — most specific first.
   [
     "premium",
-    ["interior design", "architect", "bespoke", "luxury", "high-end", "high end", "designer kitchen"],
+    ["interior design", "architect", "bespoke", "luxury", "high-end", "high end", "designer kitchen", "detailing", "swimming pool"],
   ],
   [
     "event",
@@ -74,11 +74,13 @@ const ARCHETYPE_KEYWORDS: Array<[TradeArchetype, ReadonlyArray<string>]> = [
   ],
   [
     "emergency",
-    ["plumb", "heating", "boiler", "gas", "electric", "locksmith", "drain", "glazing", "glazier", "pest", "lock"],
+    // "emergency glazing"/"glazier" = boarding-up urgency; plain "glazing"
+    // belongs to double-glazing PROJECT trades (v2 taxonomy expansion).
+    ["plumb", "heating", "boiler", "gas", "electric", "locksmith", "drain", "emergency glazing", "glazier", "pest", "lock", "damp", "hvac", "air con"],
   ],
   [
     "project",
-    ["kitchen", "bathroom", "extension", "roof", "landscap", "driveway", "paving", "plaster", "floor", "window", "build", "joiner", "carpent", "paint", "decorat", "render", "loft", "conversion", "fencing", "brick", "tiling", "tiler", "scaffold"],
+    ["kitchen", "bathroom", "extension", "roof", "landscap", "driveway", "paving", "plaster", "floor", "window", "glazing", "build", "joiner", "carpent", "paint", "decorat", "render", "loft", "conversion", "fencing", "brick", "tiling", "tiler", "scaffold", "conservator", "orangery", "tarmac", "surfacing", "artificial grass", "chimney", "fireplace", "stove"],
   ],
 ];
 

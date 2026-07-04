@@ -1,5 +1,5 @@
 /**
- * The canonical trade taxonomy (ADR-026): the founder's twenty trades, each
+ * The canonical trade taxonomy (ADR-026): the founder's thirty-five trades (v2 workbook), each
  * with a services vocabulary. Ids are IDENTICAL to the market-intelligence
  * tradeKeys — one id space across the platform. Services are richly seeded
  * for the priority trades (roofing, driveways & paving, landscaping,
@@ -296,6 +296,206 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
       "Licensed disposal & transfer notes",
     ],
   },
+  // ---- v2 expansion (TITAN-CPL-Benchmarks-v2, 35 trades) ----
+  {
+    id: "electricians",
+    label: "Electricians",
+    matchers: ["electric", "sparky", "rewir", "fuse board", "eicr"],
+    services: [
+      "Emergency electrician (24/7)",
+      "Full & partial rewires",
+      "Fuse board (consumer unit) upgrades",
+      "EICR safety certificates",
+      "EV charger wiring",
+      "Lighting design & installation",
+      "Smart home & security wiring",
+      "Landlord electrical certificates",
+    ],
+  },
+  {
+    id: "builders-general",
+    label: "Builders (General)",
+    matchers: ["builder", "building contractor", "general build"],
+    services: [
+      "New builds",
+      "Structural alterations",
+      "Garage conversions",
+      "Groundworks & foundations",
+      "Project management",
+      "Insurance & remedial work",
+    ],
+  },
+  {
+    id: "extensions-renovations",
+    label: "Extensions & Renovations",
+    matchers: ["extension", "renovation", "refurb", "loft conversion"],
+    services: [
+      "Single-storey extensions",
+      "Double-storey extensions",
+      "Loft conversions",
+      "Full house renovations",
+      "Kitchen & bathroom refits",
+      "Open-plan conversions & steels",
+      "Planning & building regs support",
+      "Design & build packages",
+    ],
+  },
+  {
+    id: "windows-doors",
+    label: "Windows & Doors (Double Glazing)",
+    matchers: ["double glazing", "upvc", "window", "glazing", "bifold", "composite door"],
+    services: [
+      "uPVC windows",
+      "Aluminium windows",
+      "Composite front doors",
+      "Bifold & sliding doors",
+      "Sash window replacement",
+      "Misted/failed unit replacement",
+      "French doors & patio doors",
+      "Trickle vents & building regs compliance",
+    ],
+  },
+  {
+    id: "conservatories",
+    label: "Conservatories",
+    matchers: ["conservator", "orangery"],
+    services: [
+      "New conservatories",
+      "Orangeries",
+      "Solid conservatory roof conversions",
+      "Conservatory refurbishment",
+      "Glazed extensions",
+    ],
+  },
+  {
+    id: "dentists-private",
+    label: "Dentists (Private)",
+    matchers: ["dentist", "dental", "implant", "invisalign"],
+    services: [
+      "New patient examinations",
+      "Hygiene appointments",
+      "Dental implants",
+      "Invisalign & orthodontics",
+      "Teeth whitening",
+      "Veneers & cosmetic dentistry",
+      "Emergency dental care",
+    ],
+  },
+  {
+    id: "solicitors",
+    label: "Solicitors",
+    matchers: ["solicitor", "law firm", "legal", "conveyanc"],
+    services: [
+      "Residential conveyancing",
+      "Family law",
+      "Wills, trusts & probate",
+      "Personal injury",
+      "Employment law",
+      "Litigation & disputes",
+    ],
+  },
+  {
+    id: "car-detailing",
+    label: "Car Detailing",
+    matchers: ["detailing", "valeting", "ceramic coating"],
+    services: [
+      "Full detail (interior + exterior)",
+      "Ceramic coating",
+      "Paint correction",
+      "Interior deep clean",
+      "Mobile valeting",
+      "New-car protection packages",
+    ],
+  },
+  {
+    id: "brickwork",
+    label: "Brickwork",
+    matchers: ["brick", "repointing", "masonry"],
+    services: [
+      "Garden & boundary walls",
+      "Repointing",
+      "Structural brickwork",
+      "Chimney rebuilds",
+      "Porches & piers",
+    ],
+  },
+  {
+    id: "swimming-pools",
+    label: "Swimming Pools",
+    matchers: ["swimming pool", "pool build", "pool install"],
+    services: [
+      "New pool design & build",
+      "Indoor pools",
+      "Pool refurbishment",
+      "Liners & covers",
+      "Heating & filtration",
+      "Servicing & maintenance plans",
+    ],
+  },
+  {
+    id: "tarmac-surfacing",
+    label: "Tarmac & Surfacing",
+    matchers: ["tarmac", "surfacing", "asphalt"],
+    services: [
+      "Tarmac driveways",
+      "Car parks & forecourts",
+      "Roadways & access lanes",
+      "Resurfacing & overlays",
+      "Line marking",
+    ],
+  },
+  {
+    id: "artificial-grass",
+    label: "Artificial Grass",
+    matchers: ["artificial grass", "astro turf", "astroturf", "fake grass"],
+    services: [
+      "Artificial lawn installation",
+      "Pet-friendly turf",
+      "Play areas & schools",
+      "Putting greens",
+      "Roof terraces & balconies",
+    ],
+  },
+  {
+    id: "chimney-fireplaces",
+    label: "Chimney & Fireplaces",
+    matchers: ["fireplace", "log burner", "wood burner", "stove install", "chimney sweep"],
+    services: [
+      "Log burner & stove installation",
+      "Chimney sweeping",
+      "Flue lining",
+      "Fireplace renovation",
+      "HETAS certification",
+    ],
+  },
+  {
+    id: "damp-proofing",
+    label: "Damp Proofing",
+    // "damp proofing" (two words) must out-rank roofing's "roof", which
+    // hides inside the word "proofing" — the substring trap.
+    matchers: ["damp proofing", "damp proof", "rising damp", "damp", "condensation control", "basement tanking"],
+    services: [
+      "Rising damp treatment",
+      "Penetrating damp repairs",
+      "Condensation & mould control",
+      "Basement tanking & waterproofing",
+      "Timber & woodworm treatment",
+      "Damp surveys",
+    ],
+  },
+  {
+    id: "hvac-air-conditioning",
+    label: "HVAC / Air Conditioning",
+    matchers: ["hvac", "air con", "aircon", "heat pump", "ventilation"],
+    services: [
+      "Air conditioning installation",
+      "Air source heat pumps",
+      "AC servicing & regas",
+      "Commercial HVAC",
+      "Ventilation & MVHR",
+      "F-Gas compliance",
+    ],
+  },
 ];
 
 const BY_ID = new Map(TRADE_TAXONOMY.map((trade) => [trade.id, trade]));
@@ -317,10 +517,18 @@ export function matchTradeId(freeText: string): string | null {
   if (!lower) return null;
   const exact = TRADE_TAXONOMY.find((trade) => trade.label.toLowerCase() === lower);
   if (exact) return exact.id;
+  // The most SPECIFIC matcher wins — more words beat fewer ("swimming pool
+  // builder" is a pool trade, not a general builder). Equal specificity
+  // falls back to taxonomy order ("Emergency Roofing & Drainage" stays
+  // roofing: "roof" and "drain" tie, roofing comes first).
+  let best: { id: string; words: number } | null = null;
   for (const trade of TRADE_TAXONOMY) {
-    if (trade.matchers.some((matcher) => lower.includes(matcher))) {
-      return trade.id;
+    for (const matcher of trade.matchers) {
+      const words = matcher.trim().split(/\s+/).length;
+      if (lower.includes(matcher) && (!best || words > best.words)) {
+        best = { id: trade.id, words };
+      }
     }
   }
-  return null;
+  return best?.id ?? null;
 }

@@ -1,6 +1,6 @@
 /**
  * The seeded benchmark dataset — imported from the founder's workbook
- * `TITAN-CPL-Benchmarks-v1.xlsx` (2 July 2026), sheets "Trade Benchmarks"
+ * `TITAN-CPL-Benchmarks-v2.xlsx` (35 trades, 4 July 2026), sheets "Trade Benchmarks"
  * and "Assumptions". Source notes are kept verbatim as citations.
  *
  * Honesty notes carried over from the workbook:
@@ -14,7 +14,7 @@
 
 import type { ConfidenceLevel, Range } from "./model";
 
-export const SEED_AS_OF = "2026-07-02";
+export const SEED_AS_OF = "2026-07-04";
 
 export interface SeedTradeBenchmark {
   tradeKey: string;
@@ -289,6 +289,200 @@ export const TRADE_BENCHMARK_SEED: ReadonlyArray<SeedTradeBenchmark> = [
       "US benchmark CPL $26-100. Job value is per-visit — recurring LTV is the real economics.",
     ],
   },
+  // ---- v2 expansion (TITAN-CPL-Benchmarks-v2, 35 trades) ----
+  {
+    tradeKey: "electricians",
+    tradeLabel: "Electricians",
+    keywords: ["electric", "sparky", "rewir", "fuse board", "eicr"],
+    cpc: { low: 2.5, high: 8 },
+    conversionRate: 0.15,
+    jobValue: { low: 150, high: 2000 },
+    marketplaceLeadNote: "Marketplace lead £5-20",
+    confidence: "sourced",
+    sources: [
+      "UK trades baseline CPC GBP1.50-3, emergency terms far higher; UK budgets GBP600-1200/mo effective. BuiltRight/VibeAds/Whito.",
+    ],
+  },
+  {
+    tradeKey: "builders-general",
+    tradeLabel: "Builders (General)",
+    keywords: ["builder", "building contractor", "general build"],
+    cpc: { low: 2, high: 6 },
+    conversionRate: 0.08,
+    jobValue: { low: 5000, high: 100000 },
+    marketplaceLeadNote: "Marketplace lead £15-50",
+    confidence: "partial",
+    sources: [
+      "Construction CPL varies widely; London +30-40 percent. Cloudswitched/Marketable.",
+    ],
+  },
+  {
+    tradeKey: "extensions-renovations",
+    tradeLabel: "Extensions & Renovations",
+    keywords: ["extension", "renovation", "refurb", "loft conversion"],
+    cpc: { low: 4, high: 8 },
+    conversionRate: 0.1,
+    jobValue: { low: 20000, high: 80000 },
+    marketplaceLeadNote: "Marketplace lead £20-50",
+    confidence: "sourced",
+    sources: [
+      "UK extension CPL GBP35-75 documented; reno CPC GBP4-8, luxury terms GBP12+. Cloudswitched/BGCollective.",
+    ],
+  },
+  {
+    tradeKey: "windows-doors",
+    tradeLabel: "Windows & Doors (Double Glazing)",
+    keywords: ["double glazing", "upvc", "window", "glazing", "bifold", "doors"],
+    cpc: { low: 3, high: 9 },
+    conversionRate: 0.09,
+    jobValue: { low: 2000, high: 15000 },
+    marketplaceLeadNote: "Marketplace lead £10-70",
+    confidence: "sourced",
+    sources: [
+      "Double glazing leads GBP10-70 market-wide; job values GBP2k-15k. OneBase/LeadPronto/GrowthPPC.",
+    ],
+  },
+  {
+    tradeKey: "conservatories",
+    tradeLabel: "Conservatories",
+    keywords: ["conservator", "orangery"],
+    cpc: { low: 3, high: 8 },
+    conversionRate: 0.07,
+    jobValue: { low: 8000, high: 30000 },
+    marketplaceLeadNote: "Marketplace lead £20-60",
+    confidence: "partial",
+    sources: [
+      "Clustered with glazing/extensions; longer consideration cycle.",
+    ],
+  },
+  {
+    tradeKey: "dentists-private",
+    tradeLabel: "Dentists (Private)",
+    keywords: ["dentist", "dental", "implant", "invisalign"],
+    cpc: { low: 4.5, high: 10 },
+    conversionRate: 0.09,
+    jobValue: { low: 100, high: 3000 },
+    confidence: "sourced",
+    sources: [
+      "UK dental CPL avg GBP62 (range GBP35-150); implants CPC GBP8-25, implant leads GBP180-300, full-arch ROI 15-25x. Whitehat/Dominate/KeyGrow.",
+    ],
+  },
+  {
+    tradeKey: "solicitors",
+    tradeLabel: "Solicitors",
+    keywords: ["solicitor", "law firm", "legal", "conveyanc"],
+    cpc: { low: 8, high: 20 },
+    conversionRate: 0.05,
+    jobValue: { low: 500, high: 5000 },
+    confidence: "sourced",
+    sources: [
+      "Legal CPC avg GBP8.58 (GBP8-20 typical), CPL avg GBP131.63 at 5.09 percent conv; London 2-3x regional. Whitehat/SmallBizExpert.",
+    ],
+  },
+  {
+    tradeKey: "car-detailing",
+    tradeLabel: "Car Detailing",
+    keywords: ["detailing", "valeting", "ceramic coating"],
+    cpc: { low: 1.5, high: 4 },
+    conversionRate: 0.12,
+    jobValue: { low: 100, high: 800 },
+    marketplaceLeadNote: "Marketplace lead £5-15",
+    confidence: "estimated",
+    sources: [
+      "Modelled from cleaning cluster; ceramic coating jobs raise top-end value.",
+    ],
+  },
+  {
+    tradeKey: "brickwork",
+    tradeLabel: "Brickwork",
+    keywords: ["brick", "repointing", "masonry"],
+    cpc: { low: 1.5, high: 4 },
+    conversionRate: 0.09,
+    jobValue: { low: 500, high: 10000 },
+    marketplaceLeadNote: "Marketplace lead £5-20",
+    confidence: "estimated",
+    sources: [
+      "Modelled from builders cluster.",
+    ],
+  },
+  {
+    tradeKey: "swimming-pools",
+    tradeLabel: "Swimming Pools",
+    keywords: ["swimming pool", "pool build", "pool install"],
+    cpc: { low: 2, high: 6 },
+    conversionRate: 0.05,
+    jobValue: { low: 20000, high: 100000 },
+    marketplaceLeadNote: "Marketplace lead £30-80",
+    confidence: "estimated",
+    sources: [
+      "Low volume, very high ticket; long cycle. Modelled from premium project cluster.",
+    ],
+  },
+  {
+    tradeKey: "tarmac-surfacing",
+    tradeLabel: "Tarmac & Surfacing",
+    keywords: ["tarmac", "surfacing", "asphalt"],
+    cpc: { low: 3, high: 8 },
+    conversionRate: 0.1,
+    jobValue: { low: 2000, high: 8000 },
+    marketplaceLeadNote: "Marketplace lead £15-40",
+    confidence: "estimated",
+    sources: [
+      "Modelled from driveways cluster.",
+    ],
+  },
+  {
+    tradeKey: "artificial-grass",
+    tradeLabel: "Artificial Grass",
+    keywords: ["artificial grass", "astro turf", "astroturf", "fake grass"],
+    cpc: { low: 2, high: 5 },
+    conversionRate: 0.09,
+    jobValue: { low: 1500, high: 8000 },
+    marketplaceLeadNote: "Marketplace lead £10-30",
+    confidence: "estimated",
+    sources: [
+      "Modelled from landscaping cluster; strong seasonal spring peak.",
+    ],
+  },
+  {
+    tradeKey: "chimney-fireplaces",
+    tradeLabel: "Chimney & Fireplaces",
+    keywords: ["fireplace", "log burner", "wood burner", "stove install", "chimney sweep"],
+    cpc: { low: 1.5, high: 4 },
+    conversionRate: 0.12,
+    jobValue: { low: 150, high: 3000 },
+    marketplaceLeadNote: "Marketplace lead £5-20",
+    confidence: "estimated",
+    sources: [
+      "Sweep/repair low ticket + stove installs high ticket; autumn peak.",
+    ],
+  },
+  {
+    tradeKey: "damp-proofing",
+    tradeLabel: "Damp Proofing",
+    keywords: ["damp", "condensation control", "basement tanking"],
+    cpc: { low: 2, high: 6 },
+    conversionRate: 0.12,
+    jobValue: { low: 500, high: 5000 },
+    marketplaceLeadNote: "Marketplace lead £10-30",
+    confidence: "estimated",
+    sources: [
+      "Problem-driven high intent; modelled between emergency and project clusters.",
+    ],
+  },
+  {
+    tradeKey: "hvac-air-conditioning",
+    tradeLabel: "HVAC / Air Conditioning",
+    keywords: ["hvac", "air con", "aircon", "heat pump", "ventilation"],
+    cpc: { low: 3, high: 9 },
+    conversionRate: 0.1,
+    jobValue: { low: 1500, high: 10000 },
+    marketplaceLeadNote: "Marketplace lead £15-40",
+    confidence: "partial",
+    sources: [
+      "US CPC $8-30, CPL $80-150 proxy tempered for UK; heat pump installs premium + BUS grant demand. Searchlight/BuiltRight.",
+    ],
+  },
 ];
 
 /** Fallback for trades outside the workbook — modelled, and says so. */
@@ -330,6 +524,22 @@ export const WORKBOOK_ORDER: ReadonlyArray<string> = [
   "house-clearance",
   "garage-clearance",
   "waste-removal",
+  // v2 expansion (35 trades)
+  "electricians",
+  "builders-general",
+  "extensions-renovations",
+  "windows-doors",
+  "conservatories",
+  "dentists-private",
+  "solicitors",
+  "car-detailing",
+  "brickwork",
+  "swimming-pools",
+  "tarmac-surfacing",
+  "artificial-grass",
+  "chimney-fireplaces",
+  "damp-proofing",
+  "hvac-air-conditioning",
 ];
 
 export interface SeedLocationMultiplier {
