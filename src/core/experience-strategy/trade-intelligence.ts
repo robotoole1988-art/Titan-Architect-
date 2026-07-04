@@ -237,7 +237,7 @@ export function buildTradeProfile(
         hero: {
           headline: `${location}'s finest ${tradeLower}, done properly`,
           subheadline: `${business} — design-led ${tradeLower} in ${location}, with a finish you'll be proud to show off.`,
-          visualConcept: `A cinematic reveal of a stunning finished ${tradeLower} project, with a before/after that lands the transformation.`,
+          visualConcept: `A cinematic reveal of a stunning finished ${tradeLower} project, shot at true golden hour — warm, low sun raking the finished surface, long soft shadows — with a before/after that lands the transformation.`,
         },
         primaryCta: "Book a free design consultation",
         secondaryCta: "See recent projects",

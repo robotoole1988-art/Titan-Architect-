@@ -66,6 +66,7 @@ const SCAFFOLDING_MARKERS: ReadonlyArray<RegExp> = [
   /narrative arc/i, // "Map the engagement to the narrative arc — …"
   /awaiting real/i, // "awaiting real footage/reviews/answers"
   /this content pillar/i,
+  /data-signature-moment/, // morph retreat (ADR-032 addendum): public never
 ];
 
 function renderPublicPage(blueprint: typeof kerbside, pageId?: string): string {

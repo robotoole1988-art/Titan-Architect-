@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { generateExperienceStrategy } from "@/core/experience-strategy";
 import { buildWebsiteBlueprint } from "@/core/website-blueprint";
 import {
@@ -11,7 +11,17 @@ import {
  * Signature Moments v1 (ADR-032, the SIGNATURE-MOMENTS.md laws):
  * ONE moment per site (the homepage hero), selected by the builder from the
  * catalogue — never free-generated; unknown ids render nothing.
+ *
+ * MORPH RETREAT (ADR-032 addendum): v1 vector morphs are retired from
+ * public output. They render ONLY in preview mode behind the reference
+ * flag; the engine, catalogue, and builder stamping remain intact for the
+ * Tier-3 WebGL milestone.
  */
+
+const FLAG = "NEXT_PUBLIC_PREVIEW_SIGNATURE_MOMENTS";
+afterEach(() => {
+  delete process.env[FLAG];
+});
 
 function blueprintFor(trade: string, areas?: string[]) {
   return buildWebsiteBlueprint({
@@ -84,24 +94,41 @@ describe("the moment catalogue (renderer)", () => {
   });
 });
 
-describe("rendered pages", () => {
-  it("the roofing homepage renders its moment layer; area pages do not", () => {
+describe("rendered pages — the morph retreat", () => {
+  it("PUBLIC pages NEVER render a moment layer, even with the flag set", () => {
+    process.env[FLAG] = "1";
+    for (const trade of ["Driveways & Paving", "Emergency Roofing & Drainage"]) {
+      const html = renderToStaticMarkup(
+        renderPage(blueprintFor(trade), { mode: "public" }),
+      );
+      expect(html, trade).not.toContain("data-signature-moment");
+    }
+  });
+
+  it("preview WITHOUT the flag renders no moment layer either", () => {
+    const html = renderToStaticMarkup(
+      renderPage(blueprintFor("Emergency Roofing & Drainage")),
+    );
+    expect(html).not.toContain("data-signature-moment");
+  });
+
+  it("preview WITH the reference flag keeps the moments renderable", () => {
+    process.env[FLAG] = "1";
     const blueprint = blueprintFor("Emergency Roofing & Drainage", ["Sale"]);
     const home = renderToStaticMarkup(renderPage(blueprint));
     expect(home).toContain('data-signature-moment="storm-cloud-new-roof"');
+    // ONE per site: area-page heroes still carry none.
     const area = renderToStaticMarkup(
       renderPage(blueprint, { pageId: blueprint.pages.pages[1].id }),
     );
     expect(area).not.toContain("data-signature-moment");
-  });
-
-  it("the driveways homepage renders gravel-to-resin", () => {
-    const blueprint = blueprintFor("Driveways & Paving");
-    const html = renderToStaticMarkup(renderPage(blueprint));
-    expect(html).toContain('data-signature-moment="gravel-to-resin"');
+    expect(
+      renderToStaticMarkup(renderPage(blueprintFor("Driveways & Paving"))),
+    ).toContain('data-signature-moment="gravel-to-resin"');
   });
 
   it("emits no invalid kebab-case DOM attributes (the dev-overlay regression)", () => {
+    process.env[FLAG] = "1";
     // React rejects SVG attributes like transform-origin in JSX — they must
     // be camelCase style props. This once shipped and lit the dev overlay.
     for (const trade of ["Driveways & Paving", "Emergency Roofing & Drainage"]) {
@@ -110,7 +137,8 @@ describe("rendered pages", () => {
     }
   });
 
-  it("moment layers are decorative: aria-hidden, never interactive", () => {
+  it("moment layers (behind the flag) are decorative: aria-hidden, never interactive", () => {
+    process.env[FLAG] = "1";
     const blueprint = blueprintFor("Emergency Roofing & Drainage");
     const html = renderToStaticMarkup(renderPage(blueprint));
     const layer = html.match(/<div[^>]*data-signature-moment[^>]*>/)?.[0];

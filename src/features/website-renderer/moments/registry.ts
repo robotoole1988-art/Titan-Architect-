@@ -34,3 +34,17 @@ export function resolveSignatureMoment(
   }
   return moment ?? null;
 }
+
+/**
+ * MORPH RETREAT (ADR-032 addendum, founder decision 2026-07-04): the v1
+ * vector morphs are below the quality bar and are RETIRED from public
+ * output — clean cinematic heroes stand alone. The engine and catalogue
+ * remain; moments render only on PREVIEW surfaces, and only behind the
+ * reference flag, until the Tier-3 WebGL particle morphs land.
+ */
+export function signatureMomentsEnabled(mode: "preview" | "public"): boolean {
+  return (
+    mode === "preview" &&
+    process.env.NEXT_PUBLIC_PREVIEW_SIGNATURE_MOMENTS === "1"
+  );
+}

@@ -100,7 +100,13 @@ export async function MediaPage({ businessId }: { businessId: string }) {
     );
   }
   const plan = blueprint ? deriveMediaPlan(blueprint.payload) : [];
-  const covered = new Set(records.map((record) => record.slotRef));
+  // A slot whose only records are rejected counts as missing — rejecting
+  // in the gate is how the founder asks for another attempt (ADR-033).
+  const covered = new Set(
+    records
+      .filter((record) => record.status !== "rejected")
+      .map((record) => record.slotRef),
+  );
   const missing = plan.filter((item) => !covered.has(item.slotRef));
   const totalCost = records.reduce(
     (sum, record) => sum + record.provenance.costUsd,
