@@ -136,6 +136,75 @@ describe("the choreography", () => {
   });
 });
 
+describe("lab environment domes — through the founder gate (ADR-035 v2)", () => {
+  it("specifies four domes: one storm + three calm times of day", async () => {
+    const { DOME_SPECS } = await import("@/features/website-renderer");
+    expect(DOME_SPECS).toHaveLength(4);
+    expect(DOME_SPECS.filter((spec) => spec.kind === "storm")).toHaveLength(1);
+    expect(
+      DOME_SPECS.filter((spec) => spec.kind === "calm").map((s) => s.timeOfDay),
+    ).toEqual(["golden-hour", "dusk", "overcast"]);
+    for (const spec of DOME_SPECS) {
+      expect(spec.slotRef).toMatch(/^lab\/dome-/);
+      expect(spec.brief).toMatch(/equirectangular/i);
+      expect(spec.brief).toMatch(/no people, no text/i);
+    }
+  });
+
+  it("ensureLabBusiness is idempotent — one internal record, ever", async () => {
+    const { ensureLabBusiness } = await import("@/features/website-renderer");
+    const { createMemoryBusinessSpine } = await import("@/core/business");
+    const spine = createMemoryBusinessSpine();
+    const first = await ensureLabBusiness(spine);
+    const second = await ensureLabBusiness(spine);
+    expect(second.id).toBe(first.id);
+    expect((await spine.businesses.list())).toHaveLength(1);
+  });
+
+  it("review domes show (honest chip); rejected NEVER; retakes supersede", async () => {
+    const { resolveLabEnvironment, ensureLabBusiness, DOME_SPECS } = await import(
+      "@/features/website-renderer"
+    );
+    const { createMemoryBusinessSpine } = await import("@/core/business");
+    const spine = createMemoryBusinessSpine();
+    const lab = await ensureLabBusiness(spine);
+    const make = (slotRef: string, url: string) =>
+      spine.media.create({
+        businessId: lab.id,
+        slotRef,
+        brief: "dome",
+        modality: "image",
+        url,
+        provenance: {
+          provider: "replicate",
+          model: "test",
+          prompt: "p",
+          costUsd: 0.04,
+          generatedAt: new Date().toISOString(),
+        },
+      });
+    const storm = await make("lab/dome-storm", "https://x/storm-1.webp");
+    await spine.media.setStatus(storm.id, "rejected");
+    const stormRetake = await make("lab/dome-storm", "https://x/storm-2.webp");
+    const golden = await make("lab/dome-golden-hour", "https://x/gold.webp");
+    await spine.media.setStatus(golden.id, "approved");
+
+    const environment = await resolveLabEnvironment(spine);
+    const stormDome = environment.domes.find((dome) => dome.kind === "storm");
+    expect(stormDome?.url).toBe("https://x/storm-2.webp"); // retake wins
+    expect(stormDome?.status).toBe("review");
+    const goldenDome = environment.domes.find((d) => d.timeOfDay === "golden-hour");
+    expect(goldenDome?.status).toBe("approved");
+    expect(environment.domes).toHaveLength(2);
+    expect(environment.missingSlotRefs.sort()).toEqual([
+      "lab/dome-dusk",
+      "lab/dome-overcast",
+    ]);
+    void stormRetake;
+    void DOME_SPECS;
+  });
+});
+
 describe("device tiering (built now, public later)", () => {
   it("routes capable desktops to full 3D", () => {
     expect(
