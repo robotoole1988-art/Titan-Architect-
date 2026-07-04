@@ -7,6 +7,7 @@ import {
   type WebsiteBlueprint,
 } from "@/core/website-blueprint";
 import { renderPage } from "../model/render-page";
+import { toStreamUrl } from "../api/media-stream";
 import type { RenderContact, ResolvedMediaAsset } from "../model/types";
 import { rendererFontClass } from "../theme/fonts";
 import { SiteMetricsBeacon } from "./site-metrics-beacon";
@@ -72,7 +73,9 @@ export async function resolvePublishedSite(
   const media: Record<string, ResolvedMediaAsset> = {};
   for (const record of approved) {
     media[record.slotRef] = {
-      url: record.url,
+      // Video streams through the same-origin Range proxy (ADR-037); images
+      // go through next/image and need no rewrite.
+      url: record.modality === "video" ? toStreamUrl(record.url) : record.url,
       modality: record.modality,
       ...(record.width !== undefined ? { width: record.width } : {}),
       ...(record.height !== undefined ? { height: record.height } : {}),

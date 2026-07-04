@@ -64,6 +64,7 @@ ADR that supersedes the old one and update the old one's status.
 | [034](./adr-034-render-modes.md) | Render Modes — the drawing and the building are different things | Accepted |
 | [035](./adr-035-morph-lab-webgl.md) | Morph Lab — WebGL particle foundation, the five-beat Morph Law | Accepted |
 | [036](./adr-036-video-engine.md) | Video Engine v1 — cinematic film through the founder gate | Accepted |
+| [037](./adr-037-media-streaming.md) | Media Streaming — same-origin Range proxy so films play | Accepted |
 
 ### Writing a new ADR
 

@@ -18,6 +18,11 @@ export { submitEnquiry } from "./api/submit-enquiry";
 export { recordSiteMetric } from "./api/record-site-metric";
 export type { RecordSiteMetricResult } from "./api/record-site-metric";
 export type { SubmitEnquiryInput, SubmitEnquiryResult } from "./api/submit-enquiry";
+export {
+  streamMedia,
+  toStreamUrl,
+  isProxyableMediaUrl,
+} from "./api/media-stream";
 export { renderPage } from "./model/render-page";
 export { resolveSignatureMoment } from "./moments/registry";
 export {

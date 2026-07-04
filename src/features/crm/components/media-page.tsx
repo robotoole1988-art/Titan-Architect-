@@ -11,6 +11,7 @@ import {
   estimateGenerationCostUsd,
   resolveMediaProvider,
 } from "@/core/media";
+import { toStreamUrl } from "@/features/website-renderer";
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
 import {
   commissionHeroFilm,
@@ -41,13 +42,13 @@ function MediaCard({ record }: { record: MediaRecord }) {
       {isVideo ? (
         <div className="relative">
           <video
-            src={record.url}
+            src={toStreamUrl(record.url)}
             poster={record.posterUrl}
             controls
             muted
             loop
             playsInline
-            preload="none"
+            preload="metadata"
             className="aspect-[16/9] w-full bg-black object-cover"
           />
           <span className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium text-white">
