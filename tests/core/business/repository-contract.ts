@@ -494,6 +494,61 @@ export function runRepositoryContract(
       });
     });
 
+    it("media records: review lifecycle, approved-only resolution, provenance (ADR-033)", async () => {
+      await withRepos(async ({ businesses, media }) => {
+        const business = await businesses.create(DRAFT);
+        const record = await media.create({
+          businessId: business.id,
+          slotRef: "media/home.01.hero.cinematic-reveal",
+          brief: "A cinematic reveal of the finished driveway",
+          modality: "image",
+          url: "/generated-media/x/hero.webp",
+          width: 1344,
+          height: 768,
+          provenance: {
+            provider: "replicate",
+            model: "black-forest-labs/flux-1.1-pro",
+            prompt: "…",
+            costUsd: 0.04,
+            generatedAt: "2026-07-04T10:00:00.000Z",
+          },
+        });
+        // Born in review — never straight to a published site.
+        expect(record.status).toBe("review");
+        expect(record.provenance.costUsd).toBe(0.04);
+
+        // Approved-only resolution:
+        expect(await media.listApprovedForBusiness(business.id)).toHaveLength(0);
+        await media.setStatus(record.id, "approved");
+        const approved = await media.listApprovedForBusiness(business.id);
+        expect(approved).toHaveLength(1);
+        expect(approved[0].slotRef).toBe("media/home.01.hero.cinematic-reveal");
+
+        // Rejection removes it from resolution but keeps the record:
+        await media.setStatus(record.id, "rejected");
+        expect(await media.listApprovedForBusiness(business.id)).toHaveLength(0);
+        expect((await media.listForBusiness(business.id))).toHaveLength(1);
+
+        // Unknown business fails loudly:
+        await expect(
+          media.create({
+            businessId: "missing",
+            slotRef: "x",
+            brief: "b",
+            modality: "image",
+            url: "/x.webp",
+            provenance: {
+              provider: "replicate",
+              model: "m",
+              prompt: "p",
+              costUsd: 0.04,
+              generatedAt: "2026-07-04T10:00:00.000Z",
+            },
+          }),
+        ).rejects.toThrow(BusinessNotFoundError);
+      });
+    });
+
     it("captures enquiries against the account, newest first, cascading", async () => {
       await withRepos(async ({ businesses, publications, enquiries }) => {
         const business = await businesses.create(DRAFT);

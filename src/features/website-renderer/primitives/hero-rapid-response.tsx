@@ -14,6 +14,7 @@
 import { Phone } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { createElement } from "react";
+import { CinematicImage } from "./cinematic-image";
 import { resolveSignatureMoment } from "../moments/registry";
 import type { PrimitiveSectionProps } from "../model/types";
 import {
@@ -62,7 +63,7 @@ const HERO_CSS = `
 }
 `;
 
-function StormAtmosphere() {
+function StormAtmosphere({ overPhoto = false }: { overPhoto?: boolean }) {
   return (
     <div aria-hidden className="absolute inset-0 overflow-hidden">
       {/* storm ground — a designed atmosphere asset (composed gradients +
@@ -71,6 +72,8 @@ function StormAtmosphere() {
           font-gated text. */}
       {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size
           generated poster; next/image adds nothing here */}
+      {!overPhoto && (
+      // eslint-disable-next-line @next/next/no-img-element -- generated poster
       <img
         src="/renderer/storm-poster.png"
         alt=""
@@ -81,6 +84,7 @@ function StormAtmosphere() {
         decoding="sync"
         className="absolute inset-0 h-full w-full object-cover"
       />
+      )}
       {/* drifting cloud masses — soft radial gradients, deliberately NOT
           filter:blur (huge blur layers dominate first-paint raster cost) */}
       <div
@@ -158,7 +162,7 @@ function promiseOf(direction: string | undefined): string | undefined {
   return segments.length >= 2 ? segments[1] : direction;
 }
 
-export function HeroRapidResponse({ section, variant, slots, blueprint }: PrimitiveSectionProps) {
+export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAssets }: PrimitiveSectionProps) {
   const callFirst = variant !== "quote-first";
   const media = section.media?.[0];
   const secondary = blueprint.pages.pages[0].conversion?.ctas?.[0];
@@ -166,13 +170,28 @@ export function HeroRapidResponse({ section, variant, slots, blueprint }: Primit
 
   const momentId = section.extensions?.signatureMoment as string | undefined;
   const signatureMoment = resolveSignatureMoment(momentId);
+  const backdropAsset =
+    mediaAssets?.[media?.generationRef ?? `media/${section.id}`];
 
   return (
     // Content is top-anchored (not vertically centred): late layout above or
     // within the hero cannot re-centre the whole block (CLS).
     <SectionShell section={section} flush defer={false} className="isolate min-h-[94svh]">
       <style dangerouslySetInnerHTML={{ __html: HERO_CSS }} />
-      <StormAtmosphere />
+      {backdropAsset && (
+        // The real photograph beneath the storm — the property at stake.
+        <div aria-hidden className="absolute inset-0">
+          <CinematicImage asset={backdropAsset} alt="" kenBurns eager className="h-full w-full" />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(120deg, rgba(8, 11, 18, 0.88) 25%, rgba(8, 11, 18, 0.55) 60%, rgba(8, 11, 18, 0.35))",
+            }}
+          />
+        </div>
+      )}
+      <StormAtmosphere overPhoto={Boolean(backdropAsset)} />
       {signatureMoment && (
         // The site's ONE signature moment — the opening act (ADR-032).
         <div
@@ -180,7 +199,7 @@ export function HeroRapidResponse({ section, variant, slots, blueprint }: Primit
           aria-hidden="true"
           className="pointer-events-none absolute inset-0 overflow-hidden"
         >
-          {createElement(signatureMoment)}
+          {createElement(signatureMoment, { hasBackdrop: Boolean(backdropAsset) })}
         </div>
       )}
       <Container wide className="relative pb-24 pt-[clamp(7rem,18svh,11rem)]">

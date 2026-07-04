@@ -101,6 +101,15 @@ describe("rendered pages", () => {
     expect(html).toContain('data-signature-moment="gravel-to-resin"');
   });
 
+  it("emits no invalid kebab-case DOM attributes (the dev-overlay regression)", () => {
+    // React rejects SVG attributes like transform-origin in JSX — they must
+    // be camelCase style props. This once shipped and lit the dev overlay.
+    for (const trade of ["Driveways & Paving", "Emergency Roofing & Drainage"]) {
+      const html = renderToStaticMarkup(renderPage(blueprintFor(trade)));
+      expect(html, trade).not.toContain("transform-origin=");
+    }
+  });
+
   it("moment layers are decorative: aria-hidden, never interactive", () => {
     const blueprint = blueprintFor("Emergency Roofing & Drainage");
     const html = renderToStaticMarkup(renderPage(blueprint));

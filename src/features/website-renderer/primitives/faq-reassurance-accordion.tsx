@@ -14,6 +14,7 @@
 import { useId, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Plus } from "lucide-react";
+import { CinematicImage } from "./cinematic-image";
 import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal } from "../motion/motion";
 import { splitList } from "../model/slots";
@@ -112,7 +113,10 @@ function AccordionItem({
   );
 }
 
-export function FaqReassuranceAccordion({ section, variant, slots }: PrimitiveSectionProps) {
+export function FaqReassuranceAccordion({ section, variant, slots, mediaAssets }: PrimitiveSectionProps) {
+  const supportAsset =
+    mediaAssets?.[`${section.media?.[0]?.generationRef ?? `media/${section.id}`}.support`];
+
   const items = faqSlots(slots["questions-direction"]);
   const [openIndex, setOpenIndex] = useState(0);
   const twoColumn = variant === "two-column";
@@ -140,6 +144,15 @@ export function FaqReassuranceAccordion({ section, variant, slots }: PrimitiveSe
             </div>
           </Reveal>
         </div>
+              {supportAsset && (
+          <div className="mt-10 overflow-hidden rounded-[var(--wr-radius-lg)]">
+            <CinematicImage
+              asset={supportAsset}
+              alt="The craft in progress"
+              className="h-56 w-full sm:h-72"
+            />
+          </div>
+        )}
       </Container>
     </SectionShell>
   );

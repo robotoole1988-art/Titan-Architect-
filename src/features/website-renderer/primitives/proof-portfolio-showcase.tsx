@@ -15,6 +15,8 @@ import { MoveHorizontal } from "lucide-react";
 import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal, Stagger, StaggerItem } from "../motion/motion";
 import { afterFirstDash } from "../model/slots";
+import { CinematicImage } from "./cinematic-image";
+import type { ResolvedMediaAsset } from "../model/types";
 import { Comparison } from "./story-transformation-arc";
 import {
   AnnotationTag,
@@ -45,10 +47,12 @@ function ProjectFrame({
   index,
   caption,
   tall = false,
+  asset,
 }: {
   index: number;
   caption?: string;
   tall?: boolean;
+  asset?: ResolvedMediaAsset;
 }) {
   return (
     <figure
@@ -60,6 +64,13 @@ function ProjectFrame({
         boxShadow: "0 18px 50px -24px color-mix(in oklab, var(--wr-ink) 45%, transparent)",
       }}
     >
+      {asset && (
+        <CinematicImage
+          asset={asset}
+          alt={`Completed project ${index + 1}`}
+          className="absolute inset-0 transition-transform duration-700 group-hover:scale-[1.04] motion-reduce:transition-none"
+        />
+      )}
       {/* light sweep on hover — the frame catches the sun */}
       <div
         aria-hidden
@@ -69,22 +80,26 @@ function ProjectFrame({
             "linear-gradient(120deg, transparent 35%, rgba(255, 236, 200, 0.28) 50%, transparent 65%)",
         }}
       />
-      <div aria-hidden className="absolute inset-3 rounded-[calc(var(--wr-radius-lg)-0.6rem)] border border-dashed"
-        style={{ borderColor: "var(--wr-line-strong)" }}
-      />
-      <figcaption className="absolute inset-x-5 bottom-4 flex flex-col gap-1.5">
-        <AnnotationTag>
-          project {String(index + 1).padStart(2, "0")} · media slot
-        </AnnotationTag>
-        {caption && (
-          <span
-            className="line-clamp-2 text-xs leading-relaxed"
-            style={{ color: "var(--wr-ink-faint)" }}
-          >
-            {caption}
-          </span>
-        )}
-      </figcaption>
+      {!asset && (
+        <div aria-hidden className="absolute inset-3 rounded-[calc(var(--wr-radius-lg)-0.6rem)] border border-dashed"
+          style={{ borderColor: "var(--wr-line-strong)" }}
+        />
+      )}
+      {!asset && (
+        <figcaption className="absolute inset-x-5 bottom-4 flex flex-col gap-1.5">
+          <AnnotationTag>
+            project {String(index + 1).padStart(2, "0")} · media slot
+          </AnnotationTag>
+          {caption && (
+            <span
+              className="line-clamp-2 text-xs leading-relaxed"
+              style={{ color: "var(--wr-ink-faint)" }}
+            >
+              {caption}
+            </span>
+          )}
+        </figcaption>
+      )}
     </figure>
   );
 }
@@ -93,8 +108,11 @@ export function ProofPortfolioShowcase({
   section,
   variant,
   slots,
+  mediaAssets,
 }: PrimitiveSectionProps) {
   const direction = slots["portfolio-direction"];
+  const baseRef = section.media?.[0]?.generationRef ?? `media/${section.id}`;
+  const frameAsset = (index: number) => mediaAssets?.[`${baseRef}.frame-${index + 1}`];
   const captionBrief = afterFirstDash(slots["captions-direction"]).trim();
   const carousel = variant === "cinematic-carousel";
   const beforeAfter = variant === "before-after-reveal";
@@ -133,7 +151,7 @@ export function ProofPortfolioShowcase({
             >
               {Array.from({ length: frameCount }, (_, index) => (
                 <div key={index} className="w-[min(78vw,34rem)] shrink-0 snap-center">
-                  <ProjectFrame index={index} caption={captionBrief} tall />
+                  <ProjectFrame index={index} caption={captionBrief} tall asset={frameAsset(index)} />
                 </div>
               ))}
             </div>
@@ -158,6 +176,7 @@ export function ProofPortfolioShowcase({
                     index={beforeAfter ? index + 1 : index}
                     caption={captionBrief}
                     tall={!beforeAfter && index % 3 === 0}
+                    asset={frameAsset(beforeAfter ? index + 1 : index)}
                   />
                 </StaggerItem>
               ),

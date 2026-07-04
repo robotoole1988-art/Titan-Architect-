@@ -25,6 +25,7 @@ export {
   resolvePrimitiveComponent,
 } from "./model/primitive-map";
 export type {
+  ResolvedMediaAsset,
   PrimitiveSectionProps,
   PrimitiveComponent,
   PrimitiveComponentMap,

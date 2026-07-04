@@ -11,6 +11,7 @@ import {
   type WebsiteBlueprint,
 } from "@/core/website-blueprint";
 import { rendererFontClass } from "../theme/fonts";
+import type { ResolvedMediaAsset } from "../model/types";
 
 // Lazily hydrated: the HTML is server-rendered in full; the client bundle
 // (Framer Motion + interactive primitives) loads after first paint.
@@ -51,6 +52,7 @@ export async function WebsitePreviewPage({
   // or nothing is stored yet.
   let storedBlueprint: WebsiteBlueprint | null = null;
   let storedVersion: number | null = null;
+  const media: Record<string, ResolvedMediaAsset> = {};
   if (businessId) {
     const spine = await resolveBusinessSpine();
     const artifact = await spine.artifacts.latest<WebsiteBlueprint>(
@@ -60,6 +62,15 @@ export async function WebsitePreviewPage({
     if (artifact) {
       storedBlueprint = artifact.payload;
       storedVersion = artifact.version;
+    }
+    // Approved media previews exactly as it will publish (ADR-033).
+    for (const record of await spine.media.listApprovedForBusiness(businessId)) {
+      media[record.slotRef] = {
+        url: record.url,
+        modality: record.modality,
+        ...(record.width !== undefined ? { width: record.width } : {}),
+        ...(record.height !== undefined ? { height: record.height } : {}),
+      };
     }
   }
 
@@ -148,6 +159,7 @@ export async function WebsitePreviewPage({
           blueprint={blueprint}
           pageId={activePage.id}
           previewQuery={baseQuery}
+          media={media}
         />
       </div>
     </div>

@@ -9,10 +9,16 @@
  */
 
 import type { ComponentType } from "react";
+
+/** Context every moment may compose with (ADR-033: real hero imagery). */
+export interface MomentProps {
+  /** True when a real photograph sits beneath the moment layer. */
+  hasBackdrop?: boolean;
+}
 import { GravelToResin } from "./gravel-to-resin";
 import { StormCloudNewRoof } from "./storm-cloud-new-roof";
 
-const SIGNATURE_MOMENTS: Readonly<Record<string, ComponentType>> = {
+const SIGNATURE_MOMENTS: Readonly<Record<string, ComponentType<MomentProps>>> = {
   "storm-cloud-new-roof": StormCloudNewRoof,
   "gravel-to-resin": GravelToResin,
 };
@@ -20,7 +26,7 @@ const SIGNATURE_MOMENTS: Readonly<Record<string, ComponentType>> = {
 /** Crafted component for a catalogue id; null (dev-warned) otherwise. */
 export function resolveSignatureMoment(
   id: string | undefined,
-): ComponentType | null {
+): ComponentType<MomentProps> | null {
   if (!id) return null;
   const moment = SIGNATURE_MOMENTS[id];
   if (!moment && process.env.NODE_ENV !== "production") {

@@ -36,6 +36,12 @@ import {
   type MetricEventKind,
   type MetricsRepository,
   type SiteMetricRow,
+  type MediaModality,
+  type MediaProvenance,
+  type MediaRecord,
+  type MediaRecordDraft,
+  type MediaRepository,
+  type MediaReviewStatus,
   type EnquiryRepository,
   type LogActivityInput,
   type Publication,
@@ -850,6 +856,125 @@ class SupabaseEnquiryRepository implements EnquiryRepository {
   }
 }
 
+interface MediaRow {
+  id: string;
+  business_id: string;
+  slot_ref: string;
+  brief: string;
+  modality: MediaModality;
+  url: string;
+  lqip: string | null;
+  poster_url: string | null;
+  duration_seconds: number | null;
+  width: number | null;
+  height: number | null;
+  status: MediaReviewStatus;
+  provenance: MediaProvenance;
+  created_at: string;
+}
+
+function toMediaRecord(row: MediaRow): MediaRecord {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    slotRef: row.slot_ref,
+    brief: row.brief,
+    modality: row.modality,
+    url: row.url,
+    ...(row.lqip !== null ? { lqip: row.lqip } : {}),
+    ...(row.poster_url !== null ? { posterUrl: row.poster_url } : {}),
+    ...(row.duration_seconds !== null
+      ? { durationSeconds: row.duration_seconds }
+      : {}),
+    ...(row.width !== null ? { width: row.width } : {}),
+    ...(row.height !== null ? { height: row.height } : {}),
+    status: row.status,
+    provenance: row.provenance,
+    createdAt: row.created_at,
+  };
+}
+
+class SupabaseMediaRepository implements MediaRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async create(draft: MediaRecordDraft): Promise<MediaRecord> {
+    const owner = await this.client
+      .from("businesses")
+      .select("id")
+      .eq("id", draft.businessId)
+      .maybeSingle();
+    if (owner.error) throw new Error(`Supabase error: ${owner.error.message}`);
+    if (!owner.data) throw new BusinessNotFoundError(draft.businessId);
+    const inserted = must(
+      await this.client
+        .from("media_assets")
+        .insert({
+          id: crypto.randomUUID(),
+          business_id: draft.businessId,
+          slot_ref: draft.slotRef,
+          brief: draft.brief,
+          modality: draft.modality,
+          url: draft.url,
+          lqip: draft.lqip ?? null,
+          poster_url: draft.posterUrl ?? null,
+          duration_seconds: draft.durationSeconds ?? null,
+          width: draft.width ?? null,
+          height: draft.height ?? null,
+          status: "review",
+          provenance: draft.provenance,
+          created_at: nowIso(),
+        })
+        .select()
+        .single<MediaRow>(),
+    );
+    return toMediaRecord(inserted);
+  }
+
+  async get(id: string): Promise<MediaRecord | null> {
+    const { data, error } = await this.client
+      .from("media_assets")
+      .select()
+      .eq("id", id)
+      .maybeSingle<MediaRow>();
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return data ? toMediaRecord(data) : null;
+  }
+
+  async setStatus(id: string, status: MediaReviewStatus): Promise<MediaRecord> {
+    const updated = must(
+      await this.client
+        .from("media_assets")
+        .update({ status })
+        .eq("id", id)
+        .select()
+        .single<MediaRow>(),
+    );
+    return toMediaRecord(updated);
+  }
+
+  async listForBusiness(businessId: string): Promise<MediaRecord[]> {
+    const { data, error } = await this.client
+      .from("media_assets")
+      .select()
+      .eq("business_id", businessId)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return (data as MediaRow[]).map(toMediaRecord);
+  }
+
+  async listApprovedForBusiness(businessId: string): Promise<MediaRecord[]> {
+    const { data, error } = await this.client
+      .from("media_assets")
+      .select()
+      .eq("business_id", businessId)
+      .eq("status", "approved")
+      .order("created_at", { ascending: false });
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return (data as MediaRow[]).map(toMediaRecord);
+  }
+}
+
 class SupabaseMetricsRepository implements MetricsRepository {
   constructor(private readonly client: SupabaseClient) {}
 
@@ -926,5 +1051,6 @@ export function createSupabaseBusinessSpine(
     publications: new SupabasePublicationRepository(client),
     enquiries: new SupabaseEnquiryRepository(client),
     metrics: new SupabaseMetricsRepository(client),
+    media: new SupabaseMediaRepository(client),
   };
 }

@@ -10,6 +10,7 @@
 
 import { useRef } from "react";
 import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
+import { CinematicImage } from "./cinematic-image";
 import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal, Stagger, StaggerItem } from "../motion/motion";
 import { splitArc, splitList } from "../model/slots";
@@ -47,7 +48,10 @@ function guaranteesOf(direction: string | undefined): string[] {
   return splitList(afterColon);
 }
 
-export function ProcessJourneyMap({ section, slots }: PrimitiveSectionProps) {
+export function ProcessJourneyMap({ section, slots, mediaAssets }: PrimitiveSectionProps) {
+  const supportAsset =
+    mediaAssets?.[`${section.media?.[0]?.generationRef ?? `media/${section.id}`}.support`];
+
   const stages = stagesOf(slots.steps);
   const guarantees = guaranteesOf(slots.guarantees);
   const railRef = useRef<HTMLOListElement>(null);
@@ -118,6 +122,15 @@ export function ProcessJourneyMap({ section, slots }: PrimitiveSectionProps) {
               </StaggerItem>
             ))}
           </Stagger>
+        )}
+              {supportAsset && (
+          <div className="mt-10 overflow-hidden rounded-[var(--wr-radius-lg)]">
+            <CinematicImage
+              asset={supportAsset}
+              alt="The craft in progress"
+              className="h-56 w-full sm:h-72"
+            />
+          </div>
         )}
       </Container>
     </SectionShell>

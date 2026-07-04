@@ -60,6 +60,7 @@ ADR that supersedes the old one and update the old one's status.
 | [030](./adr-030-lead-flow.md) | Lead Flow v1 — instant notifications, speed-to-lead, measurement | Accepted |
 | [031](./adr-031-ads-intelligence.md) | Ads Intelligence — deterministic campaign build sheets | Accepted |
 | [032](./adr-032-signature-moments.md) | Signature Moments v1 — the scroll-morph engine | Accepted |
+| [033](./adr-033-media-pipeline.md) | Media Pipeline — multi-modal generation behind the founder gate | Accepted |
 
 ### Writing a new ADR
 
