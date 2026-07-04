@@ -114,6 +114,17 @@ export async function saveDeal(
     payload: deal,
   });
   await recordArtifactGenerated(spine, businessId, "deal", artifact.version);
+  // Soft-floor governance: every cut below the recommendation is logged
+  // (item, delta, reason) — internal record; the customer summary never
+  // shows any of this.
+  for (const discount of deal.discounts ?? []) {
+    await spine.activity.log({
+      businessId,
+      kind: "note",
+      message: `Discount on deal v${artifact.version}: ${discount.item} £${discount.actual} (recommended £${discount.recommended}, −£${discount.delta}) — ${discount.reason}`,
+      meta: { ...discount, dealVersion: artifact.version },
+    });
+  }
   revalidateCrm(businessId);
 }
 

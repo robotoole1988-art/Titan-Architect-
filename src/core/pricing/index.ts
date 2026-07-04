@@ -25,4 +25,5 @@ export type {
   DealInputs,
   DealCplSource,
   DealComputed,
+  DealDiscount,
 } from "./pricing";

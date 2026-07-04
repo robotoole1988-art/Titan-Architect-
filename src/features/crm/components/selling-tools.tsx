@@ -155,13 +155,16 @@ export function SellingTools({
     existingDeal?.includedServices ?? ["lead_generation"],
   );
   const [setupFee, setSetupFee] = useState(
-    existingDeal?.setupFee ?? getPricedService("lead_generation")!.defaultSetupFee,
+    existingDeal?.setupFee ?? getPricedService("lead_generation")!.recommendedSetupFee,
   );
   const [mmf, setMmf] = useState(
     existingDeal?.monthlyManagementFee ??
-      getPricedService("lead_generation")!.defaultMonthlyFee,
+      getPricedService("lead_generation")!.recommendedMonthlyFee,
   );
   const [notes, setNotes] = useState(existingDeal?.notes ?? "");
+  const [discountReason, setDiscountReason] = useState(
+    existingDeal?.discounts?.[0]?.reason ?? "",
+  );
   const [view, setView] = useState<"internal" | "customer">("internal");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -187,6 +190,13 @@ export function SellingTools({
     problem = error instanceof Error ? error.message : "Invalid inputs";
   }
 
+  // Soft floors (recommendations): raising is free; lowering needs a reason.
+  const activeService = getPricedService(packageType)!;
+  const setupVsRec = setupFee - activeService.recommendedSetupFee;
+  const mmfVsRec = mmf - activeService.recommendedMonthlyFee;
+  const discounted = setupVsRec < 0 || mmfVsRec < 0;
+  const discountReasonMissing = discounted && discountReason.trim() === "";
+
   const dealForDisplay: Deal = {
     packageType,
     includedServices,
@@ -200,6 +210,7 @@ export function SellingTools({
   };
   const computed = computeDeal(dealForDisplay);
   const dealValid =
+    !discountReasonMissing &&
     [setupFee, mmf].every((v) => Number.isFinite(v) && v >= 0) &&
     cpl > 0 &&
     leadTarget >= 0;
@@ -360,10 +371,12 @@ export function SellingTools({
                     const next = event.target.value as PricedServiceId;
                     const service = getPricedService(next)!;
                     setPackageType(next);
-                    setSetupFee(service.defaultSetupFee);
-                    setMmf(service.defaultMonthlyFee);
-                    setIncludedServices((current) =>
-                      current.includes(next) ? current : [...current, next],
+                    setSetupFee(service.recommendedSetupFee);
+                    setMmf(service.recommendedMonthlyFee);
+                    // Bundles pre-fill their parts; single services include
+                    // themselves. (Bundle ids themselves aren't line items.)
+                    setIncludedServices(
+                      service.includedServices ?? [service.id],
                     );
                     markSaved();
                   }}
@@ -392,7 +405,7 @@ export function SellingTools({
               />
               <Field
                 id="deal-setup"
-                label="Setup fee (ex VAT) — founder input"
+                label={`Setup fee (ex VAT) — recommended ${pounds(activeService.recommendedSetupFee)}`}
                 value={setupFee}
                 step="0.01"
                 onChange={(value) => {
@@ -402,7 +415,7 @@ export function SellingTools({
               />
               <Field
                 id="deal-mmf"
-                label="Monthly management fee (ex VAT) — founder input"
+                label={`Monthly management (ex VAT) — recommended ${pounds(activeService.recommendedMonthlyFee)}`}
                 value={mmf}
                 step="0.01"
                 onChange={(value) => {
@@ -411,6 +424,49 @@ export function SellingTools({
                 }}
               />
             </div>
+
+            {/* Soft-floor status: raise freely; cuts need a reason (internal only) */}
+            <div className="flex flex-wrap items-center gap-2" data-floor-status>
+              {setupVsRec > 0 && (
+                <span className="inline-flex items-center rounded-full border border-sky-400/30 bg-sky-400/10 px-2 py-0.5 text-[11px] text-sky-300">
+                  setup above recommended (+{pounds(setupVsRec)})
+                </span>
+              )}
+              {mmfVsRec > 0 && (
+                <span className="inline-flex items-center rounded-full border border-sky-400/30 bg-sky-400/10 px-2 py-0.5 text-[11px] text-sky-300">
+                  monthly above recommended (+{pounds(mmfVsRec)})
+                </span>
+              )}
+              {discounted && discountReason.trim() !== "" && (
+                <span
+                  className="inline-flex items-center rounded-full border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[11px] text-amber-300"
+                  data-discount-chip
+                >
+                  discounted — {discountReason.trim()}
+                </span>
+              )}
+            </div>
+            {discounted && (
+              <div className="flex flex-col gap-1.5" data-discount-reason>
+                <label
+                  htmlFor="deal-discount-reason"
+                  className="text-xs text-amber-300"
+                >
+                  Below the recommended price — a discount reason is required
+                  before saving (logged to the account, never shown to the
+                  customer).
+                </label>
+                <Input
+                  id="deal-discount-reason"
+                  value={discountReason}
+                  onChange={(event) => {
+                    setDiscountReason(event.target.value);
+                    markSaved();
+                  }}
+                  placeholder="e.g. Launch client — first 3 in the area"
+                />
+              </div>
+            )}
 
             {/* Ad spend: DERIVED and LOCKED — the working is the interface */}
             <div
@@ -552,7 +608,7 @@ export function SellingTools({
 
         <div className="flex items-center justify-between">
           <span className="text-[11px] text-muted-foreground">
-            Fees are founder inputs; ad spend is lead target × CPL (ADR-026).
+            Prices pre-fill from catalogue recommendations (soft floors — cuts need a reason); ad spend is lead target × CPL (ADR-026).
           </span>
           <div className="flex items-center gap-2">
             {saved && <span className="text-xs text-emerald-300">Saved ✓</span>}
@@ -571,6 +627,7 @@ export function SellingTools({
                     cplUsed: cpl,
                     cplSource: cplTouched ? "founder" : "estimate",
                     notes,
+                    discountReason: discountReason.trim() || undefined,
                   });
                   setSaved(true);
                 } finally {
