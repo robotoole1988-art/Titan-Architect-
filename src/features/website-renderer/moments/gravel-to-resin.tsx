@@ -88,6 +88,9 @@ export function GravelToResin({ hasBackdrop = false }: { hasBackdrop?: boolean }
     [0.8, 0.98],
     [1, hasBackdrop ? 0.12 : 1],
   );
+  const surfaceOpacity = useTransform(
+    () => resinOpacity.get() * surfaceHandOff.get(),
+  );
   const sheenOpacity = useTransform(progress, [0.78, 0.86, 1], [0, 0.5, 0.25]);
 
   const resinSurface = (
@@ -133,7 +136,7 @@ export function GravelToResin({ hasBackdrop = false }: { hasBackdrop?: boolean }
         {/* THE MORPH: resin flows in beneath the settling stones */}
         <motion.g
           style={{
-            opacity: useTransform(() => resinOpacity.get() * surfaceHandOff.get()),
+            opacity: surfaceOpacity,
             scaleX: resinScale,
             transformBox: "fill-box",
             transformOrigin: "50% 50%",

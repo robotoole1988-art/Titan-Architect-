@@ -57,18 +57,16 @@ export async function resolvePublishedSite(
   }
   if (!publication) return null;
 
-  const [artifact, business] = await Promise.all([
+  const [artifact, business, approved] = await Promise.all([
     spine.artifacts.getVersion<WebsiteBlueprint>(
       publication.businessId,
       "blueprint",
       publication.blueprintVersion,
     ),
     spine.businesses.get(publication.businessId),
+    spine.media.listApprovedForBusiness(publication.businessId),
   ]);
   if (!artifact || !business) return null;
-  const approved = await spine.media.listApprovedForBusiness(
-    publication.businessId,
-  );
   const media: Record<string, ResolvedMediaAsset> = {};
   for (const record of approved) {
     media[record.slotRef] = {
@@ -148,6 +146,13 @@ export function PublishedSitePage({
 
   return (
     <div className={rendererFontClass}>
+      {/* Warm the media origin before the hero image request (ADR-033). */}
+      {Object.values(resolved.media)[0]?.url.startsWith("http") && (
+        <link
+          rel="preconnect"
+          href={new URL(Object.values(resolved.media)[0].url).origin}
+        />
+      )}
       {/* First-party view beacon (ADR-030) — published pages only. */}
       <SiteMetricsBeacon
         slug={publication.slug}

@@ -7,6 +7,10 @@ import {
   resolvePublishedSite,
 } from "@/features/website-renderer";
 
+// Publications are immutable snapshots (ADR-027) — cache and revalidate;
+// a republish is picked up within a minute.
+export const revalidate = 60;
+
 /** Thin route: the live site's HOMEPAGE by slug (ADR-027/028). */
 
 async function siteBase(slug: string): Promise<string> {

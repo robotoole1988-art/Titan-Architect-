@@ -57,6 +57,9 @@ export function createSupabaseStorage(config: {
         {
           method: "POST",
           headers: {
+            // New-style sb_secret_ keys need BOTH headers (the storage API
+            // rejects Bearer-only as "Invalid Compact JWS").
+            apikey: config.serviceRoleKey,
             Authorization: `Bearer ${config.serviceRoleKey}`,
             "Content-Type": `image/${format}`,
             "x-upsert": "true",

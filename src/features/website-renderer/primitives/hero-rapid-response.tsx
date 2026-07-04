@@ -70,11 +70,9 @@ function StormAtmosphere({ overPhoto = false }: { overPhoto?: boolean }) {
           grain, never fake photography; generated, checked in). A real <img>
           so the hero's largest paint is a tiny, cacheable image rather than
           font-gated text. */}
-      {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size
-          generated poster; next/image adds nothing here */}
       {!overPhoto && (
-      // eslint-disable-next-line @next/next/no-img-element -- generated poster
-      <img
+        // eslint-disable-next-line @next/next/no-img-element -- fixed-size generated poster; next/image adds nothing here
+        <img
         src="/renderer/storm-poster.png"
         alt=""
         width={416}

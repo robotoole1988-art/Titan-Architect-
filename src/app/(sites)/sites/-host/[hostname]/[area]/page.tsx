@@ -6,6 +6,10 @@ import {
   resolvePublishedSite,
 } from "@/features/website-renderer";
 
+// Publications are immutable snapshots (ADR-027) — cache and revalidate;
+// a republish is picked up within a minute.
+export const revalidate = 60;
+
 /** Thin route: an AREA landing page by hostname (ADR-028). */
 
 export async function generateMetadata({

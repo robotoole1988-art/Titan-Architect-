@@ -182,7 +182,9 @@ export function SurfaceSelector({
                 }}
               />
               <div className="absolute inset-x-6 bottom-6 flex flex-col items-start gap-3">
-                <AnnotationTag>surface texture · suggestive, real media slot</AnnotationTag>
+                {!mediaAssets?.[`surfaces/${surfaceSlug(surface)}`] && (
+                  <AnnotationTag>surface texture · suggestive, real media slot</AnnotationTag>
+                )}
                 <h3
                   className="text-balance font-semibold capitalize"
                   style={{ ...displayFont, fontSize: "var(--wr-text-xl)", color: "#fdf6ec" }}

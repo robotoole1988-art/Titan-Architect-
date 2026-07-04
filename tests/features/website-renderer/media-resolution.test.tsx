@@ -38,13 +38,14 @@ const MEDIA: Record<string, ResolvedMediaAsset> = {
 describe("media resolution", () => {
   it("renders the hero backdrop photo when an approved asset exists", () => {
     const html = renderToStaticMarkup(renderPage(blueprint, { media: MEDIA }));
-    expect(html).toContain("/generated-media/demo/hero.webp");
+    // next/image encodes the source into its optimiser URL.
+    expect(html).toContain(encodeURIComponent("/generated-media/demo/hero.webp"));
   });
 
   it("renders the before/after pair as real imagery", () => {
     const html = renderToStaticMarkup(renderPage(blueprint, { media: MEDIA }));
-    expect(html).toContain("/generated-media/demo/before.webp");
-    expect(html).toContain("/generated-media/demo/after.webp");
+    expect(html).toContain(encodeURIComponent("/generated-media/demo/before.webp"));
+    expect(html).toContain(encodeURIComponent("/generated-media/demo/after.webp"));
   });
 
   it("keeps the honest annotated frames when no asset is approved", () => {
@@ -61,7 +62,9 @@ describe("media resolution", () => {
       expect(img, img).toContain("alt=");
     }
     // The pair frames load lazily (the hero backdrop may be eager).
-    const beforeImg = images.find((img) => img.includes("before.webp"));
+    const beforeImg = images.find((img) =>
+      img.includes(encodeURIComponent("/generated-media/demo/before.webp")),
+    );
     expect(beforeImg).toContain('loading="lazy"');
   });
 });

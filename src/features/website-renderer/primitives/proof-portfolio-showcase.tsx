@@ -138,7 +138,13 @@ export function ProofPortfolioShowcase({
 
         {beforeAfter && (
           <div className="mt-12">
-            <Comparison mediaDirection={captionBrief || undefined} />
+            <Comparison
+              mediaDirection={
+                mediaAssets?.[`${baseRef}.pair-before`] ? undefined : captionBrief || undefined
+              }
+              beforeAsset={mediaAssets?.[`${baseRef}.pair-before`]}
+              afterAsset={mediaAssets?.[`${baseRef}.pair-after`]}
+            />
           </div>
         )}
 
@@ -176,7 +182,7 @@ export function ProofPortfolioShowcase({
                     index={beforeAfter ? index + 1 : index}
                     caption={captionBrief}
                     tall={!beforeAfter && index % 3 === 0}
-                    asset={frameAsset(beforeAfter ? index + 1 : index)}
+                    asset={frameAsset(index)}
                   />
                 </StaggerItem>
               ),

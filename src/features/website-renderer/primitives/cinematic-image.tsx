@@ -1,13 +1,14 @@
 /**
  * CinematicImage (ADR-033): how every generated asset is shown.
  *
- * LCP-protected and JS-independent: a themed placeholder paints UNDER the
- * image instantly; the image simply draws over it when loaded (no
- * opacity-gating that could strand a cached image invisible). Below-fold
- * assets are lazy. Optional Ken Burns drift gives hero backdrops slow
- * cinematic life — reduced-motion turns it off via media query.
+ * next/image serves assets SAME-ORIGIN, per-viewport sized, AVIF/WebP —
+ * the difference between a 280KB cross-origin hero and a ~40KB optimised
+ * one. A themed placeholder paints beneath instantly (never gating the
+ * image); below-fold assets are lazy; the hero is priority (it is the
+ * LCP). Ken Burns drift is CSS-only and reduced-motion safe.
  */
 
+import Image from "next/image";
 import type { ResolvedMediaAsset } from "../model/types";
 
 const KEN_BURNS_CSS = `
@@ -27,7 +28,7 @@ export function CinematicImage({
   className = "",
   kenBurns = false,
   eager = false,
-  sizes,
+  sizes = "(max-width: 768px) 100vw, 60vw",
 }: {
   asset: ResolvedMediaAsset;
   alt: string;
@@ -47,18 +48,15 @@ export function CinematicImage({
       }}
     >
       {kenBurns && <style dangerouslySetInnerHTML={{ __html: KEN_BURNS_CSS }} />}
-      {/* eslint-disable-next-line @next/next/no-img-element -- generated
-          assets are pre-sized webp; next/image adds nothing here */}
-      <img
+      <Image
         src={asset.url}
         alt={alt}
-        width={asset.width}
-        height={asset.height}
+        fill
+        priority={eager}
         loading={eager ? "eager" : "lazy"}
-        decoding={eager ? "sync" : "async"}
-        fetchPriority={eager ? "high" : undefined}
+        quality={45}
         sizes={sizes}
-        className={`h-full w-full object-cover ${kenBurns ? "wr-kenburns" : ""}`}
+        className={`object-cover ${kenBurns ? "wr-kenburns" : ""}`}
       />
     </div>
   );

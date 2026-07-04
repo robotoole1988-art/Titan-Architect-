@@ -32,7 +32,9 @@ function slugify(text: string): string {
 /** "…: a · b · c." → ["a","b","c"] (the explorer's anchor convention). */
 function anchorsOf(direction: string | undefined): string[] {
   if (!direction) return [];
-  const afterColon = direction.split(":").slice(1).join(":");
+  // The LAST colon starts the list (the slot text itself contains one:
+  // "services: The core … choose: A · B · C").
+  const afterColon = direction.split(":").pop() ?? "";
   return afterColon
     .split("·")
     .map((item) => item.trim().replace(/\.$/, ""))
@@ -90,6 +92,35 @@ export function deriveMediaPlan(blueprint: WebsiteBlueprint): MediaPlanItem[] {
         });
         push({
           slotRef: `${baseRef}.after`,
+          brief,
+          prompt: pair.after,
+          modality: "image",
+          width: 1344,
+          height: 768,
+          pairSeed: pair.seed,
+        });
+      }
+
+      if (
+        section.identifier === "proof.portfolio-showcase" &&
+        section.extensions?.variant === "before-after-reveal"
+      ) {
+        // The variant's headline comparison gets its OWN coherent pair.
+        const pair = buildPairPrompts(
+          `${brief} A second complete transformation, different property from the story arc's`,
+          context,
+        );
+        push({
+          slotRef: `${baseRef}.pair-before`,
+          brief,
+          prompt: pair.before,
+          modality: "image",
+          width: 1344,
+          height: 768,
+          pairSeed: pair.seed,
+        });
+        push({
+          slotRef: `${baseRef}.pair-after`,
           brief,
           prompt: pair.after,
           modality: "image",
