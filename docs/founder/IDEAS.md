@@ -4,6 +4,9 @@ Living register of product ideas — where they came from, what they'd change,
 and where they stand. An idea graduates by becoming a milestone spec (and
 usually an ADR); nothing here is a commitment until it does.
 
+Creative canon lives separately: the founder's morph & cinema library is
+[Signature Moments](../experience/SIGNATURE-MOMENTS.md).
+
 | Idea | Status |
 | --- | --- |
 | [Glass Box](#glass-box) | Idea |
@@ -40,7 +43,8 @@ golden summer tones in June and warm maintenance messaging in November. The
 blueprint already separates content direction from rendering — a reactive
 layer would select variants/emphasis from live context signals, under the
 same review-gate discipline (nothing changes live without rules the founder
-approved).
+approved). The creative expression of this idea is "The Living Atmosphere"
+in [Signature Moments](../experience/SIGNATURE-MOMENTS.md#the-five-cinematic-systems).
 
 ## Never-Miss-A-Lead
 
