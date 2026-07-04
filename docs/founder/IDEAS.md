@@ -5,9 +5,10 @@ and where they stand. An idea graduates by becoming a milestone spec (and
 usually an ADR); nothing here is a commitment until it does.
 
 Creative canon lives separately: the founder's morph & cinema library is
-[Signature Moments](../experience/SIGNATURE-MOMENTS.md), and the
+[Signature Moments](../experience/SIGNATURE-MOMENTS.md), the
 creative-technology constitution behind it is
-[Experience Engineering](../experience/EXPERIENCE-ENGINEERING.md).
+[Experience Engineering](../experience/EXPERIENCE-ENGINEERING.md), and the
+growth constitution is [The Growth Department](../growth/GROWTH-DEPARTMENT.md).
 
 | Idea | Status |
 | --- | --- |
