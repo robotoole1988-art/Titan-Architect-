@@ -36,6 +36,12 @@ export interface TradeProfile {
   primaryCta: string;
   secondaryCta: string;
   storyArc: string;
+  /**
+   * Customer-facing engagement steps (ADR-034). The storyArc is INTERNAL
+   * framework language ("Dream → Doubt → …") and must never render as copy;
+   * these are the real step names a homeowner reads on the page.
+   */
+  customerJourney: string[];
   keyMessages: string[];
   aesthetic: string;
   moodKeywords: string[];
@@ -153,6 +159,12 @@ export function buildTradeProfile(
         primaryCta: "Call now",
         secondaryCta: "Get a fast quote",
         storyArc: `Panic (something has failed) → Relief (${business} answers, fast) → Certainty (a real person, a clear price) → Resolution (sorted and guaranteed).`,
+        customerJourney: [
+          "Your call answered by a real person",
+          "A clear price before any work starts",
+          "Rapid response and the problem made safe",
+          "Fixed properly, tidied up and guaranteed",
+        ],
         keyMessages: [
           "We answer — fast",
           "Upfront pricing, no nasty surprises",
@@ -230,6 +242,12 @@ export function buildTradeProfile(
         primaryCta: "Book a free design consultation",
         secondaryCta: "See recent projects",
         storyArc: `Dream (imagine the finished space) → Doubt (fear of choosing the wrong ${tradeLower}) → Guide (${business}'s proven process & portfolio) → Transformation (the finished result, guaranteed).`,
+        customerJourney: [
+          "A design consultation at your home",
+          "A detailed written quote — itemised, no surprises",
+          "Precision groundwork and preparation",
+          "The finished result, walked through together",
+        ],
         keyMessages: [
           "A finish worth showing off",
           "Design-led — not just fitted",
@@ -307,6 +325,12 @@ export function buildTradeProfile(
         primaryCta: "Enquire",
         secondaryCta: "View the portfolio",
         storyArc: `Aspiration (a vision of something exceptional) → Trust (${business}'s signature and pedigree) → Collaboration (a considered, personal process) → Realisation (a result beyond expectation).`,
+        customerJourney: [
+          "A private consultation, at your convenience",
+          "A considered proposal, crafted around your home",
+          "Meticulous execution by our own team",
+          "The reveal — finished to the last detail",
+        ],
         keyMessages: [
           "A signature style, unmistakably yours",
           "Considered, personal, and precise",
@@ -383,6 +407,12 @@ export function buildTradeProfile(
         primaryCta: "Book a consultation",
         secondaryCta: "Request a callback",
         storyArc: `Worry (a personal concern) → Welcome (a warm, unhurried first visit) → Care (expert, gentle treatment) → Confidence (relief and renewed trust).`,
+        customerJourney: [
+          "A warm, unhurried first visit",
+          "A clear plan, explained properly",
+          "Expert, gentle treatment",
+          "Aftercare that checks in on you",
+        ],
         keyMessages: [
           "Gentle, unhurried care",
           "Genuinely qualified and registered",
@@ -459,6 +489,12 @@ export function buildTradeProfile(
         primaryCta: "Get a free quote",
         secondaryCta: "See our plans",
         storyArc: `Hassle (one more thing to manage) → Handover (${business} takes it off your plate) → Consistency (reliable, every time) → Peace of mind (never think about it again).`,
+        customerJourney: [
+          "A quick walkthrough and a fixed quote",
+          "Your regular slot, booked in",
+          "The same standard, every single visit",
+          "Easy to pause, change or cancel",
+        ],
         keyMessages: [
           "Reliable, every single time",
           "Vetted, friendly team",
@@ -535,6 +571,12 @@ export function buildTradeProfile(
         primaryCta: "Check your date",
         secondaryCta: "See the portfolio",
         storyArc: `The dream day (imagine it perfectly) → The fear (what if it's not captured?) → The guide (${business}'s portfolio & warmth) → The memory (relived forever).`,
+        customerJourney: [
+          "A relaxed first chat about your day",
+          "A tailored plan and transparent pricing",
+          "The day itself, handled calmly",
+          "Your memories, beautifully delivered",
+        ],
         keyMessages: [
           "We capture the feeling, not just the moment",
           "Warm and unobtrusive on the day",
@@ -610,6 +652,12 @@ export function buildTradeProfile(
         primaryCta: "Get a free quote",
         secondaryCta: "See our work",
         storyArc: `A need (the job to be done) → A guide (${business}, proven and local) → A simple plan → Sorted, and guaranteed.`,
+        customerJourney: [
+          "A quick call to understand the job",
+          "A clear, fixed quote",
+          "The work done properly, first time",
+          "Tidied up, checked and guaranteed",
+        ],
         keyMessages: [
           `Local ${tradeLower} you can trust`,
           "Clear, upfront pricing",

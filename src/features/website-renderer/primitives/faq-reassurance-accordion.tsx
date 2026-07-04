@@ -30,7 +30,10 @@ import {
 
 interface FaqSlot {
   question: string;
-  annotation: string;
+  /** A real answer (from `qa:` requirements) — customer-visible copy. */
+  answer?: string;
+  /** Preview-only pencil mark when no real answer exists yet. */
+  annotation?: string;
 }
 
 /** Build FAQ slots from the direction: quoted objection first, then pillars. */
@@ -50,6 +53,20 @@ function faqSlots(direction: string | undefined): FaqSlot[] {
       question: pillar,
       annotation: "question set slot · derived from this content pillar",
     });
+  }
+  return slots;
+}
+
+/** Complete Q&A copy: `qa: question | answer` content requirements (ADR-034). */
+function qaSlots(requirements: ReadonlyArray<string> | undefined): FaqSlot[] {
+  const slots: FaqSlot[] = [];
+  for (const requirement of requirements ?? []) {
+    if (!requirement.startsWith("qa:")) continue;
+    const [question, answer] = requirement
+      .slice("qa:".length)
+      .split("|")
+      .map((part) => part.trim());
+    if (question && answer) slots.push({ question, answer });
   }
   return slots;
 }
@@ -104,7 +121,16 @@ function AccordionItem({
             className="overflow-hidden"
           >
             <div className="pb-6">
-              <AnnotationTag>{slot.annotation}</AnnotationTag>
+              {slot.answer ? (
+                <p
+                  className="max-w-[var(--wr-measure)] leading-relaxed"
+                  style={{ color: "var(--wr-ink-muted)" }}
+                >
+                  {slot.answer}
+                </p>
+              ) : (
+                slot.annotation && <AnnotationTag>{slot.annotation}</AnnotationTag>
+              )}
             </div>
           </motion.div>
         )}
@@ -113,13 +139,18 @@ function AccordionItem({
   );
 }
 
-export function FaqReassuranceAccordion({ section, variant, slots, mediaAssets }: PrimitiveSectionProps) {
+export function FaqReassuranceAccordion({ section, variant, slots, mediaAssets, mode }: PrimitiveSectionProps) {
   const supportAsset =
     mediaAssets?.[`${section.media?.[0]?.generationRef ?? `media/${section.id}`}.support`];
 
-  const items = faqSlots(slots["questions-direction"]);
+  // Public mode renders ONLY complete Q&A copy; with none, the section
+  // collapses (ADR-034). Preview keeps the annotated direction slots.
+  const qa = qaSlots(section.contentRequirements);
+  const items = mode === "public" ? qa : qa.length > 0 ? qa : faqSlots(slots["questions-direction"]);
   const [openIndex, setOpenIndex] = useState(0);
   const twoColumn = variant === "two-column";
+
+  if (mode === "public" && items.length === 0) return null;
 
   return (
     <SectionShell section={section}>

@@ -12,10 +12,91 @@ import { MotionConfig } from "framer-motion";
 import type { CSSProperties, ReactElement } from "react";
 import { resolveTheme } from "../theme/theme";
 import { SiteFooter, SiteHeader } from "../primitives/site-chrome";
-import type { WebsiteBlueprint } from "@/core/website-blueprint";
-import { parseSlots, sectionVariant } from "./slots";
+import type { SectionBlueprint, WebsiteBlueprint } from "@/core/website-blueprint";
+import { parseSlots, sectionVariant, type SlotMap } from "./slots";
 import { resolvePrimitiveComponent } from "./primitive-map";
 import type { RenderPageOptions, SiteNavLink } from "./types";
+
+/**
+ * Slots that carry internal DIRECTION, not customer copy. Rendered only in
+ * preview; in public mode they are also stripped from the props handed to
+ * client primitives, so blueprint intent never even reaches the serialized
+ * payload of a published page (ADR-034).
+ */
+const INTERNAL_SLOT_KEYS = new Set([
+  "narrative-arc",
+  "backdrop-direction",
+  "portfolio-direction",
+  "captions-direction",
+  "gallery-direction",
+  "questions-direction",
+  "response-notes",
+  "attribution-direction",
+  "review-themes",
+  "fields",
+]);
+
+function redactSlots(slots: SlotMap): SlotMap {
+  return Object.fromEntries(
+    Object.entries(slots).filter(([key]) => !INTERNAL_SLOT_KEYS.has(key)),
+  );
+}
+
+/** Strip blueprint intent/metadata a public page must never carry. */
+function redactSection(section: SectionBlueprint): SectionBlueprint {
+  // Extensions carry internal framework metadata (experienceArc, archetype);
+  // only the keys the renderer actually consumes survive.
+  const extensions: Record<string, unknown> = {};
+  if (section.extensions?.variant !== undefined) {
+    extensions.variant = section.extensions.variant;
+  }
+  if (section.extensions?.signatureMoment !== undefined) {
+    extensions.signatureMoment = section.extensions.signatureMoment;
+  }
+  return {
+    ...section,
+    purpose: "",
+    contentRequirements: (section.contentRequirements ?? []).filter(
+      (requirement) => requirement.startsWith("qa:"),
+    ),
+    media: (section.media ?? []).map((media) => ({ ...media, direction: "" })),
+    // Internal design rationale the renderer never reads — not serialized.
+    suggestedComponents: [],
+    animation: undefined,
+    interaction: [],
+    visibilityRules: [],
+    futureAiNotes: [],
+    confidence: { ...section.confidence, reasoningRef: "" },
+    extensions,
+  };
+}
+
+/**
+ * The blueprint handed to client primitives on PUBLIC pages: identity and
+ * page-level conversion survive (primitives render from those); sections,
+ * SEO direction, and chrome placeholder contents do not — they are the
+ * drawing, not the building.
+ */
+function redactBlueprint(blueprint: WebsiteBlueprint): WebsiteBlueprint {
+  return {
+    ...blueprint,
+    // Blueprint-level extensions carry archetype + experienceArc — internal.
+    extensions: {},
+    pages: {
+      ...blueprint.pages,
+      pages: blueprint.pages.pages.map((page) => ({
+        ...page,
+        purpose: "",
+        sections: [],
+        seo: undefined,
+        extensions: {},
+        futureAiNotes: [],
+      })),
+    },
+    header: { ...blueprint.header, contents: [] },
+    footer: { ...blueprint.footer, contents: [], legal: [] },
+  };
+}
 
 /** Base styles scoped to the rendered site (not the TITAN app). */
 const ROOT_CSS = `
@@ -33,6 +114,7 @@ export function renderPage(
   const onUnmapped =
     options.onUnmapped ??
     (process.env.NODE_ENV === "production" ? "skip" : "throw");
+  const mode = options.mode ?? "preview";
   const collection = blueprint.pages.pages;
   const page = options.pageId
     ? collection.find((candidate) => candidate.id === options.pageId)
@@ -66,6 +148,8 @@ export function renderPage(
           .filter((link): link is SiteNavLink => link !== null)
       : [];
 
+  const isPublic = mode === "public";
+  const primitiveBlueprint = isPublic ? redactBlueprint(blueprint) : blueprint;
   const sections = page.sections.map((section) => {
     // Registry primitives ALWAYS resolve (crafted or labelled placeholder);
     // null means the identifier is outside the registry — a broken blueprint.
@@ -82,15 +166,17 @@ export function renderPage(
       }
       return null;
     }
+    const slots = parseSlots(section);
     return (
       <Primitive
         key={section.id}
-        section={section}
+        section={isPublic ? redactSection(section) : section}
         variant={sectionVariant(section)}
-        slots={parseSlots(section)}
-        blueprint={blueprint}
+        slots={isPublic ? redactSlots(slots) : slots}
+        blueprint={primitiveBlueprint}
         serving={options.serving}
         mediaAssets={options.media}
+        mode={mode}
       />
     );
   });
@@ -112,9 +198,9 @@ export function renderPage(
     >
       <style dangerouslySetInnerHTML={{ __html: ROOT_CSS }} />
       <MotionConfig reducedMotion="user">
-        <SiteHeader blueprint={blueprint} nav={nav} />
+        <SiteHeader blueprint={primitiveBlueprint} nav={nav} />
         <main>{sections}</main>
-        <SiteFooter blueprint={blueprint} nav={nav} />
+        <SiteFooter blueprint={primitiveBlueprint} nav={nav} mode={mode} contact={options.contact} />
       </MotionConfig>
     </div>
   );

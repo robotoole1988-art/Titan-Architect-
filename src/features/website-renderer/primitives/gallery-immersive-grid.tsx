@@ -32,11 +32,14 @@ function GalleryFrame({
   brief,
   height,
   asset,
+  annotate,
 }: {
   index: number;
   brief?: string;
   height?: string;
   asset?: ResolvedMediaAsset;
+  /** Preview-only pencil marks (ADR-034). */
+  annotate?: boolean;
 }) {
   const angle = [160, 120, 195, 140, 175, 110][index % 6];
   const warm = index % 2 === 0;
@@ -64,7 +67,7 @@ function GalleryFrame({
       {asset && (
         <CinematicImage asset={asset} alt={`Gallery photograph ${index + 1}`} className="absolute inset-0" />
       )}
-      {!asset && (
+      {!asset && annotate && (
       <figcaption className="absolute inset-x-5 bottom-4 flex flex-col gap-1.5">
         <AnnotationTag>gallery {String(index + 1).padStart(2, "0")} · media slot</AnnotationTag>
         {brief && (
@@ -86,7 +89,9 @@ export function GalleryImmersiveGrid({
   variant,
   slots,
   mediaAssets,
+  mode,
 }: PrimitiveSectionProps) {
+  const annotate = mode === "preview";
   const brief = slots["gallery-direction"];
   const baseRef = section.media?.[0]?.generationRef ?? `media/${section.id}`;
   const frameAsset = (index: number) => mediaAssets?.[`${baseRef}.frame-${index + 1}`];
@@ -112,7 +117,7 @@ export function GalleryImmersiveGrid({
           >
             {Array.from({ length: 4 }, (_, index) => (
               <div key={index} className="w-[min(88vw,60rem)] shrink-0 snap-center">
-                <GalleryFrame index={index} brief={brief} height="clamp(20rem, 55vw, 32rem)" asset={frameAsset(index)} />
+                <GalleryFrame index={index} brief={brief} height="clamp(20rem, 55vw, 32rem)" asset={frameAsset(index)} annotate={annotate} />
               </div>
             ))}
           </div>
@@ -131,7 +136,7 @@ export function GalleryImmersiveGrid({
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {HEIGHTS.map((height, index) => (
               <Parallax key={index} distance={index % 3 === 1 ? 28 : 14}>
-                <GalleryFrame index={index} brief={brief} height={height} asset={frameAsset(index)} />
+                <GalleryFrame index={index} brief={brief} height={height} asset={frameAsset(index)} annotate={annotate} />
               </Parallax>
             ))}
           </div>

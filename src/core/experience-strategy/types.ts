@@ -38,7 +38,10 @@ export interface HeroConcept extends StrategySection {
 
 /** 3. Storytelling */
 export interface Storytelling extends StrategySection {
+  /** INTERNAL framework language — never rendered as customer copy (ADR-034). */
   narrativeArc: string;
+  /** Customer-facing engagement steps — the copy the arc renders as. */
+  customerJourney: ReadonlyArray<string>;
   keyMessages: ReadonlyArray<string>;
   emotionalHooks: ReadonlyArray<string>;
 }

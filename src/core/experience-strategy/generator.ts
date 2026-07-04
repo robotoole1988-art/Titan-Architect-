@@ -146,6 +146,7 @@ export function generateExperienceStrategy(
   const storytelling: Storytelling = {
     summary: profile.thesis,
     narrativeArc: profile.storyArc,
+    customerJourney: profile.customerJourney,
     keyMessages: profile.keyMessages,
     emotionalHooks: profile.dominantEmotions,
   };

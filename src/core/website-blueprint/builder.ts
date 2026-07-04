@@ -177,6 +177,17 @@ function contentFor(
 ): ReadonlyArray<string> {
   const { meta, heroConcept, storytelling, conversionStrategy, mediaDirection, seoStrategy, mobileStrategy } = strategy;
   const trade = meta.trade.toLowerCase();
+  // Stored strategy artifacts from before ADR-034 lack customerJourney —
+  // fall back to the general-archetype steps rather than leaking arc names.
+  const customerJourney =
+    storytelling.customerJourney && storytelling.customerJourney.length > 0
+      ? storytelling.customerJourney
+      : [
+          "A quick call to understand the job",
+          "A clear, fixed quote",
+          "The work done properly, first time",
+          "Tidied up, checked and guaranteed",
+        ];
 
   switch (primitiveId) {
     case "hero.cinematic-reveal":
@@ -194,8 +205,12 @@ function contentFor(
         `response-promise: Lead with the response promise — ${conversionStrategy.trustSignals[0]} — stated plainly, above the fold.`,
       ];
     case "story.transformation-arc":
+      // narrative-arc stays as INTERNAL rationale; the renderer draws visible
+      // copy only from arc-headline + journey-steps (ADR-034).
       return [
         `narrative-arc: ${storytelling.narrativeArc}`,
+        `arc-headline: ${storytelling.keyMessages[0]}`,
+        `journey-steps: ${customerJourney.join(" · ")}`,
         `key-messages: ${storytelling.keyMessages.join(" · ")}`,
       ];
     case "story.gentle-welcome":
@@ -250,8 +265,10 @@ function contentFor(
         `response-notes: ${mobileStrategy.summary}`,
       ];
     case "process.journey-map":
+      // Real customer step names — arc metadata is never copy (ADR-034).
       return [
-        `steps: Map the engagement to the narrative arc — ${storytelling.narrativeArc}`,
+        `steps: ${customerJourney.join(" · ")}`,
+        `steps-headline: How it works — from first call to finished ${trade}`,
         `guarantees: Close each step with proof: ${conversionStrategy.trustSignals.join(" · ")}.`,
       ];
     case "faq.reassurance-accordion":

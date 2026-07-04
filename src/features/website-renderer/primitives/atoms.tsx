@@ -17,6 +17,7 @@ import {
   type SectionBlueprint,
 } from "@/core/website-blueprint";
 import { sectionVariant } from "../model/slots";
+import type { RenderMode } from "../model/types";
 
 /**
  * Structural eyebrow text = the registry primitive's human name. Data from the
@@ -181,12 +182,15 @@ export function MediaSlotFrame({
   scene = "linear-gradient(150deg, var(--wr-storm-1), var(--wr-storm-2) 55%, var(--wr-bg))",
   className = "",
   minHeight = "16rem",
+  mode = "preview",
 }: {
   media?: MediaBlueprint;
   label: string;
   scene?: string;
   className?: string;
   minHeight?: string;
+  /** Public mode strips the brief annotation and dashed inset (ADR-034). */
+  mode?: RenderMode;
 }) {
   return (
     <figure
@@ -201,23 +205,27 @@ export function MediaSlotFrame({
             "radial-gradient(120% 90% at 20% 0%, rgba(255,255,255,0.06), transparent 55%)",
         }}
       />
-      <div aria-hidden className="absolute inset-3 rounded-[calc(var(--wr-radius-lg)-0.6rem)] border border-dashed"
-        style={{ borderColor: "var(--wr-line-strong)" }}
-      />
-      <figcaption className="absolute inset-x-5 bottom-4 flex flex-col gap-1.5">
-        <AnnotationTag>
-          {label}
-          {media ? ` · ${media.kind}` : ""}
-        </AnnotationTag>
-        {media?.direction && (
-          <span
-            className="line-clamp-2 text-xs leading-relaxed"
-            style={{ color: "var(--wr-ink-faint)" }}
-          >
-            {media.direction}
-          </span>
-        )}
-      </figcaption>
+      {mode === "preview" && (
+        <>
+          <div aria-hidden className="absolute inset-3 rounded-[calc(var(--wr-radius-lg)-0.6rem)] border border-dashed"
+            style={{ borderColor: "var(--wr-line-strong)" }}
+          />
+          <figcaption className="absolute inset-x-5 bottom-4 flex flex-col gap-1.5">
+            <AnnotationTag>
+              {label}
+              {media ? ` · ${media.kind}` : ""}
+            </AnnotationTag>
+            {media?.direction && (
+              <span
+                className="line-clamp-2 text-xs leading-relaxed"
+                style={{ color: "var(--wr-ink-faint)" }}
+              >
+                {media.direction}
+              </span>
+            )}
+          </figcaption>
+        </>
+      )}
     </figure>
   );
 }

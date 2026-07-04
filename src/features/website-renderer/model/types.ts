@@ -13,6 +13,20 @@ export interface ServingContext {
   slug: string;
 }
 
+/**
+ * The drawing vs the building (ADR-034). "preview" is the architect's
+ * drawing — annotations and media briefs visible. "public" is the customer's
+ * building — zero internal scaffolding, ever; empty states express honesty
+ * as ABSENCE (sections collapse rather than render skeletal).
+ */
+export type RenderMode = "preview" | "public";
+
+/** Real business contact data for public chrome (from the Business record). */
+export interface RenderContact {
+  phone?: string;
+  email?: string;
+}
+
 /** An approved generated asset, resolved for rendering (ADR-033). */
 export interface ResolvedMediaAsset {
   url: string;
@@ -36,6 +50,8 @@ export interface PrimitiveSectionProps {
   serving?: ServingContext;
   /** APPROVED media by slotRef (ADR-033); slots without one stay honest frames. */
   mediaAssets?: Readonly<Record<string, ResolvedMediaAsset>>;
+  /** The render mode (ADR-034). Public pages carry zero scaffolding. */
+  mode: RenderMode;
 }
 
 export type PrimitiveComponent = ComponentType<PrimitiveSectionProps>;
@@ -71,4 +87,8 @@ export interface RenderPageOptions {
   serving?: ServingContext;
   /** Approved media map (ADR-033). */
   media?: Readonly<Record<string, ResolvedMediaAsset>>;
+  /** Render mode (ADR-034). Defaults to "preview" — the architect's drawing. */
+  mode?: RenderMode;
+  /** Real contact data for public chrome (from the Business record). */
+  contact?: RenderContact;
 }

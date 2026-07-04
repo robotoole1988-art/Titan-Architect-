@@ -3,10 +3,10 @@
  * blueprint, so structured data and rendered page can never disagree.
  *
  * HONESTY RULE: nothing is fabricated. LocalBusiness carries only the fields
- * the blueprint actually knows; FAQPage mirrors EXACTLY what the FAQ primitive
- * renders (same parsing rules as the renderer — when real answers land in the
- * slots, the markup upgrades automatically); review/rating markup is omitted
- * entirely until real review data exists.
+ * the blueprint actually knows; FAQPage is emitted ONLY when the blueprint
+ * carries complete Q&A copy (`qa:` requirements, ADR-034) — direction and
+ * placeholder text are never sent to search engines; review/rating markup is
+ * omitted entirely until real review data exists.
  */
 
 import type { PageBlueprint } from "./page";
@@ -19,32 +19,28 @@ export interface PageJsonLdOptions {
 
 export type JsonLdObject = Record<string, unknown>;
 
-/** Mirror of the renderer's FAQ parsing: quoted objection, then pillars. */
-function faqEntities(direction: string | undefined): JsonLdObject[] {
-  if (!direction) return [];
+/**
+ * FAQPage entities — ONLY from complete Q&A copy (ADR-034). The blueprint's
+ * `questions-direction` slot is internal direction, not answers; publishing
+ * placeholder text as an Answer would send scaffolding to search engines.
+ * Real Q&A arrives as `qa:` content requirements ("qa: question | answer");
+ * until then, no FAQPage is emitted at all.
+ */
+function faqEntities(
+  requirements: ReadonlyArray<string> | undefined,
+): JsonLdObject[] {
   const entities: JsonLdObject[] = [];
-  const objection = direction.match(/[“"]([^”"]+)[”"]/)?.[1];
-  if (objection) {
-    entities.push({
-      "@type": "Question",
-      name: objection,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "answer slot · the primary objection, answered plainly",
-      },
-    });
-  }
-  const afterColon = direction.split(":").slice(1).join(":");
-  for (const pillar of afterColon.split("·")) {
-    const question = pillar.trim().replace(/\.$/, "");
-    if (!question) continue;
+  for (const requirement of requirements ?? []) {
+    if (!requirement.startsWith("qa:")) continue;
+    const [question, answer] = requirement
+      .slice("qa:".length)
+      .split("|")
+      .map((part) => part.trim());
+    if (!question || !answer) continue;
     entities.push({
       "@type": "Question",
       name: question,
-      acceptedAnswer: {
-        "@type": "Answer",
-        text: "question set slot · derived from this content pillar",
-      },
+      acceptedAnswer: { "@type": "Answer", text: answer },
     });
   }
   return entities;
@@ -100,11 +96,7 @@ export function buildPageJsonLd(
     section.identifier.startsWith("faq."),
   );
   if (faqSection) {
-    const direction = (faqSection.contentRequirements ?? [])
-      .find((requirement) => requirement.startsWith("questions-direction:"))
-      ?.slice("questions-direction:".length)
-      .trim();
-    const mainEntity = faqEntities(direction);
+    const mainEntity = faqEntities(faqSection.contentRequirements);
     if (mainEntity.length > 0) {
       items.push({
         "@context": "https://schema.org",

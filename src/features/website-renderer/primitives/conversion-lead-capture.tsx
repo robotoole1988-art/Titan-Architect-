@@ -39,8 +39,8 @@ const FIELD_CLASS =
 export function ConversionLeadCapture({
   section,
   slots,
-  blueprint,
   serving,
+  mode,
 }: PrimitiveSectionProps) {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">(
     "idle",
@@ -100,14 +100,8 @@ export function ConversionLeadCapture({
               <SectionTitle id={`${section.id}-title`}>
                 {objection ? `“${objection}”` : ctaLabel}
               </SectionTitle>
-              {objection && ctaLabel && (
-                <p
-                  className="mt-5 text-pretty"
-                  style={{ fontSize: "var(--wr-text-lg)", color: "var(--wr-ink-muted)" }}
-                >
-                  {blueprint.identity.businessName}
-                </p>
-              )}
+              {/* The quote is the CUSTOMER'S inner voice — it renders
+                  unattributed, never as a company statement (ADR-034). */}
             </Reveal>
             <Reveal delay={0.12}>
               <div className="mt-8">
@@ -225,6 +219,7 @@ export function ConversionLeadCapture({
                 </p>
               )}
               {!serving &&
+                mode === "preview" &&
                 (submitted ? (
                   <AnnotationTag>
                     lead-capture slot · live submission activates when the site
