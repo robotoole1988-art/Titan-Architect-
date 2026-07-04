@@ -1,6 +1,6 @@
 /**
  * The estimate maths, pinned against the founder's workbook fixtures
- * (TITAN-CPL-Benchmarks-v1: "CPL by Location" is national mid × multiplier —
+ * (TITAN-CPL-Benchmarks-v2, 35 trades: "CPL by Location" is national mid × multiplier —
  * our model must reproduce it).
  */
 
@@ -38,6 +38,27 @@ describe("estimateCpl (workbook fixtures)", () => {
   it("Solar PV · Dublin: mid 158.33 (×1.0 GBP eq.)", async () => {
     const estimate = await resolveCplEstimate(provider, "Solar PV", "Dublin");
     expect(estimate.cpl.mid).toBeCloseTo(158.33, 1);
+  });
+
+  // ---- v2 expansion fixtures, pinned to the workbook's derived sheet ----
+
+  it("Solicitors · London: mid 378 (280 × 1.35)", async () => {
+    const estimate = await resolveCplEstimate(provider, "Solicitors", "London");
+    expect(estimate.cpl.mid).toBeCloseTo(378, 1);
+    expect(estimate.cpl.low).toBeCloseTo(216, 1); // 160 × 1.35
+    expect(estimate.cpl.high).toBeCloseTo(540, 1); // 400 × 1.35
+    expect(estimate.provenance.confidence).toBe("sourced");
+  });
+
+  it("Extensions & Renovations · Manchester: mid 69 (60 × 1.15)", async () => {
+    const estimate = await resolveCplEstimate(
+      provider,
+      "Extensions & Renovations",
+      "Manchester",
+    );
+    expect(estimate.cpl.mid).toBeCloseTo(69, 1);
+    expect(estimate.provenance.locationMultiplier).toBe(1.15);
+    expect(estimate.provenance.confidence).toBe("sourced");
   });
 
   it("budget scenarios: £1,000 at Roofing national buys 24–40 leads", async () => {
