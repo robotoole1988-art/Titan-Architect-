@@ -68,3 +68,30 @@ describe("media resolution", () => {
     expect(beforeImg).toContain('loading="lazy"');
   });
 });
+
+describe("hero ambience film (ADR-036) — LCP is untouchable", () => {
+  const WITH_FILM: Record<string, ResolvedMediaAsset> = {
+    ...MEDIA,
+    [`${heroRef}.film`]: {
+      url: "/generated-media/demo/hero.mp4",
+      modality: "video",
+      posterUrl: "/generated-media/demo/hero.webp",
+      durationSeconds: 5,
+    },
+  };
+
+  it("ships NO <video> in SSR markup — the poster is the LCP, the clip is client-only", () => {
+    const html = renderToStaticMarkup(renderPage(blueprint, { media: WITH_FILM, mode: "public" }));
+    // The still hero photo is present (the LCP)…
+    expect(html).toContain(encodeURIComponent("/generated-media/demo/hero.webp"));
+    // …but the clip never reaches the server markup (AmbientFilm is
+    // client-only; it mounts after idle).
+    expect(html).not.toContain("<video");
+    expect(html).not.toContain("/generated-media/demo/hero.mp4");
+  });
+
+  it("no film layer at all when the film asset is absent", () => {
+    const html = renderToStaticMarkup(renderPage(blueprint, { media: MEDIA, mode: "public" }));
+    expect(html).not.toContain("<video");
+  });
+});

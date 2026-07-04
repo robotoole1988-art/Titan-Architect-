@@ -78,6 +78,9 @@ export async function resolvePublishedSite(
       ...(record.height !== undefined ? { height: record.height } : {}),
       ...(record.posterUrl !== undefined ? { posterUrl: record.posterUrl } : {}),
       ...(record.lqip !== undefined ? { lqip: record.lqip } : {}),
+      ...(record.durationSeconds !== undefined
+        ? { durationSeconds: record.durationSeconds }
+        : {}),
     };
   }
 

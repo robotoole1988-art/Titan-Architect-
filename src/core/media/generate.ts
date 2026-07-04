@@ -39,6 +39,11 @@ export function createLocalDiskStorage(publicDir = "public"): MediaStorage {
   };
 }
 
+/** MIME type from a stored format — images and mp4 clips (ADR-036). */
+function contentTypeFor(format: string): string {
+  return format === "mp4" ? "video/mp4" : `image/${format}`;
+}
+
 /** Production storage: a Supabase Storage bucket (service key, server-side). */
 export function createSupabaseStorage(config: {
   url: string;
@@ -62,7 +67,7 @@ export function createSupabaseStorage(config: {
             // rejects Bearer-only as "Invalid Compact JWS").
             apikey: config.serviceRoleKey,
             Authorization: `Bearer ${config.serviceRoleKey}`,
-            "Content-Type": `image/${format}`,
+            "Content-Type": contentTypeFor(format),
             "x-upsert": "true",
           },
           body: new Uint8Array(bytes),
@@ -134,13 +139,15 @@ export async function generateMissingMedia(
     }
     options.onProgress?.(item, index, plan.length);
     try {
+      const isVideo = item.modality === "video";
       const generated = await provider.generate({
         modality: item.modality,
         prompt: item.prompt,
         width: item.width,
         height: item.height,
         seed: item.pairSeed,
-        format: "webp",
+        ...(isVideo ? { durationSeconds: item.durationSeconds ?? 5 } : {}),
+        format: isVideo ? "mp4" : "webp",
       });
       const response = await fetch(generated.url);
       if (!response.ok) {
@@ -154,9 +161,16 @@ export async function generateMissingMedia(
         bytes,
         generated.format,
       );
-      // Blurred micro-preview inlined on the record — the renderer paints
-      // it instantly, so a cold optimizer cache never shows a bare gradient.
-      const lqip = await createLqip(Buffer.from(bytes));
+      // A film's poster is the business's approved hero photograph — the
+      // same scene, already the LCP, already LQIP'd (ADR-036). No ffmpeg
+      // frame extraction; the still carries first paint.
+      const poster = isVideo
+        ? records.find(
+            (r) => r.slotRef === item.slotRef.replace(/\.film$/, "") && r.status !== "rejected",
+          )
+        : undefined;
+      // Blurred micro-preview for stills; a film reuses its poster's lqip.
+      const lqip = isVideo ? poster?.lqip : await createLqip(Buffer.from(bytes));
       await spine.media.create({
         businessId: business.id,
         slotRef: item.slotRef,
@@ -164,6 +178,8 @@ export async function generateMissingMedia(
         modality: item.modality,
         url: stored.url,
         ...(lqip ? { lqip } : {}),
+        ...(isVideo && poster ? { posterUrl: poster.url } : {}),
+        ...(isVideo ? { durationSeconds: item.durationSeconds ?? 5 } : {}),
         width: item.width,
         height: item.height,
         provenance: {

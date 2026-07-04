@@ -27,7 +27,7 @@ export interface RenderContact {
   email?: string;
 }
 
-/** An approved generated asset, resolved for rendering (ADR-033). */
+/** An approved generated asset, resolved for rendering (ADR-033/036). */
 export interface ResolvedMediaAsset {
   url: string;
   modality: "image" | "video";
@@ -35,6 +35,8 @@ export interface ResolvedMediaAsset {
   height?: number;
   posterUrl?: string;
   lqip?: string;
+  /** Video only (ADR-036): clip length in seconds. */
+  durationSeconds?: number;
 }
 
 /** Everything a primitive component may draw from. */

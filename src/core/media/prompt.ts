@@ -23,6 +23,16 @@ export function buildMediaPrompt(brief: string, context: PromptContext): string 
   return `${brief.trim().replace(/\.?$/, ".")} Trade context: ${context.trade}. ${clauses}`;
 }
 
+/**
+ * A film brief → a cinematic ambient-video prompt (ADR-036). The same
+ * authenticity law applies; the treatment asks for slow, atmospheric,
+ * loopable camera motion — hero ambience, not a stills slideshow.
+ */
+export function buildFilmPrompt(brief: string, context: PromptContext): string {
+  const treatment = `${brief.trim().replace(/\.?$/, "")} — a short cinematic ambient film for a hero background: slow, smooth, atmospheric camera motion (a gentle drone drift or a slow tracking move), volumetric weather-true light, filmic colour, a calm continuous loop with no hard cuts.`;
+  return buildMediaPrompt(treatment, context);
+}
+
 export interface PairPrompts {
   before: string;
   after: string;

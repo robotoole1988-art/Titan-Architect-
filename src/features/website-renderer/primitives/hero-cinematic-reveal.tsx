@@ -18,6 +18,7 @@ import { ArrowDown } from "lucide-react";
 import type { CSSProperties, ReactNode } from "react";
 import { createElement } from "react";
 import { CinematicImage } from "./cinematic-image";
+import { AmbientFilm } from "./ambient-film";
 import { resolveSignatureMoment, signatureMomentsEnabled } from "../moments/registry";
 import type { PrimitiveSectionProps } from "../model/types";
 import {
@@ -192,8 +193,10 @@ export function HeroCinematicReveal({
   const signatureMoment = signatureMomentsEnabled(mode)
     ? resolveSignatureMoment(momentId)
     : null;
-  const backdropAsset =
-    mediaAssets?.[media?.generationRef ?? `media/${section.id}`];
+  const backdropRef = media?.generationRef ?? `media/${section.id}`;
+  const backdropAsset = mediaAssets?.[backdropRef];
+  const filmAsset = mediaAssets?.[`${backdropRef}.film`];
+  const film = filmAsset?.modality === "video" ? filmAsset : undefined;
 
   return (
     // Top-anchored (never vertically centred): late layout cannot re-centre
@@ -215,6 +218,9 @@ export function HeroCinematicReveal({
             eager
             className="h-full w-full"
           />
+          {/* hero ambience clip (ADR-036) — client-only, cross-fades over the
+              poster after idle; the grades below tint it to theme. */}
+          {film && <AmbientFilm film={film} />}
           {/* golden-hour mood grade — the theme is literally named for it:
               warm low sun from the right, faint violet in the sky. Deepened
               (ADR-032-addendum polish): the flat overcast master must read

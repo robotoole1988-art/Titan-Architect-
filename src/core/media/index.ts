@@ -15,7 +15,9 @@ export type {
   MediaRepository,
   MediaReviewStatus,
 } from "./model";
-export { buildMediaPrompt, buildPairPrompts, seedFrom } from "./prompt";
+export { buildFilmPrompt, buildMediaPrompt, buildPairPrompts, seedFrom } from "./prompt";
+export { commissionFilm } from "./commission";
+export type { FilmCommission } from "./commission";
 export {
   createReplicateProvider,
   estimateGenerationCostUsd,

@@ -1,14 +1,19 @@
 import Link from "next/link";
-import { ArrowLeft, Check, Images, Sparkles, X } from "lucide-react";
+import { ArrowLeft, Check, Film, Images, Sparkles, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   resolveBusinessSpine,
   type MediaRecord,
   type MediaReviewStatus,
 } from "@/core/business";
-import { deriveMediaPlan, resolveMediaProvider } from "@/core/media";
+import {
+  deriveMediaPlan,
+  estimateGenerationCostUsd,
+  resolveMediaProvider,
+} from "@/core/media";
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
 import {
+  commissionHeroFilm,
   generateBusinessMedia,
   setMediaStatus,
 } from "../api/actions";
@@ -26,18 +31,38 @@ const STATUS_STYLES: Record<MediaReviewStatus, string> = {
 };
 
 function MediaCard({ record }: { record: MediaRecord }) {
+  const isVideo = record.modality === "video";
   return (
     <figure
       className="flex flex-col overflow-hidden rounded-2xl border border-border/60 bg-card/40"
       data-media-status={record.status}
+      data-media-modality={record.modality}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- review thumbnails */}
-      <img
-        src={record.url}
-        alt={record.brief}
-        loading="lazy"
-        className="aspect-[4/3] w-full object-cover"
-      />
+      {isVideo ? (
+        <div className="relative">
+          <video
+            src={record.url}
+            poster={record.posterUrl}
+            controls
+            muted
+            loop
+            playsInline
+            preload="none"
+            className="aspect-[16/9] w-full bg-black object-cover"
+          />
+          <span className="absolute right-2 top-2 rounded-full bg-black/70 px-2 py-0.5 text-[10px] font-medium text-white">
+            ▶ film{record.durationSeconds ? ` · ${record.durationSeconds}s` : ""}
+          </span>
+        </div>
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element -- review thumbnails
+        <img
+          src={record.url}
+          alt={record.brief}
+          loading="lazy"
+          className="aspect-[4/3] w-full object-cover"
+        />
+      )}
       <figcaption className="flex flex-col gap-2 p-3">
         <div className="flex items-center justify-between gap-2">
           <span
@@ -113,7 +138,10 @@ export async function MediaPage({ businessId }: { businessId: string }) {
     0,
   );
   const providerReady = resolveMediaProvider() !== null;
-  const estimatedCost = missing.length * 0.04;
+  const estimatedCost = missing.reduce(
+    (sum, item) => sum + estimateGenerationCostUsd(item.modality),
+    0,
+  );
 
   return (
     <div className="flex flex-col gap-6" data-media-page>
@@ -153,6 +181,33 @@ export async function MediaPage({ businessId }: { businessId: string }) {
           </Button>
         </div>
       </header>
+
+      {providerReady && (
+        <form
+          action={async (formData: FormData) => {
+            "use server";
+            const brief = String(formData.get("brief") ?? "");
+            if (brief.trim()) await commissionHeroFilm(businessId, brief);
+          }}
+          className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card/30 p-4 sm:flex-row sm:items-end"
+        >
+          <label className="flex flex-1 flex-col gap-1.5">
+            <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+              <Film className="size-3.5" /> Commission a hero film (ADR-036)
+            </span>
+            <textarea
+              name="brief"
+              rows={2}
+              placeholder="e.g. a slow aerial drift over rain-soaked UK rooftops under a brooding storm sky, cinematic and moody"
+              className="w-full resize-none rounded-xl border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/40"
+            />
+          </label>
+          <Button type="submit" variant="outline" className="gap-2">
+            <Film className="size-4" />
+            Commission (~${estimateGenerationCostUsd("video").toFixed(2)})
+          </Button>
+        </form>
+      )}
 
       {records.length === 0 ? (
         <div className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border/60 bg-card/30 p-12 text-center">
