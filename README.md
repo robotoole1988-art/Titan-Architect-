@@ -29,6 +29,7 @@ TITAN is building the world's most advanced **AI Growth Operating System for loc
 | 🔭 **Product Vision** (what we're building) | [`docs/founder/VISION.md`](docs/founder/VISION.md) |
 | 💡 **Ideas Register** (what might come next) | [`docs/founder/IDEAS.md`](docs/founder/IDEAS.md) |
 | 🎬 **Signature Moments** (the morph & cinema library) | [`docs/experience/SIGNATURE-MOMENTS.md`](docs/experience/SIGNATURE-MOMENTS.md) |
+| ⚙️ **Experience Engineering** (the creative-technology constitution) | [`docs/experience/EXPERIENCE-ENGINEERING.md`](docs/experience/EXPERIENCE-ENGINEERING.md) |
 | 🏛️ **Architecture Charter** (binding structural rules) | [`docs/architecture/architecture-charter.md`](docs/architecture/architecture-charter.md) |
 | 🧭 **Architecture Decision Records (ADRs)** | [`docs/architecture/`](docs/architecture/README.md) |
 | 📄 **Product Requirement Documents (PRDs)** | [`docs/prd/`](docs/prd/README.md) |

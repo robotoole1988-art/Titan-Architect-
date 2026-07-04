@@ -6,6 +6,11 @@
 > it is edited by the founder; engineering builds FROM it, never over it.
 > Nothing here is a build commitment until it appears in a milestone spec
 > (see [Status & Roadmap](#status--roadmap)).
+>
+> Companion: [Experience Engineering](./EXPERIENCE-ENGINEERING.md) is the
+> founder's creative-technology *constitution* — the manifesto and the
+> three-pillar engineering doctrine that realises these moments. This
+> document is the moment *library*; read them together.
 
 ---
 
