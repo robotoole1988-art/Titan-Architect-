@@ -164,6 +164,56 @@ describe("public mode — arc metadata becomes customer copy", () => {
   });
 });
 
+describe("public mode — the serialized element tree is ALSO clean", () => {
+  // Client-component props are serialized into the page payload (RSC flight
+  // data). Blueprint intent must not reach it: the redaction layer strips
+  // internal slots/sections/extensions before props are handed over.
+  it("no blueprint intent survives in any prop passed to primitives", () => {
+    for (const demo of DEMOS) {
+      const tree = JSON.stringify(
+        renderPage(demo.blueprint, { mode: "public" }),
+        (key, value) => (typeof value === "function" ? undefined : value),
+      );
+      for (const marker of [
+        /narrative-arc:/,
+        /\bDoubt\b/,
+        /Dream \(/,
+        /experienceArc/,
+        /-direction:/,
+        /contact details for/i,
+        /copyright notice/i,
+        /suggestedComponents":\[\{/,
+      ]) {
+        const hit = tree.match(marker);
+        expect(
+          hit,
+          `"${marker}" leaked into serialized props: …${
+            hit ? tree.slice(Math.max(0, hit.index! - 80), hit.index! + 80) : ""
+          }…`,
+        ).toBeNull();
+      }
+    }
+  });
+});
+
+describe("legacy strategy artifacts (pre-ADR-034, no customerJourney)", () => {
+  it("still builds and never leaks arc names", () => {
+    const legacyStrategy = structuredClone(
+      generateExperienceStrategy({
+        businessName: "Kerbside Kings",
+        trade: "Driveways & Paving",
+        location: "Manchester",
+      }),
+    );
+    delete (legacyStrategy.storytelling as { customerJourney?: unknown })
+      .customerJourney;
+    const legacyBlueprint = buildWebsiteBlueprint({ strategy: legacyStrategy });
+    const html = renderPublicPage(legacyBlueprint);
+    expect(html).not.toMatch(/\bDoubt\b|Dream \(|narrative arc/);
+    expect(html).toContain("A clear, fixed quote"); // the fallback steps
+  });
+});
+
 describe("preview mode — the drawing KEEPS its pencil marks", () => {
   it("annotations still render for the founder", () => {
     const html = renderToStaticMarkup(renderPage(kerbside));

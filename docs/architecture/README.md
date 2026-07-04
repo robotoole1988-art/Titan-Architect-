@@ -61,6 +61,7 @@ ADR that supersedes the old one and update the old one's status.
 | [031](./adr-031-ads-intelligence.md) | Ads Intelligence — deterministic campaign build sheets | Accepted |
 | [032](./adr-032-signature-moments.md) | Signature Moments v1 — the scroll-morph engine | Accepted |
 | [033](./adr-033-media-pipeline.md) | Media Pipeline — multi-modal generation behind the founder gate | Accepted |
+| [034](./adr-034-render-modes.md) | Render Modes — the drawing and the building are different things | Accepted |
 
 ### Writing a new ADR
 

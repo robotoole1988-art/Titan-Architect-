@@ -46,18 +46,18 @@ const PEBBLE_TONES = [
 ];
 
 /** Deterministic scatter — index maths, never Math.random (ADR-021 spirit). */
-const STONES = Array.from({ length: 22 }, (_, index) => {
+const STONES = Array.from({ length: 34 }, (_, index) => {
   const row = index % 2;
   return {
     // Tumbled start: spread across the band, upper courses only slightly
     // higher — gravel on the ground, never in the air.
-    x: 50 + ((index * 211) % 880),
-    y: BAND_TOP + 14 + ((index * 97) % 96), // 444..540 — inside the band
+    x: 40 + ((index * 173) % 910),
+    y: BAND_TOP + 20 + ((index * 97) % 92), // 450..542 — inside the band
     rotate: ((index * 47) % 360) - 180,
-    scale: 0.85 + ((index * 13) % 8) / 10, // 0.85..1.55
+    scale: 0.5 + ((index * 13) % 8) / 20, // 0.5..0.85 — gravel, not boulders
     // Settled finish: two tight courses reading as a laid surface.
-    settleX: 52 + index * 43.4,
-    settleY: 508 + row * 26,
+    settleX: 38 + index * 28.2,
+    settleY: 512 + row * 18,
     settleRotate: ((index * 29) % 24) - 12, // near-flat, slight tessellation
     tone: index % 3,
     shape: index % PEBBLE_PATHS.length,
@@ -92,17 +92,17 @@ function Pebble({
       {/* grounding shadow — the pebble sits ON the surface */}
       <path
         d={PEBBLE_PATHS[stone.shape]}
-        transform="translate(1.6 2.2)"
-        fill="rgba(40, 28, 16, 0.35)"
+        transform="translate(1.2 1.8)"
+        fill="rgba(40, 28, 16, 0.3)"
       />
       <path
         d={PEBBLE_PATHS[stone.shape]}
         fill={tone.fill}
         stroke={tone.edge}
-        strokeWidth="1"
+        strokeWidth="0.8"
       />
-      {/* the sun catches the top edge */}
-      <ellipse cx="-3" cy="-4" rx="5" ry="3" fill="rgba(255, 240, 214, 0.4)" />
+      {/* the sun catches the top edge — a hint, not a gloss */}
+      <ellipse cx="-3" cy="-4" rx="3.5" ry="2" fill="rgba(255, 240, 214, 0.28)" />
     </motion.g>
   );
 }

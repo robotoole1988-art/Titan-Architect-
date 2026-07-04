@@ -177,6 +177,17 @@ function contentFor(
 ): ReadonlyArray<string> {
   const { meta, heroConcept, storytelling, conversionStrategy, mediaDirection, seoStrategy, mobileStrategy } = strategy;
   const trade = meta.trade.toLowerCase();
+  // Stored strategy artifacts from before ADR-034 lack customerJourney —
+  // fall back to the general-archetype steps rather than leaking arc names.
+  const customerJourney =
+    storytelling.customerJourney && storytelling.customerJourney.length > 0
+      ? storytelling.customerJourney
+      : [
+          "A quick call to understand the job",
+          "A clear, fixed quote",
+          "The work done properly, first time",
+          "Tidied up, checked and guaranteed",
+        ];
 
   switch (primitiveId) {
     case "hero.cinematic-reveal":
@@ -199,7 +210,7 @@ function contentFor(
       return [
         `narrative-arc: ${storytelling.narrativeArc}`,
         `arc-headline: ${storytelling.keyMessages[0]}`,
-        `journey-steps: ${storytelling.customerJourney.join(" · ")}`,
+        `journey-steps: ${customerJourney.join(" · ")}`,
         `key-messages: ${storytelling.keyMessages.join(" · ")}`,
       ];
     case "story.gentle-welcome":
@@ -256,7 +267,7 @@ function contentFor(
     case "process.journey-map":
       // Real customer step names — arc metadata is never copy (ADR-034).
       return [
-        `steps: ${storytelling.customerJourney.join(" · ")}`,
+        `steps: ${customerJourney.join(" · ")}`,
         `steps-headline: How it works — from first call to finished ${trade}`,
         `guarantees: Close each step with proof: ${conversionStrategy.trustSignals.join(" · ")}.`,
       ];

@@ -245,10 +245,12 @@ export function HeroCinematicReveal({
       {!backdropAsset && <GoldenAtmosphere dim={split} />}
       {signatureMoment && (
         // The site's ONE signature moment — the opening act (ADR-032).
+        // On phones the copy fills the hero, so the moment lives in a
+        // bottom strip — gravel never crosses the headline or CTA (ADR-034).
         <div
           data-signature-moment={momentId}
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 overflow-hidden"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[24svh] overflow-hidden sm:inset-0 sm:h-auto"
         >
           {createElement(signatureMoment, { hasBackdrop: Boolean(backdropAsset) })}
         </div>
