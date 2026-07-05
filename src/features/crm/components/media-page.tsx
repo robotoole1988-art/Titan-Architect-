@@ -7,14 +7,18 @@ import {
   type MediaReviewStatus,
 } from "@/core/business";
 import {
+  VIDEO_MODELS,
+  availableVideoModels,
   deriveMediaPlan,
   estimateGenerationCostUsd,
   resolveMediaProvider,
+  type VideoModelKey,
 } from "@/core/media";
 import { toStreamUrl } from "@/features/website-renderer";
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
 import {
   commissionHeroFilm,
+  commissionMorphFilm,
   generateBusinessMedia,
   setMediaStatus,
 } from "../api/actions";
@@ -143,6 +147,12 @@ export async function MediaPage({ businessId }: { businessId: string }) {
     (sum, item) => sum + estimateGenerationCostUsd(item.modality),
     0,
   );
+  // Which film tiers can be commissioned right now (ADR-039).
+  const videoModels = availableVideoModels();
+  const heroModels = videoModels.filter(
+    (key) => VIDEO_MODELS[key].kind === "text-to-video",
+  );
+  const canMorph = videoModels.includes("morph");
 
   return (
     <div className="flex flex-col gap-6" data-media-page>
@@ -183,31 +193,144 @@ export async function MediaPage({ businessId }: { businessId: string }) {
         </div>
       </header>
 
-      {providerReady && (
+      {heroModels.length > 0 && (
         <form
           action={async (formData: FormData) => {
             "use server";
             const brief = String(formData.get("brief") ?? "");
-            if (brief.trim()) await commissionHeroFilm(businessId, brief);
+            const videoModel = String(formData.get("videoModel") ?? "standard") as VideoModelKey;
+            const durationSeconds = Number(formData.get("duration") ?? 5) || 5;
+            const model = VIDEO_MODELS[videoModel] ? videoModel : "standard";
+            if (brief.trim()) await commissionHeroFilm(businessId, brief, model, durationSeconds);
           }}
-          className="flex flex-col gap-2 rounded-2xl border border-border/60 bg-card/30 p-4 sm:flex-row sm:items-end"
+          className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card/30 p-4"
+          data-commission-hero
         >
-          <label className="flex flex-1 flex-col gap-1.5">
-            <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
-              <Film className="size-3.5" /> Commission a hero film (ADR-036)
+          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-muted-foreground">
+            <Film className="size-3.5" /> Commission a hero film (ADR-036 / 4K ADR-039)
+          </span>
+          <textarea
+            name="brief"
+            rows={2}
+            placeholder="e.g. a slow aerial drift over rain-soaked UK rooftops under a brooding storm sky, cinematic and moody"
+            className="w-full resize-none rounded-xl border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/40"
+          />
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+              Quality
+              <select
+                name="videoModel"
+                defaultValue={heroModels.includes("hero-4k") ? "hero-4k" : "standard"}
+                className="rounded-lg border border-border/60 bg-transparent px-2.5 py-1.5 text-sm text-foreground outline-none"
+                data-video-model
+              >
+                {heroModels.map((key) => (
+                  <option key={key} value={key} className="bg-background">
+                    {VIDEO_MODELS[key].label} · {VIDEO_MODELS[key].resolution}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+              Seconds
+              <input
+                name="duration"
+                type="number"
+                min={3}
+                max={15}
+                defaultValue={5}
+                className="w-20 rounded-lg border border-border/60 bg-transparent px-2.5 py-1.5 text-sm outline-none"
+              />
+            </label>
+            <Button type="submit" variant="outline" className="gap-2">
+              <Film className="size-4" />
+              Commission
+            </Button>
+            <span className="text-[11px] text-muted-foreground">
+              4K bills by the second (${VIDEO_MODELS["hero-4k"].costPerSecondUsd?.toFixed(2)}/s);
+              standard is a flat ${VIDEO_MODELS.standard.flatCostUsd?.toFixed(2)}.
             </span>
-            <textarea
-              name="brief"
-              rows={2}
-              placeholder="e.g. a slow aerial drift over rain-soaked UK rooftops under a brooding storm sky, cinematic and moody"
-              className="w-full resize-none rounded-xl border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/40"
-            />
-          </label>
-          <Button type="submit" variant="outline" className="gap-2">
-            <Film className="size-4" />
-            Commission (~${estimateGenerationCostUsd("video").toFixed(2)})
-          </Button>
+          </div>
         </form>
+      )}
+
+      {canMorph && (
+        <form
+          action={async (formData: FormData) => {
+            "use server";
+            const brief = String(formData.get("brief") ?? "");
+            const startImageUrl = String(formData.get("startImageUrl") ?? "");
+            const endImageUrl = String(formData.get("endImageUrl") ?? "");
+            const durationSeconds = Number(formData.get("duration") ?? 5) || 5;
+            if (brief.trim() && startImageUrl.trim()) {
+              await commissionMorphFilm(businessId, {
+                brief,
+                startImageUrl,
+                ...(endImageUrl.trim() ? { endImageUrl } : {}),
+                durationSeconds,
+              });
+            }
+          }}
+          className="flex flex-col gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/[0.04] p-4"
+          data-commission-morph
+        >
+          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-sky-300/80">
+            <Sparkles className="size-3.5" /> Commission a MORPH film — Kling O1 keyframes (ADR-039)
+          </span>
+          <textarea
+            name="brief"
+            rows={2}
+            placeholder="e.g. a brooding storm of loose slate resolves into a pristine, seated slate roof over a UK home — one continuous cinematic move"
+            className="w-full resize-none rounded-xl border border-border/60 bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-foreground/40"
+          />
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+              Start frame URL (raw storm / loose slate)
+              <input
+                name="startImageUrl"
+                type="url"
+                required
+                placeholder="https://… .webp"
+                className="rounded-lg border border-border/60 bg-transparent px-2.5 py-1.5 text-sm outline-none"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+              End frame URL (finished seated roof)
+              <input
+                name="endImageUrl"
+                type="url"
+                placeholder="https://… .webp (optional)"
+                className="rounded-lg border border-border/60 bg-transparent px-2.5 py-1.5 text-sm outline-none"
+              />
+            </label>
+          </div>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+              Seconds
+              <input
+                name="duration"
+                type="number"
+                min={3}
+                max={10}
+                defaultValue={5}
+                className="w-20 rounded-lg border border-border/60 bg-transparent px-2.5 py-1.5 text-sm outline-none"
+              />
+            </label>
+            <Button type="submit" variant="outline" className="gap-2">
+              <Sparkles className="size-4" />
+              Commission morph
+            </Button>
+            <span className="text-[11px] text-muted-foreground">
+              O1 bills ${VIDEO_MODELS.morph.costPerSecondUsd?.toFixed(3)}/s (~${estimateGenerationCostUsd("video", { videoModel: "morph", durationSeconds: 5 }).toFixed(2)} for 5s).
+            </span>
+          </div>
+        </form>
+      )}
+
+      {providerReady && heroModels.length === 0 && !canMorph && (
+        <p className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300">
+          Set FAL_KEY (native-4K + O1 morph) or REPLICATE_API_TOKEN (standard film) in .env.local to commission film.
+        </p>
       )}
 
       {records.length === 0 ? (

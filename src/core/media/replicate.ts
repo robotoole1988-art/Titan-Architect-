@@ -17,27 +17,14 @@ import type {
   GeneratedMedia,
   MediaGenerationProvider,
   MediaGenerationRequest,
-  MediaModality,
 } from "./model";
+import { estimateGenerationCostUsd, videoModelCostUsd } from "./model";
+import { VIDEO_NEGATIVE_PROMPT } from "./prompt";
 
 const DEFAULT_IMAGE_MODEL = "black-forest-labs/flux-1.1-pro";
 // The text-to-video variant (kling-v2.1 base is image-to-video, needs a
 // start_image; the *-master* model is pure T2V, prompt-only — ADR-036).
 const DEFAULT_VIDEO_MODEL = "kwaivgi/kling-v2.1-master";
-
-/** Cost telemetry table (USD) — logged onto every record's provenance. */
-const COST_USD: Record<MediaModality, number> = {
-  image: 0.04, // Flux 1.1 Pro list price per image
-  video: 0.28, // Kling v2.1 Master, ~5s (ADR-036)
-};
-
-/** The authenticity law, expressed for a video negative prompt. */
-const VIDEO_NEGATIVE_PROMPT =
-  "people, human figures, faces, crowds, text, captions, subtitles, watermark, logo, signage, cartoon, illustration, distorted architecture, warped geometry";
-
-export function estimateGenerationCostUsd(modality: MediaModality): number {
-  return COST_USD[modality];
-}
 
 type TransportResponse = {
   ok: boolean;
@@ -120,7 +107,7 @@ export function createReplicateProvider(config: {
     return {
       url: output,
       format: request.format ?? "webp",
-      costUsd: COST_USD.image,
+      costUsd: estimateGenerationCostUsd("image"),
       provider: "replicate",
       model,
     };
@@ -190,7 +177,7 @@ export function createReplicateProvider(config: {
     return {
       url: output,
       format: "mp4",
-      costUsd: COST_USD.video,
+      costUsd: videoModelCostUsd("standard", duration),
       provider: "replicate",
       model: videoModel,
     };
@@ -207,11 +194,4 @@ export function createReplicateProvider(config: {
         : generateImage(request);
     },
   };
-}
-
-/** Env-driven resolution: null without a token (and always null in CI). */
-export function resolveMediaProvider(): MediaGenerationProvider | null {
-  const token = process.env.REPLICATE_API_TOKEN;
-  if (!token) return null;
-  return createReplicateProvider({ token });
 }
