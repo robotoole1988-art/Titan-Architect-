@@ -88,9 +88,21 @@ first paint (it already does, ADR-036); the film streams after.
 ## Verification
 
 - Gates green: lint, type-check, 349 tests (fal queue adapter, registry, cost,
-  composite routing, commission wiring), production build.
-- In-browser: the CRM media gate shows the quality select + morph form when the
-  keys are present; a commissioned 4K/O1 film lands in review and plays through
-  `/api/media`; poster-first LCP holds Lighthouse ≥90 on a production build.
-- **Prerequisite:** `FAL_KEY` in `.env.local` (founder action) before the live
-  4K/morph commission. Restart the dev server; judge 4K on a production build.
+  composite routing, commission wiring, GET-body regression), production build.
+- **Live, real spend** (Summit Roofing Rescue, fal credit):
+  - Native-4K hero film commissioned → lands in review → plays through
+    `/api/media` at **3840×2160** (`readyState 4`, `currentTime` advancing),
+    provenance logs **$2.10**.
+  - O1 morph film commissioned from a start→end keyframe pair (matched stills)
+    → lands in review → plays through `/api/media`, logs **$0.56**. (O1 returned
+    a 960×960 frame — the model's output shape.)
+  - Both born in **review** — nothing auto-approved.
+- **Poster-first LCP, production build** (`next start`, Horsforth hero, 4K film
+  transiently approved for the measurement then reverted to review, disclosed):
+  **Lighthouse Performance 98** — LCP 0.9 s on the **poster `IMG`** (not the
+  4K video), FCP 0.3 s, TBT 10 ms, CLS 0; the 4K streams progressively behind
+  the poster via the Range proxy.
+- One bug caught + fixed in the live pass: the queue poll sent a body on GET
+  requests, which `fetch` rejects; GET now carries no body, pinned by a test.
+- **Prerequisite:** `FAL_KEY` in `.env.local` (founder action). Restart the dev
+  server after adding it; judge 4K on a production build.

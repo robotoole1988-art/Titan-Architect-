@@ -33,7 +33,7 @@ type TransportResponse = {
 };
 type Transport = (
   url: string,
-  init: { method: string; headers: Record<string, string>; body: string },
+  init: { method: string; headers: Record<string, string>; body?: string },
 ) => Promise<TransportResponse>;
 
 interface ReplicatePrediction {
@@ -153,10 +153,10 @@ export function createReplicateProvider(config: {
         throw new Error(`Replicate video timed out after ${pollTimeoutMs}ms.`);
       }
       await sleep(pollIntervalMs);
+      // No body on GET — fetch rejects a GET/HEAD request that carries one.
       const polled = await transport(pollUrl, {
         method: "GET",
         headers: authHeaders,
-        body: "",
       });
       if (!polled.ok) {
         throw new Error(`Replicate video poll HTTP ${polled.status}.`);

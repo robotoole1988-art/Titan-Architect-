@@ -49,7 +49,7 @@ describe("the fal.ai adapter (ADR-039) — queue submit → poll → result", ()
   function mockFal(output: unknown) {
     const calls: Array<{ method: string; url: string; body?: string; headers: Record<string, string> }> = [];
     const transport = vi.fn(
-      async (url: string, init: { method: string; headers: Record<string, string>; body: string }) => {
+      async (url: string, init: { method: string; headers: Record<string, string>; body?: string }) => {
         calls.push({ method: init.method, url, headers: init.headers, body: init.body });
         if (init.method === "POST") {
           return {
@@ -101,6 +101,8 @@ describe("the fal.ai adapter (ADR-039) — queue submit → poll → result", ()
     expect(String(input.negative_prompt)).toMatch(/people|face|text/i);
     // Polled the queue to completion before fetching the result.
     expect(calls.some((c) => c.method === "GET" && c.url.endsWith("/status"))).toBe(true);
+    // GET requests must NOT carry a body — real fetch rejects that outright.
+    expect(calls.filter((c) => c.method === "GET").every((c) => c.body === undefined)).toBe(true);
   });
 
   it("commissions an O1 morph film from a start→end keyframe pair", async () => {

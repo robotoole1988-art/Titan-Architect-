@@ -86,7 +86,7 @@ describe("the Replicate adapter (image, seam ready for video)", () => {
 describe("the Replicate VIDEO adapter (ADR-036) — create + poll", () => {
   it("creates a video prediction and polls it to completion", async () => {
     const calls: Array<{ method: string; url: string; body?: string }> = [];
-    const transport = vi.fn(async (url: string, init: { method: string; body: string }) => {
+    const transport = vi.fn(async (url: string, init: { method: string; body?: string }) => {
       calls.push({ method: init.method, url, body: init.body });
       if (init.method === "POST") {
         return {

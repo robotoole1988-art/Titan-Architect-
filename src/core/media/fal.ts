@@ -26,7 +26,7 @@ type TransportResponse = {
 };
 type Transport = (
   url: string,
-  init: { method: string; headers: Record<string, string>; body: string },
+  init: { method: string; headers: Record<string, string>; body?: string },
 ) => Promise<TransportResponse>;
 
 interface FalSubmit {
@@ -137,7 +137,8 @@ export function createFalProvider(config: {
         throw new Error(`fal job timed out after ${pollTimeoutMs}ms.`);
       }
       await sleep(pollIntervalMs);
-      const polled = await transport(statusUrl, { method: "GET", headers, body: "" });
+      // No body on GET — fetch rejects a GET/HEAD request that carries one.
+      const polled = await transport(statusUrl, { method: "GET", headers });
       if (!polled.ok) throw new Error(`fal status HTTP ${polled.status}.`);
       status = (await polled.json()) as FalStatus;
       if (status.status && !["IN_QUEUE", "IN_PROGRESS", "COMPLETED"].includes(status.status)) {
@@ -146,7 +147,7 @@ export function createFalProvider(config: {
     }
 
     // Fetch the result.
-    const resultRes = await transport(responseUrl, { method: "GET", headers, body: "" });
+    const resultRes = await transport(responseUrl, { method: "GET", headers });
     if (!resultRes.ok) throw new Error(`fal result HTTP ${resultRes.status}.`);
     const result = (await resultRes.json()) as FalResult;
     const url = result.video?.url;
