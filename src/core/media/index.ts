@@ -14,15 +14,30 @@ export type {
   MediaRecordDraft,
   MediaRepository,
   MediaReviewStatus,
+  VideoModelKey,
+  VideoModelSpec,
 } from "./model";
-export { buildFilmPrompt, buildMediaPrompt, buildPairPrompts, seedFrom } from "./prompt";
-export { commissionFilm } from "./commission";
-export type { FilmCommission } from "./commission";
 export {
-  createReplicateProvider,
+  VIDEO_MODELS,
   estimateGenerationCostUsd,
+  videoModelCostUsd,
+} from "./model";
+export {
+  buildFilmPrompt,
+  buildMediaPrompt,
+  buildMorphFilmPrompt,
+  buildPairPrompts,
+  seedFrom,
+} from "./prompt";
+export { commissionFilm, commissionMorphFilm } from "./commission";
+export type { FilmCommission, MorphFilmCommission } from "./commission";
+export { createReplicateProvider } from "./replicate";
+export { createFalProvider } from "./fal";
+export {
+  availableVideoModels,
+  createCompositeProvider,
   resolveMediaProvider,
-} from "./replicate";
+} from "./provider";
 export { deriveMediaPlan } from "./plan";
 export type { MediaPlanItem } from "./plan";
 export {

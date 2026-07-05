@@ -12,12 +12,15 @@ import {
   validateCampaignPlan,
 } from "@/core/ads-intelligence";
 import {
+  VIDEO_MODELS,
   commissionFilm,
+  commissionMorphFilm as commissionMorphFilmCore,
   createLocalDiskStorage,
   createSupabaseStorage,
   deriveMediaPlan,
   generateMissingMedia,
   resolveMediaProvider,
+  type VideoModelKey,
 } from "@/core/media";
 import type { Deal } from "@/core/pricing";
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
@@ -324,15 +327,25 @@ export async function generateBusinessMedia(businessId: string): Promise<void> {
  * in review under the founder gate. Called twice per demo (two takes) so the
  * founder can exercise taste. Reusable for any business + any brief.
  */
+function mediaStorage() {
+  return process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
+    ? createSupabaseStorage({
+        url: process.env.SUPABASE_URL,
+        serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
+      })
+    : createLocalDiskStorage();
+}
+
 export async function commissionHeroFilm(
   businessId: string,
   brief: string,
+  videoModel: VideoModelKey = "standard",
   durationSeconds = 5,
 ): Promise<void> {
   const provider = resolveMediaProvider();
   if (!provider) {
     throw new Error(
-      "REPLICATE_API_TOKEN is not set — add it to .env.local to generate film (ADR-036).",
+      "No media provider is configured — set REPLICATE_API_TOKEN and/or FAL_KEY in .env.local (ADR-039).",
     );
   }
   const spine = await resolveBusinessSpine();
@@ -349,23 +362,59 @@ export async function commissionHeroFilm(
   )?.slotRef;
   if (!heroSlotRef) throw new Error("No hero slot found in the blueprint.");
 
-  const storage =
-    process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY
-      ? createSupabaseStorage({
-          url: process.env.SUPABASE_URL,
-          serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
-        })
-      : createLocalDiskStorage();
-
-  const result = await commissionFilm(spine, provider, storage, business, {
+  const result = await commissionFilm(spine, provider, mediaStorage(), business, {
     heroSlotRef,
     brief: brief.trim(),
+    videoModel,
     durationSeconds,
   });
   await spine.activity.log({
     businessId,
     kind: "note",
-    message: `Hero film commissioned ($${result.costUsd.toFixed(2)}) — awaiting founder review: "${brief.trim().slice(0, 80)}"`,
+    message: `Hero film commissioned — ${VIDEO_MODELS[videoModel].label} ($${result.costUsd.toFixed(2)}) — awaiting founder review: "${brief.trim().slice(0, 80)}"`,
+    meta: { slotRef: result.slotRef, costUsd: result.costUsd, videoModel },
+  });
+  revalidateCrm(businessId);
+}
+
+/**
+ * Commission a MORPH film (ADR-039): Kling O1 animates a start frame → end
+ * frame — the storm-to-roof transformation as film. Born in review; frames
+ * are supplied URLs (existing posters or stills). Per-render cost logged.
+ */
+export async function commissionMorphFilm(
+  businessId: string,
+  input: {
+    brief: string;
+    startImageUrl: string;
+    endImageUrl?: string;
+    durationSeconds?: number;
+  },
+): Promise<void> {
+  const provider = resolveMediaProvider();
+  if (!provider) {
+    throw new Error(
+      "No media provider is configured — set FAL_KEY in .env.local for the O1 morph film (ADR-039).",
+    );
+  }
+  const startImageUrl = input.startImageUrl.trim();
+  if (!startImageUrl) throw new Error("A morph film needs a start frame URL.");
+  const spine = await resolveBusinessSpine();
+  const business = await spine.businesses.get(businessId);
+  if (!business) throw new BusinessNotFoundError(businessId);
+
+  const endImageUrl = input.endImageUrl?.trim();
+  const result = await commissionMorphFilmCore(spine, provider, mediaStorage(), business, {
+    slotRef: "morph.hero.film",
+    brief: input.brief.trim(),
+    startImageUrl,
+    ...(endImageUrl ? { endImageUrl } : {}),
+    durationSeconds: input.durationSeconds ?? 5,
+  });
+  await spine.activity.log({
+    businessId,
+    kind: "note",
+    message: `Morph film commissioned — Kling O1 keyframes ($${result.costUsd.toFixed(2)}) — awaiting founder review: "${input.brief.trim().slice(0, 80)}"`,
     meta: { slotRef: result.slotRef, costUsd: result.costUsd },
   });
   revalidateCrm(businessId);

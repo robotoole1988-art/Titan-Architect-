@@ -10,6 +10,13 @@ export interface PromptContext {
   location: string;
 }
 
+/**
+ * The authenticity law as a VIDEO negative prompt — no people, no text, no
+ * warped architecture. Rides every film request whatever the provider.
+ */
+export const VIDEO_NEGATIVE_PROMPT =
+  "people, human figures, faces, crowds, text, captions, subtitles, watermark, logo, signage, cartoon, illustration, distorted architecture, warped geometry";
+
 /** Appended to EVERY prompt — the law. */
 const AUTHENTICITY_CLAUSES = [
   "Setting: authentic United Kingdom — typical UK housing stock, region-plausible streets, gardens and planting around {location}.",
@@ -30,6 +37,16 @@ export function buildMediaPrompt(brief: string, context: PromptContext): string 
  */
 export function buildFilmPrompt(brief: string, context: PromptContext): string {
   const treatment = `${brief.trim().replace(/\.?$/, "")} — a short cinematic ambient film for a hero background: slow, smooth, atmospheric camera motion (a gentle drone drift or a slow tracking move), volumetric weather-true light, filmic colour, a calm continuous loop with no hard cuts.`;
+  return buildMediaPrompt(treatment, context);
+}
+
+/**
+ * A morph-film prompt (ADR-039) for Kling O1's dual keyframes: begin on the
+ * start frame (@Image1), resolve on the end frame (@Image2), animate the
+ * transformation between them. The same authenticity law applies.
+ */
+export function buildMorphFilmPrompt(brief: string, context: PromptContext): string {
+  const treatment = `${brief.trim().replace(/\.?$/, "")} — a cinematic transformation film: begin exactly on the first frame @Image1 and resolve exactly on the last frame @Image2, animating a smooth, believable transition between the two states with elegant, controlled camera motion; filmic colour, weather-true light, one continuous move with no hard cuts.`;
   return buildMediaPrompt(treatment, context);
 }
 
