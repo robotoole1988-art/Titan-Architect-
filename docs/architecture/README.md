@@ -65,6 +65,7 @@ ADR that supersedes the old one and update the old one's status.
 | [035](./adr-035-morph-lab-webgl.md) | Morph Lab — WebGL particle foundation, the five-beat Morph Law | Accepted |
 | [036](./adr-036-video-engine.md) | Video Engine v1 — cinematic film through the founder gate | Accepted |
 | [037](./adr-037-media-streaming.md) | Media Streaming — same-origin Range proxy so films play | Accepted |
+| [038](./adr-038-morph-lab-webgpu.md) | Morph Lab v3 — WebGPU/TSL compute particles, slate material, seam-free domes | Accepted |
 
 ### Writing a new ADR
 

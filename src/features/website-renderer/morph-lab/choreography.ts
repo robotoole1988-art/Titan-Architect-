@@ -124,62 +124,180 @@ const ROOF = {
   pitch: Math.atan2(1.4, 1.5),
 };
 
+/**
+ * The per-particle field maths for ONE tile of the roof grid — the single
+ * source of truth shared by the CPU object array (buildStormVortex) and the
+ * flat GPU storage field (buildStormField). Index maths only, deterministic.
+ */
+function tileFields(
+  index: number,
+  side: 0 | 1,
+  course: number,
+  courses: number,
+  column: number,
+  columns: number,
+  turbulence: number,
+  hoverRadius: number,
+): Omit<VortexParticle, "index" | "side" | "course" | "column"> {
+  const frac = courses === 1 ? 0 : course / (courses - 1);
+  const y = ROOF.eavesY + frac * (ROOF.apexY - ROOF.eavesY);
+  const z = (1 - frac) * ROOF.eavesZ + 0.06;
+  const x =
+    -ROOF.width / 2 + (columns === 1 ? 0.5 : column / (columns - 1)) * ROOF.width;
+  const home: [number, number, number] = [x, y, side === 0 ? z : -z];
+
+  // The vortex: a storm spiral around and above the house.
+  const a = index * 2.399963; // golden angle — even angular coverage
+  const radius = (4.2 + hash(index) * 4.6) * (0.8 + 0.35 * turbulence);
+  const height = 1.2 + hash(index + 1) * (4.8 + 1.6 * turbulence);
+  const scatter: [number, number, number] = [
+    Math.cos(a) * radius,
+    height,
+    Math.sin(a) * radius,
+  ];
+
+  // The hover ghost: a loose shell just off the true form.
+  const ghostMag = hoverRadius * (0.6 + hash(index + 2) * 0.8);
+  const ga = hash(index + 3) * Math.PI * 2;
+  const gb = hash(index + 4) * Math.PI - Math.PI / 2;
+  const hoverOffset: [number, number, number] = [
+    Math.cos(ga) * Math.cos(gb) * ghostMag,
+    Math.sin(gb) * ghostMag + 0.15,
+    Math.sin(ga) * Math.cos(gb) * ghostMag * (side === 0 ? 1 : -1),
+  ];
+
+  return {
+    home,
+    scatter,
+    hoverOffset,
+    restRotation: [side === 0 ? -ROOF.pitch : ROOF.pitch, 0, 0],
+    // Course 0 (the eaves) seats first; tiny column stagger inside each
+    // course keeps the wave organic, never a hard shutter.
+    waveDelay:
+      (courses === 1 ? 0 : course / (courses - 1)) * 0.82 + hash(index + 5) * 0.08,
+    phase: hash(index + 6) * Math.PI * 2,
+    sizeJitter: 0.85 + hash(index + 7) * 0.3,
+  };
+}
+
 export function buildStormVortex(params: VortexParams): VortexParticle[] {
   const particles: VortexParticle[] = [];
   const { courses, columns, turbulence } = params;
   let index = 0;
   for (let side = 0 as 0 | 1; side <= 1; side++) {
     for (let course = 0; course < courses; course++) {
-      const frac = courses === 1 ? 0 : course / (courses - 1);
-      const y = ROOF.eavesY + frac * (ROOF.apexY - ROOF.eavesY);
-      const z = (1 - frac) * ROOF.eavesZ + 0.06;
       for (let column = 0; column < columns; column++) {
-        const x =
-          -ROOF.width / 2 + (columns === 1 ? 0.5 : column / (columns - 1)) * ROOF.width;
-        const home: [number, number, number] = [x, y, side === 0 ? z : -z];
-
-        // The vortex: a storm spiral around and above the house.
-        const a = index * 2.399963; // golden angle — even angular coverage
-        const radius = (4.2 + hash(index) * 4.6) * (0.8 + 0.35 * turbulence);
-        const height = 1.2 + hash(index + 1) * (4.8 + 1.6 * turbulence);
-        const scatter: [number, number, number] = [
-          Math.cos(a) * radius,
-          height,
-          Math.sin(a) * radius,
-        ];
-
-        // The hover ghost: a loose shell just off the true form.
-        const ghostMag = params.hoverRadius * (0.6 + hash(index + 2) * 0.8);
-        const ga = hash(index + 3) * Math.PI * 2;
-        const gb = hash(index + 4) * Math.PI - Math.PI / 2;
-        const hoverOffset: [number, number, number] = [
-          Math.cos(ga) * Math.cos(gb) * ghostMag,
-          Math.sin(gb) * ghostMag + 0.15,
-          Math.sin(ga) * Math.cos(gb) * ghostMag * (side === 0 ? 1 : -1),
-        ];
-
         particles.push({
           index,
           side,
           course,
           column,
-          home,
-          scatter,
-          hoverOffset,
-          restRotation: [side === 0 ? -ROOF.pitch : ROOF.pitch, 0, 0],
-          // Course 0 (the eaves) seats first; tiny column stagger inside
-          // each course keeps the wave organic, never a hard shutter.
-          waveDelay:
-            (courses === 1 ? 0 : course / (courses - 1)) * 0.82 +
-            hash(index + 5) * 0.08,
-          phase: hash(index + 6) * Math.PI * 2,
-          sizeJitter: 0.85 + hash(index + 7) * 0.3,
+          ...tileFields(
+            index,
+            side,
+            course,
+            courses,
+            column,
+            columns,
+            turbulence,
+            params.hoverRadius,
+          ),
         });
         index += 1;
       }
     }
   }
   return particles;
+}
+
+/**
+ * The flat GPU storage field (ADR-038): the SAME roof choreography scaled to
+ * 50k+ particles, packed as index-contiguous Float32Arrays ready to upload
+ * to WebGPU storage buffers. `count` is derived from `target` as a clean
+ * 2×courses×columns grid (columns ≫ courses — the roof is wide, not tall),
+ * always ≥ target. The TSL compute pass reads these buffers and reproduces
+ * particleState() on the GPU; the maths lives ONCE, in tileFields.
+ */
+export interface StormField {
+  count: number;
+  courses: number;
+  columns: number;
+  /** vec3 per particle, xyz interleaved. */
+  home: Float32Array;
+  scatter: Float32Array;
+  hoverOffset: Float32Array;
+  /** Euler xyz per particle. */
+  restRotation: Float32Array;
+  /** Scalar per particle. */
+  waveDelay: Float32Array;
+  phase: Float32Array;
+  sizeJitter: Float32Array;
+}
+
+/** Roof width ÷ slope-course count — keeps the wide-gable proportion at any density. */
+const ROOF_ASPECT = 5.6;
+
+export function buildStormField(target: number, params: VortexParams): StormField {
+  const perSide = Math.ceil(Math.max(target, 2) / 2);
+  const courses = Math.max(2, Math.round(Math.sqrt(perSide / ROOF_ASPECT)));
+  const columns = Math.max(2, Math.ceil(perSide / courses));
+  const count = 2 * courses * columns;
+
+  const home = new Float32Array(count * 3);
+  const scatter = new Float32Array(count * 3);
+  const hoverOffset = new Float32Array(count * 3);
+  const restRotation = new Float32Array(count * 3);
+  const waveDelay = new Float32Array(count);
+  const phase = new Float32Array(count);
+  const sizeJitter = new Float32Array(count);
+
+  let index = 0;
+  for (let side = 0 as 0 | 1; side <= 1; side++) {
+    for (let course = 0; course < courses; course++) {
+      for (let column = 0; column < columns; column++) {
+        const f = tileFields(
+          index,
+          side,
+          course,
+          courses,
+          column,
+          columns,
+          params.turbulence,
+          params.hoverRadius,
+        );
+        const v = index * 3;
+        home[v] = f.home[0];
+        home[v + 1] = f.home[1];
+        home[v + 2] = f.home[2];
+        scatter[v] = f.scatter[0];
+        scatter[v + 1] = f.scatter[1];
+        scatter[v + 2] = f.scatter[2];
+        hoverOffset[v] = f.hoverOffset[0];
+        hoverOffset[v + 1] = f.hoverOffset[1];
+        hoverOffset[v + 2] = f.hoverOffset[2];
+        restRotation[v] = f.restRotation[0];
+        restRotation[v + 1] = f.restRotation[1];
+        restRotation[v + 2] = f.restRotation[2];
+        waveDelay[index] = f.waveDelay;
+        phase[index] = f.phase;
+        sizeJitter[index] = f.sizeJitter;
+        index += 1;
+      }
+    }
+  }
+
+  return {
+    count,
+    courses,
+    columns,
+    home,
+    scatter,
+    hoverOffset,
+    restRotation,
+    waveDelay,
+    phase,
+    sizeJitter,
+  };
 }
 
 /** Mechanical deceleration — Transformers precision, nothing floaty. */

@@ -20,27 +20,45 @@ import {
 } from "react";
 import Link from "next/link";
 import {
+  buildStormField,
   buildStormVortex,
   vortexParams,
   type VortexIntensity,
 } from "./choreography";
 import { StormVortexFallback2d } from "./fallback-2d";
 import type { ParticleGeometryVariant } from "./storm-vortex-scene";
+import { resolveParticleMaterial } from "./particle-materials";
 import { generateLabDomes } from "./api";
 import type { DomeTimeOfDay, LabEnvironment } from "./environment";
-import { detectDeviceTier, type DeviceTier } from "../webgl/device-tier";
+import {
+  detectDeviceTier,
+  detectWebGpu,
+  preferWebGpu,
+  type DeviceTier,
+} from "../webgl/device-tier";
+
+const sceneLoading = () => (
+  <div className="flex h-full w-full items-center justify-center text-xs uppercase tracking-[0.2em] text-slate-400">
+    Loading the storm…
+  </div>
+);
 
 const StormVortexScene = dynamic(
   () => import("./storm-vortex-scene").then((module) => module.StormVortexScene),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-full w-full items-center justify-center text-xs uppercase tracking-[0.2em] text-slate-400">
-        Loading the storm…
-      </div>
-    ),
-  },
+  { ssr: false, loading: sceneLoading },
 );
+
+const StormFieldWebGPU = dynamic(
+  () => import("./storm-field-webgpu").then((module) => module.StormFieldWebGPU),
+  { ssr: false, loading: sceneLoading },
+);
+
+/** Intensity → WebGPU particle budget. The compute path holds 50k+. */
+const WEBGPU_BUDGET: Record<VortexIntensity, number> = {
+  calm: 50_000,
+  dramatic: 80_000,
+  maximum: 130_000,
+};
 
 type Presentation = "fullscreen" | "hero-stage";
 type Drive = "scroll" | "autoplay";
@@ -98,6 +116,8 @@ export function MorphLabPage({
   const [glow, setGlow] = useState(0.35);
   const [tier, setTier] = useState<DeviceTier>("full-3d");
   const [detectedTier, setDetectedTier] = useState<DeviceTier | null>(null);
+  const [webgpuAdapter, setWebgpuAdapter] = useState<boolean | null>(null);
+  const [forceWebgl, setForceWebgl] = useState(false);
   const [controlsOpen, setControlsOpen] = useState(true);
   const [autoplaying, setAutoplaying] = useState(false);
   const [environmentOn, setEnvironmentOn] = useState(true);
@@ -119,6 +139,25 @@ export function MorphLabPage({
     [intensity, hoverDuration],
   );
   const particles = useMemo(() => buildStormVortex(params), [params]);
+  // The dense GPU field — only built when the compute path is live.
+  const field = useMemo(
+    () => buildStormField(WEBGPU_BUDGET[intensity], params),
+    [intensity, params],
+  );
+  // The lab morph is the roof: real Welsh slate (ADR-038).
+  const slate = useMemo(() => resolveParticleMaterial("roofing"), []);
+
+  // WebGPU is a strict upgrade of the full-3D tier, and only when the founder
+  // hasn't pinned WebGL for an A/B against v2.
+  const webgpuActive =
+    !forceWebgl && preferWebGpu(tier, webgpuAdapter === true);
+  const computeLabel = webgpuActive
+    ? `WebGPU · ${(field.count / 1000).toFixed(0)}k compute`
+    : tier === "full-3d"
+      ? `WebGL · ${(particles.length / 1000).toFixed(1)}k CPU`
+      : tier === "fallback-2d"
+        ? "2D canvas tier"
+        : "designed still";
 
   const tRef = useRef(0);
   const stageRef = useRef<HTMLDivElement>(null);
@@ -128,6 +167,17 @@ export function MorphLabPage({
   useEffect(() => {
     const frame = requestAnimationFrame(() => setDetectedTier(detectDeviceTier()));
     return () => cancelAnimationFrame(frame);
+  }, []);
+
+  // Probe for a real WebGPU adapter once; null = probing, false = fall back.
+  useEffect(() => {
+    let live = true;
+    detectWebGpu().then((ok) => {
+      if (live) setWebgpuAdapter(ok);
+    });
+    return () => {
+      live = false;
+    };
   }, []);
 
   // Drive: scroll-linked — the visitor controls the storm.
@@ -193,19 +243,36 @@ export function MorphLabPage({
   const stage = (
     <div className="relative h-full w-full overflow-hidden rounded-2xl border border-slate-700/50 bg-[#0a1120]">
       {tier === "full-3d" ? (
-        <StormVortexScene
-          particles={particles}
-          params={params}
-          geometry={geometry}
-          glow={glow}
-          tRef={tRef}
-          domes={domes}
-          environment={environmentOn}
-          orbit
-          onStats={(fps, frameMs) => {
-            if (fpsRef.current) fpsRef.current.textContent = `${fps} fps · ${frameMs} ms`;
-          }}
-        />
+        webgpuActive ? (
+          <StormFieldWebGPU
+            field={field}
+            params={params}
+            geometry={geometry}
+            material={slate}
+            glow={glow}
+            tRef={tRef}
+            domes={domes}
+            environment={environmentOn}
+            orbit
+            onStats={(fps, frameMs) => {
+              if (fpsRef.current) fpsRef.current.textContent = `${fps} fps · ${frameMs} ms`;
+            }}
+          />
+        ) : (
+          <StormVortexScene
+            particles={particles}
+            params={params}
+            geometry={geometry}
+            glow={glow}
+            tRef={tRef}
+            domes={domes}
+            environment={environmentOn}
+            orbit
+            onStats={(fps, frameMs) => {
+              if (fpsRef.current) fpsRef.current.textContent = `${fps} fps · ${frameMs} ms`;
+            }}
+          />
+        )
       ) : (
         <StormVortexFallback2d
           particles={particles}
@@ -218,6 +285,9 @@ export function MorphLabPage({
       <div className="pointer-events-none absolute left-3 top-3 flex flex-col gap-1 font-mono text-[11px] text-slate-300">
         <span ref={fpsRef} data-fps-readout>
           {tier === "full-3d" ? "— fps" : tier === "fallback-2d" ? "2D canvas tier" : "designed still"}
+        </span>
+        <span data-compute-readout className="text-slate-400">
+          {computeLabel}
         </span>
         <span ref={beatRef} data-beat-readout />
       </div>
@@ -238,7 +308,16 @@ export function MorphLabPage({
           </p>
         </div>
         <div className="flex items-center gap-2 text-[11px] text-slate-400">
-          {detectedTier && <span>this device: {detectedTier}</span>}
+          {detectedTier && (
+            <span>
+              this device: {detectedTier}
+              {webgpuAdapter === true
+                ? " · WebGPU"
+                : webgpuAdapter === false
+                  ? " · WebGL"
+                  : ""}
+            </span>
+          )}
           <button
             type="button"
             onClick={() => setControlsOpen((open) => !open)}
@@ -319,6 +398,21 @@ export function MorphLabPage({
                 {level}
               </Chip>
             ))}
+          </ControlGroup>
+          <ControlGroup label="Compute (ADR-038)">
+            <Chip
+              active={!forceWebgl && webgpuAdapter === true}
+              onClick={() => setForceWebgl(false)}
+            >
+              {webgpuAdapter === false
+                ? "WebGPU · unavailable"
+                : webgpuAdapter === null
+                  ? "WebGPU · probing…"
+                  : "WebGPU 50k+ (auto)"}
+            </Chip>
+            <Chip active={forceWebgl || webgpuAdapter === false} onClick={() => setForceWebgl(true)}>
+              WebGL v2 (A/B)
+            </Chip>
           </ControlGroup>
           <ControlGroup label="Environment (v2)">
             <Chip active={environmentOn} onClick={() => setEnvironmentOn(true)}>

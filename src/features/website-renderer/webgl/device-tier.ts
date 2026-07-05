@@ -27,6 +27,32 @@ export function classifyGpuTier(capabilities: DeviceCapabilities): DeviceTier {
   return "full-3d";
 }
 
+/**
+ * The WebGPU compute path (ADR-038) is a strict UPGRADE of the full-3D
+ * tier: only capable devices already bound for full 3D take it, and only
+ * when a WebGPU adapter is actually present. Everything else — constrained
+ * tiers, still tier, no adapter — falls back to the WebGL scene. Pure so
+ * the decision is testable without a GPU.
+ */
+export function preferWebGpu(tier: DeviceTier, adapterAvailable: boolean): boolean {
+  return tier === "full-3d" && adapterAvailable;
+}
+
+/** Probe for a real WebGPU adapter (async). Server/no-API → false. */
+export async function detectWebGpu(): Promise<boolean> {
+  if (typeof navigator === "undefined") return false;
+  // @webgpu/types isn't in the lib; probe structurally.
+  const gpu = (navigator as Navigator & {
+    gpu?: { requestAdapter(): Promise<unknown> };
+  }).gpu;
+  if (!gpu) return false;
+  try {
+    return (await gpu.requestAdapter()) !== null;
+  } catch {
+    return false;
+  }
+}
+
 /** Browser wrapper — probe once, classify. Server-side → "still". */
 export function detectDeviceTier(): DeviceTier {
   if (typeof window === "undefined") return "still";

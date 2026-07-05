@@ -44,6 +44,7 @@ export type {
 export {
   BEAT_ORDER,
   beatAt,
+  buildStormField,
   buildStormVortex,
   particleState,
   stormLightAt,
@@ -52,12 +53,26 @@ export {
 export type {
   MorphBeat,
   ParticleState,
+  StormField,
   StormLight,
   VortexIntensity,
   VortexParams,
   VortexParticle,
 } from "./morph-lab/choreography";
-export { classifyGpuTier, detectDeviceTier } from "./webgl/device-tier";
+export {
+  classifyGpuTier,
+  detectDeviceTier,
+  detectWebGpu,
+  preferWebGpu,
+} from "./webgl/device-tier";
+export {
+  PARTICLE_MATERIALS,
+  resolveParticleMaterial,
+} from "./morph-lab/particle-materials";
+export type {
+  ParticleMaterialKey,
+  ParticleMaterialSpec,
+} from "./morph-lab/particle-materials";
 export type { DeviceCapabilities, DeviceTier } from "./webgl/device-tier";
 export { MorphLabPage } from "./morph-lab/lab-page";
 export {

@@ -2,12 +2,20 @@ import { describe, expect, it } from "vitest";
 import {
   BEAT_ORDER,
   beatAt,
+  buildStormField,
   buildStormVortex,
   classifyGpuTier,
   particleState,
+  preferWebGpu,
+  resolveParticleMaterial,
   stormLightAt,
   vortexParams,
 } from "@/features/website-renderer";
+
+function hexToRgb(hex: string) {
+  const n = parseInt(hex.replace("#", ""), 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
 
 /**
  * Morph Lab (ADR-035): the Storm Vortex choreography core is PURE and
@@ -225,5 +233,131 @@ describe("device tiering (built now, public later)", () => {
     expect(
       classifyGpuTier({ webgl2: true, deviceMemoryGb: 16, cores: 10, isMobile: false, reducedMotion: true }),
     ).toBe("still");
+  });
+
+  it("WebGPU is preferred only on the full-3D tier WITH an adapter present", () => {
+    // The compute path is a full-3D upgrade: never on constrained/still
+    // tiers, never without a WebGPU adapter (graceful fall back to WebGL).
+    expect(preferWebGpu("full-3d", true)).toBe(true);
+    expect(preferWebGpu("full-3d", false)).toBe(false);
+    expect(preferWebGpu("fallback-2d", true)).toBe(false);
+    expect(preferWebGpu("still", true)).toBe(false);
+  });
+});
+
+describe("the WebGPU compute field (ADR-038) — 50k+ flat, GPU-uploadable", () => {
+  const params = vortexParams({ intensity: "maximum" });
+
+  it("packs at LEAST the requested count as a clean 2×courses×columns grid", () => {
+    const field = buildStormField(50_000, params);
+    expect(field.count).toBeGreaterThanOrEqual(50_000);
+    expect(field.count).toBe(2 * field.courses * field.columns);
+    // The roof is wide, not tall — many more columns than courses.
+    expect(field.columns).toBeGreaterThan(field.courses);
+  });
+
+  it("emits flat Float32Arrays sized to the GPU storage buffers", () => {
+    const field = buildStormField(50_000, params);
+    const n = field.count;
+    expect(field.home).toBeInstanceOf(Float32Array);
+    expect(field.home).toHaveLength(n * 3);
+    expect(field.scatter).toHaveLength(n * 3);
+    expect(field.hoverOffset).toHaveLength(n * 3);
+    expect(field.restRotation).toHaveLength(n * 3);
+    expect(field.waveDelay).toHaveLength(n);
+    expect(field.phase).toHaveLength(n);
+    expect(field.sizeJitter).toHaveLength(n);
+  });
+
+  it("is deterministic — no randomness, ever (index maths only)", () => {
+    const a = buildStormField(50_000, params);
+    const b = buildStormField(50_000, params);
+    expect(Array.from(a.home)).toEqual(Array.from(b.home));
+    expect(Array.from(a.waveDelay)).toEqual(Array.from(b.waveDelay));
+  });
+
+  it("every home sits on the roof gable; scatter flings out beyond it", () => {
+    const field = buildStormField(50_000, params);
+    let scatteredFarther = 0;
+    for (let i = 0; i < field.count; i += 137) {
+      const hx = field.home[i * 3];
+      const hy = field.home[i * 3 + 1];
+      const hz = field.home[i * 3 + 2];
+      // Roof bounds (ROOF: width 5.8, eaves y 2.3 → apex 3.7, |z| ≤ 1.56).
+      expect(Math.abs(hx)).toBeLessThanOrEqual(2.9 + 1e-4);
+      expect(hy).toBeGreaterThanOrEqual(2.3 - 1e-4);
+      expect(hy).toBeLessThanOrEqual(3.7 + 1e-4);
+      expect(Math.abs(hz)).toBeLessThanOrEqual(1.6);
+      const homeR = Math.hypot(hx, hy, hz);
+      const sx = field.scatter[i * 3];
+      const sz = field.scatter[i * 3 + 2];
+      if (Math.hypot(sx, sz) > homeR) scatteredFarther += 1;
+    }
+    expect(scatteredFarther).toBeGreaterThan(0);
+  });
+
+  it("preserves the lock-in cascade: eaves (low) seat before the ridge (high)", () => {
+    const field = buildStormField(50_000, params);
+    // Sample low-course vs high-course particles by their home height.
+    let lowSum = 0;
+    let lowN = 0;
+    let highSum = 0;
+    let highN = 0;
+    for (let i = 0; i < field.count; i += 53) {
+      const y = field.home[i * 3 + 1];
+      if (y < 2.6) {
+        lowSum += field.waveDelay[i];
+        lowN += 1;
+      } else if (y > 3.4) {
+        highSum += field.waveDelay[i];
+        highN += 1;
+      }
+    }
+    expect(lowSum / lowN).toBeLessThan(highSum / highN);
+    // waveDelay is a normalised seat offset in [0, 1).
+    for (let i = 0; i < field.count; i += 311) {
+      expect(field.waveDelay[i]).toBeGreaterThanOrEqual(0);
+      expect(field.waveDelay[i]).toBeLessThan(1);
+    }
+  });
+
+  it("no more blue confetti: slate is dark, metallic, with a near-black emissive", () => {
+    const slate = resolveParticleMaterial("roofing");
+    expect(slate.key).toBe("slate");
+    // Metallic stone, not glowing plastic.
+    expect(slate.metalness).toBeGreaterThan(0.4);
+    // Base albedo is dark — this is what the eye reads.
+    const albedo = hexToRgb(slate.color);
+    expect(Math.max(albedo.r, albedo.g, albedo.b)).toBeLessThan(110);
+    // The emissive is a whisper of heat, never a bright blue cast.
+    const glow = hexToRgb(slate.emissive);
+    expect(Math.max(glow.r, glow.g, glow.b)).toBeLessThan(80);
+  });
+
+  it("dresses the morph in its trade material (registry-keyed)", () => {
+    expect(resolveParticleMaterial("Roofing & guttering").key).toBe("slate");
+    expect(resolveParticleMaterial("Resin driveways").key).toBe("resin");
+    expect(resolveParticleMaterial("Patios & paving").key).toBe("stone");
+    // Unclassified trades fall back to slate — the canonical Tier-3 moment.
+    expect(resolveParticleMaterial().key).toBe("slate");
+    expect(resolveParticleMaterial("something new").key).toBe("slate");
+  });
+
+  it("shares its per-particle maths with buildStormVortex (single source of truth)", () => {
+    // A field sized to a known grid must reproduce the object-array homes
+    // exactly — the flat GPU path and the CPU path tell ONE story.
+    const grid = vortexParams({ intensity: "calm" }); // 12 courses × 66 columns
+    const objects = buildStormVortex(grid);
+    const field = buildStormField(objects.length, grid);
+    expect(field.count).toBe(objects.length);
+    expect(field.courses).toBe(grid.courses);
+    expect(field.columns).toBe(grid.columns);
+    for (const i of [0, 500, objects.length - 1]) {
+      expect(field.home[i * 3]).toBeCloseTo(objects[i].home[0], 6);
+      expect(field.home[i * 3 + 1]).toBeCloseTo(objects[i].home[1], 6);
+      expect(field.home[i * 3 + 2]).toBeCloseTo(objects[i].home[2], 6);
+      expect(field.scatter[i * 3]).toBeCloseTo(objects[i].scatter[0], 6);
+      expect(field.phase[i]).toBeCloseTo(objects[i].phase, 6);
+    }
   });
 });
