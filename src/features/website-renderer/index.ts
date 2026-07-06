@@ -69,6 +69,20 @@ export {
   PARTICLE_MATERIALS,
   resolveParticleMaterial,
 } from "./morph-lab/particle-materials";
+export {
+  buildRenovation,
+  buildRenovationField,
+  renovationLight,
+  renovationParams,
+  renovationState,
+} from "./morph-lab/renovation";
+export type {
+  RenovationField,
+  RenovationLight,
+  RenovationParams,
+  RenovationParticle,
+  RenovationRegion,
+} from "./morph-lab/renovation";
 export type {
   ParticleMaterialKey,
   ParticleMaterialSpec,
