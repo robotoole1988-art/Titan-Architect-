@@ -1,12 +1,14 @@
 # ADR-040: Renovation morph — a tired house particle-reassembles into a renovated one
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-041](./adr-041-retire-particle-morph.md)
 - **Date:** 2026-07-05
 - **Deciders:** Robert O'Toole
 - **Tags:** experience, webgpu, morph-lab, signature-moment
 - **Supersedes:** — (extends [ADR-038](./adr-038-morph-lab-webgpu.md); reopens the
   public question deferred in the [ADR-032](./adr-032-signature-moments.md) morph retreat)
-- **Superseded by:** —
+- **Superseded by:** [ADR-041](./adr-041-retire-particle-morph.md) — the
+  renovation morph was retired with the rest of the real-time particle morph;
+  this ADR stays as historical record.
 
 ## Context
 

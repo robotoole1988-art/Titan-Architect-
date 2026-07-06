@@ -62,12 +62,13 @@ ADR that supersedes the old one and update the old one's status.
 | [032](./adr-032-signature-moments.md) | Signature Moments v1 — the scroll-morph engine | Accepted |
 | [033](./adr-033-media-pipeline.md) | Media Pipeline — multi-modal generation behind the founder gate | Accepted |
 | [034](./adr-034-render-modes.md) | Render Modes — the drawing and the building are different things | Accepted |
-| [035](./adr-035-morph-lab-webgl.md) | Morph Lab — WebGL particle foundation, the five-beat Morph Law | Accepted |
+| [035](./adr-035-morph-lab-webgl.md) | Morph Lab — WebGL particle foundation, the five-beat Morph Law | Superseded by [041](./adr-041-retire-particle-morph.md) |
 | [036](./adr-036-video-engine.md) | Video Engine v1 — cinematic film through the founder gate | Accepted |
 | [037](./adr-037-media-streaming.md) | Media Streaming — same-origin Range proxy so films play | Accepted |
-| [038](./adr-038-morph-lab-webgpu.md) | Morph Lab v3 — WebGPU/TSL compute particles, slate material, seam-free domes | Accepted |
+| [038](./adr-038-morph-lab-webgpu.md) | Morph Lab v3 — WebGPU/TSL compute particles, slate material, seam-free domes | Superseded by [041](./adr-041-retire-particle-morph.md) |
 | [039](./adr-039-video-4k-morph.md) | Video Engine — native-4K hero film + morph-as-film on a swappable provider (fal.ai) | Accepted |
-| [040](./adr-040-renovation-morph.md) | Renovation morph — a tired house particle-reassembles into a renovated one | Accepted |
+| [040](./adr-040-renovation-morph.md) | Renovation morph — a tired house particle-reassembles into a renovated one | Superseded by [041](./adr-041-retire-particle-morph.md) |
+| [041](./adr-041-retire-particle-morph.md) | Retire the real-time particle morph and the Morph Lab — hero WOW pivots to premium AI film | Accepted |
 
 ### Writing a new ADR
 

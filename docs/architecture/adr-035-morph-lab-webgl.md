@@ -1,12 +1,14 @@
 # ADR-035: Morph Lab — the WebGL particle foundation and the five-beat Morph Law
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-041](./adr-041-retire-particle-morph.md)
 - **Date:** 2026-07-04
 - **Deciders:** Robert O'Toole
 - **Tags:** renderer, webgl, motion, lab
 - **Supersedes:** — (builds on the ADR-032 addendum and
   SIGNATURE-MOMENTS.md § Tier 3)
-- **Superseded by:** —
+- **Superseded by:** [ADR-041](./adr-041-retire-particle-morph.md) — the
+  real-time particle morph and the Morph Lab were retired; this ADR stays as
+  historical record.
 
 ## Context
 

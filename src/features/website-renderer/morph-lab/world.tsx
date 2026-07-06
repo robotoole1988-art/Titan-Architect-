@@ -1,15 +1,23 @@
 "use client";
 
 /**
- * The Morph Lab world (ADR-035 / ADR-038): the house the roof seats onto and
- * the garden it stands in. Extracted so the WebGL scene AND the WebGPU
- * compute scene render the IDENTICAL world — the renderer changes, the story
- * never does. three's non-node materials are duck-typed (`.isMeshStandard…`)
- * so they render under both WebGLRenderer and WebGPURenderer unchanged.
+ * The house + garden world, authored in three.js.
+ *
+ * RETAINED 3D FOUNDATION (ADR-041): the real-time particle morph and its
+ * scenes were retired, but the House/Garden geometry is kept as reusable,
+ * renderer-agnostic craft for any future 3D work. It has no live consumer
+ * today — it is deliberately preserved, not orphaned by accident. three's
+ * materials are duck-typed so they render under WebGLRenderer or
+ * WebGPURenderer unchanged.
  */
 
 import { useEffect, useMemo } from "react";
 import * as THREE from "three";
+// Load the react-three-fiber JSX augmentation (<mesh>, <group>, <boxGeometry>…).
+// The morph scenes that used to import r3f are gone (ADR-041); this type-only
+// import keeps House/Garden type-checking as retained 3D foundation, with no
+// runtime effect and nothing pulled into any bundle.
+import type {} from "@react-three/fiber";
 import {
   makeBrickTexture,
   makeFlagstoneTexture,

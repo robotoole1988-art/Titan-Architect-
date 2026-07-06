@@ -249,6 +249,17 @@
 
 ## Tier 3 — 3D Particle Morphs (WebGL)
 
+> **⚠️ Superseded — 2026-07-06 (engineering annotation).** **Superseded by
+> ADR-041: real-time particle morph retired; hero WOW = premium AI film
+> (Kling); film-morph via Kling O1 parked as a future option.** The Tier-3
+> real-time WebGL/WebGPU path below was built (Storm Vortex, ADR-038; whole-
+> house Renovation morph, ADR-040) and then **removed from the app** — the
+> medium pivoted to generated cinematic film, which clears the WOW bar without
+> a GPU-bound real-time renderer on the visitor's device. The founder's
+> catalogue and design laws are preserved here as creative canon; treat them
+> as **concept for the film medium**, not a live real-time build. See
+> [Status & Roadmap](#status--roadmap).
+
 The next class of signature moment: **real-time particle deconstruction and
 reconstruction** (Three.js/WebGL). Two 3D forms — the problem and the
 promise — are represented as particle clouds and interpolated between, live
@@ -315,9 +326,9 @@ archetype gating all carry forward unchanged.
 | Everything above, unless listed below | Concept |
 | Roofing — Storm Cloud → New Roof | SHIPPED (ADR-032), then **RETIRED from public output** (ADR-032 addendum) — preview reference behind `NEXT_PUBLIC_PREVIEW_SIGNATURE_MOMENTS=1` |
 | Driveways — Gravel → Resin | SHIPPED (ADR-032), then **RETIRED from public output** (ADR-032 addendum) — preview reference behind the same flag |
-| **Tier 3 — Roofing — The Storm Vortex** | **Flagship — build FIRST** (milestone forthcoming) |
-| Tier 3 — all other particle morphs | Concept |
-| The Magic Wipe | Flagship interactive primitive — candidate after Tier 3 lands |
+| **Tier 3 — Roofing — The Storm Vortex** | BUILT (ADR-038), joined by the whole-house Renovation morph (ADR-040), then **RETIRED** (ADR-041) — real-time particle morph removed from the app; hero WOW = premium AI film (Kling); Kling O1 film-morph parked as a future option |
+| Tier 3 — all other particle morphs | Concept — if ever built, as premium AI film, **not** real-time WebGL (ADR-041) |
+| The Magic Wipe | Flagship interactive primitive — concept |
 
 The morph engine lives in `src/features/website-renderer/moments/`
 (ADR-032): selection is stamped by the blueprint builder from the catalogue
