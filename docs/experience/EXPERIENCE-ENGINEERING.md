@@ -441,6 +441,17 @@ whole vision.*
 
 ### Pillar A — Real-time procedural
 
+> **⚠️ Superseded for the hero morph — 2026-07-06 (engineering annotation).**
+> **Superseded by ADR-041: real-time particle morph retired; hero WOW =
+> premium AI film (Kling); film-morph via Kling O1 parked as a future
+> option.** The real-time WebGPU/TSL particle *morph* (Storm Vortex ADR-038,
+> whole-house Renovation ADR-040) was built and then **removed from the app** —
+> the medium pivoted to generated cinematic film (Pillar C), which clears the
+> WOW bar without a GPU-bound real-time renderer on the visitor's device. The
+> Pillar-A doctrine below stands as the engineering reference for any future
+> real-time work; it is not a live build today. See
+> [Part 3 — Status](#part-3--status--build-order).
+
 **The living, interactive layer.** Built on **three.js `WebGPURenderer` with
 TSL (Three Shading Language) compute shaders**, using the **WebGL fallback
 path three.js provides** so nothing breaks on older hardware. WebGPU now
@@ -527,28 +538,39 @@ non-negotiable across every pillar:
 
 *Where the doctrine stands today, and the order of activation.*
 
+> **⚠️ Updated 2026-07-06 (ADR-041 — real-time particle morph retired).**
+> The Morph Lab and its real-time particle morph were built through v3 and
+> then **removed from the app**. The hero WOW now comes from **Pillar C
+> (premium AI film — Kling)**; a **Kling O1 film-morph** is parked as a future
+> option. Pillar A (real-time compute) is **parked as engineering reference**,
+> not a live build. The reusable pieces the morph left behind — device-tier
+> detection and the trade-keyed PBR material registry — are retained.
+
 ### Current state
 
-- **Morph Lab v1 / v2 — SHIPPED** ([ADR-035](../architecture/adr-035-morph-lab-webgl.md)
-  and its v2 addendum). Classic WebGL instancing, ~3k particles, the
-  **five-beat Morph Law** (Rest → Dissolve → Hover → Purpose → Lock-in)
-  working; v2 added the real-world environment (media-engine domes, IBL,
-  ACES, PBR, garden) and the honest pixel-budget performance fix. This is the
-  proving ground for the pillars, internal only.
+- **Pillar C — the Video Engine — SHIPPED and LIVE.** Premium AI film is the
+  hero WOW: native-4K hero films and a Kling O1 dual-keyframe film-morph path,
+  on a swappable media provider ([ADR-036](../architecture/adr-036-video-engine.md),
+  [ADR-037](../architecture/adr-037-media-streaming.md),
+  [ADR-039](../architecture/adr-039-video-4k-morph.md)). Poster-first,
+  lazy-loaded, reduced-motion-safe, Lighthouse ≥ 90.
+- **Pillar A — Morph Lab v1 → v3 — BUILT, then RETIRED** ([ADR-035](../architecture/adr-035-morph-lab-webgl.md)
+  and v2 addendum; WebGPU/TSL compute v3, [ADR-038](../architecture/adr-038-morph-lab-webgpu.md);
+  whole-house Renovation morph, [ADR-040](../architecture/adr-040-renovation-morph.md)).
+  The five-beat Morph Law and the 50k+ compute path were proven internally,
+  then removed from the app by **[ADR-041](../architecture/adr-041-retire-particle-morph.md)** —
+  the medium pivoted to film. Git history is the archive; ADR-041 records how
+  to restore.
 
 ### Next
 
-- **Morph Lab v3 — migration to Pillar A.** WebGPU / TSL compute shaders,
-  **50k+ particles**, slate-metallic PBR particles, and the dome-integration
-  fixes. This is the first real Pillar-A build. *Milestone spec to follow
-  separately.*
-- **Pillar B activates after v3** — it requires the Blender toolchain on the
-  build machine (a **future ADR** will record the pipeline: authoring →
-  VAT / morph-target bake → glTF + DRACO + KTX2 → registry-keyed asset
-  library).
-- **Pillar C — the Video Engine milestone** (ADR-036),
-  **in flight**: the video modality of the media seam, poster-first hero
-  ambience through the founder gate.
+- **Kling O1 film-morph — parked as a future option.** The before→after
+  transformation as *generated film* (ADR-039's O1 path), not a real-time
+  renderer — revisit if a demo calls for it.
+- **Pillar B — authored & baked — future option.** Still requires the Blender
+  toolchain on the build machine (a **future ADR** would record the pipeline:
+  authoring → VAT / morph-target bake → glTF + DRACO + KTX2 → registry-keyed
+  asset library). Not scheduled.
 
 ### An honest note on the software list
 

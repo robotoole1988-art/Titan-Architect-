@@ -38,67 +38,24 @@ export type {
   UnmappedPrimitiveBehaviour,
 } from "./model/types";
 
-// Morph Lab (ADR-035): the Tier-3 choreography core + device tiering.
-// Pure maths — the heavy three.js scene loads ONLY via the lab's dynamic
-// import, never through this index.
-export {
-  BEAT_ORDER,
-  beatAt,
-  buildStormField,
-  buildStormVortex,
-  particleState,
-  stormLightAt,
-  vortexParams,
-} from "./morph-lab/choreography";
-export type {
-  MorphBeat,
-  ParticleState,
-  StormField,
-  StormLight,
-  VortexIntensity,
-  VortexParams,
-  VortexParticle,
-} from "./morph-lab/choreography";
+// WebGL 3D foundation — retained after the real-time particle morph was
+// retired (ADR-041 supersedes ADR-035/ADR-038; hero WOW = premium AI film).
+// These are the reusable, renderer-agnostic pieces the morph left behind:
+// device-capability tiering and the trade-keyed PBR material registry. Pure
+// config/detection — no three.js pulled through this index. The compute
+// renderer, the storm/vortex choreography, and the Morph Lab route are gone.
 export {
   classifyGpuTier,
   detectDeviceTier,
   detectWebGpu,
   preferWebGpu,
 } from "./webgl/device-tier";
+export type { DeviceCapabilities, DeviceTier } from "./webgl/device-tier";
 export {
   PARTICLE_MATERIALS,
   resolveParticleMaterial,
 } from "./morph-lab/particle-materials";
-export {
-  buildRenovation,
-  buildRenovationField,
-  renovationLight,
-  renovationParams,
-  renovationState,
-} from "./morph-lab/renovation";
-export type {
-  RenovationField,
-  RenovationLight,
-  RenovationParams,
-  RenovationParticle,
-  RenovationRegion,
-} from "./morph-lab/renovation";
 export type {
   ParticleMaterialKey,
   ParticleMaterialSpec,
 } from "./morph-lab/particle-materials";
-export type { DeviceCapabilities, DeviceTier } from "./webgl/device-tier";
-export { MorphLabPage } from "./morph-lab/lab-page";
-export {
-  DOME_SPECS,
-  ensureLabBusiness,
-  mapDomeRecords,
-  resolveLabEnvironment,
-  resolveMorphLab,
-} from "./morph-lab/environment";
-export type {
-  DomeSpec,
-  DomeTimeOfDay,
-  LabDome,
-  LabEnvironment,
-} from "./morph-lab/environment";

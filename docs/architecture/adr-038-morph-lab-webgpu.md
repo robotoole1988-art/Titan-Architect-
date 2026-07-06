@@ -1,11 +1,12 @@
 # ADR-038: Morph Lab v3 — WebGPU/TSL compute particles, material truth, seam-free domes
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-041](./adr-041-retire-particle-morph.md)
 - **Date:** 2026-07-05
 - **Deciders:** Robert O'Toole
 - **Tags:** experience, webgpu, tsl, morph-lab, performance
 - **Supersedes:** — (extends [ADR-035](./adr-035-morph-lab-webgl.md))
-- **Superseded by:** —
+- **Superseded by:** [ADR-041](./adr-041-retire-particle-morph.md) — the
+  WebGPU/TSL compute renderer was retired; this ADR stays as historical record.
 
 ## Context
 
