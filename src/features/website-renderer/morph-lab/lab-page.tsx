@@ -25,6 +25,7 @@ import {
   vortexParams,
   type VortexIntensity,
 } from "./choreography";
+import { buildRenovationField, renovationParams } from "./renovation";
 import { StormVortexFallback2d } from "./fallback-2d";
 import type { ParticleGeometryVariant } from "./storm-vortex-scene";
 import { resolveParticleMaterial } from "./particle-materials";
@@ -52,6 +53,14 @@ const StormFieldWebGPU = dynamic(
   () => import("./storm-field-webgpu").then((module) => module.StormFieldWebGPU),
   { ssr: false, loading: sceneLoading },
 );
+
+const RenovationSceneWebGPU = dynamic(
+  () =>
+    import("./renovation-scene-webgpu").then((module) => module.RenovationSceneWebGPU),
+  { ssr: false, loading: sceneLoading },
+);
+
+type MorphKind = "storm" | "renovation";
 
 /** Intensity → WebGPU particle budget. The compute path holds 50k+. */
 const WEBGPU_BUDGET: Record<VortexIntensity, number> = {
@@ -122,6 +131,7 @@ export function MorphLabPage({
   const [autoplaying, setAutoplaying] = useState(false);
   const [environmentOn, setEnvironmentOn] = useState(true);
   const [timeOfDay, setTimeOfDay] = useState<DomeTimeOfDay>("golden-hour");
+  const [morph, setMorph] = useState<MorphKind>("storm");
 
   const stormDome = environment?.domes.find((dome) => dome.kind === "storm");
   const calmDome =
@@ -146,6 +156,15 @@ export function MorphLabPage({
   );
   // The lab morph is the roof: real Welsh slate (ADR-038).
   const slate = useMemo(() => resolveParticleMaterial("roofing"), []);
+  // The renovation morph (ADR-040): tired house → renovated house + new chimney.
+  const renoParams = useMemo(
+    () => renovationParams({ intensity, hoverDuration }),
+    [intensity, hoverDuration],
+  );
+  const renoField = useMemo(
+    () => buildRenovationField(WEBGPU_BUDGET[intensity], renoParams),
+    [intensity, renoParams],
+  );
 
   // WebGPU is a strict upgrade of the full-3D tier, and only when the founder
   // hasn't pinned WebGL for an A/B against v2.
@@ -242,7 +261,29 @@ export function MorphLabPage({
 
   const stage = (
     <div className="relative h-full w-full overflow-hidden rounded-2xl border border-slate-700/50 bg-[#0a1120]">
-      {tier === "full-3d" ? (
+      {morph === "renovation" ? (
+        webgpuActive && tier === "full-3d" ? (
+          // The renovation morph is a WebGPU-only craft surface (ADR-040): the
+          // old→new house lives entirely on the compute path. A WebGL/2D
+          // fallback ships with the public milestone, not the lab.
+          <RenovationSceneWebGPU
+            field={renoField}
+            params={renoParams}
+            tRef={tRef}
+            orbit
+            onStats={(fps, frameMs) => {
+              if (fpsRef.current) fpsRef.current.textContent = `${fps} fps · ${frameMs} ms`;
+            }}
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center px-8 text-center text-sm text-slate-400">
+            The renovation morph is crafted on the WebGPU compute path. This
+            device is on the {tier === "full-3d" ? "WebGL" : `${tier}`} tier —
+            switch on a WebGPU browser, or force WebGPU off to preview the Storm
+            Vortex. The public fallback ships with a later milestone.
+          </div>
+        )
+      ) : tier === "full-3d" ? (
         webgpuActive ? (
           <StormFieldWebGPU
             field={field}
@@ -330,6 +371,14 @@ export function MorphLabPage({
 
       {controlsOpen && (
         <div className="flex flex-wrap gap-x-8 gap-y-4 rounded-2xl border border-slate-700/50 bg-slate-900/40 p-4">
+          <ControlGroup label="Morph">
+            <Chip active={morph === "storm"} onClick={() => setMorph("storm")}>
+              Storm Vortex
+            </Chip>
+            <Chip active={morph === "renovation"} onClick={() => setMorph("renovation")}>
+              Renovation (old → new house)
+            </Chip>
+          </ControlGroup>
           <ControlGroup label="Presentation">
             <Chip active={presentation === "fullscreen"} onClick={() => setPresentation("fullscreen")}>
               Full-screen opening

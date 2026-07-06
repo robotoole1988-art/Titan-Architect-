@@ -67,6 +67,7 @@ ADR that supersedes the old one and update the old one's status.
 | [037](./adr-037-media-streaming.md) | Media Streaming — same-origin Range proxy so films play | Accepted |
 | [038](./adr-038-morph-lab-webgpu.md) | Morph Lab v3 — WebGPU/TSL compute particles, slate material, seam-free domes | Accepted |
 | [039](./adr-039-video-4k-morph.md) | Video Engine — native-4K hero film + morph-as-film on a swappable provider (fal.ai) | Accepted |
+| [040](./adr-040-renovation-morph.md) | Renovation morph — a tired house particle-reassembles into a renovated one | Accepted |
 
 ### Writing a new ADR
 
