@@ -38,10 +38,10 @@ export const primaryNavigation: NavSection[] = [
     title: "Platform",
     items: [
       {
-        title: "Dashboard",
+        title: "Mission Control",
         href: "/dashboard",
         icon: LayoutDashboard,
-        description: "Overview of the TITAN ecosystem.",
+        description: "Your daily briefing — what needs attention today.",
       },
       {
         title: "TITAN Brain",
