@@ -69,6 +69,7 @@ ADR that supersedes the old one and update the old one's status.
 | [039](./adr-039-video-4k-morph.md) | Video Engine — native-4K hero film + morph-as-film on a swappable provider (fal.ai) | Accepted |
 | [040](./adr-040-renovation-morph.md) | Renovation morph — a tired house particle-reassembles into a renovated one | Superseded by [041](./adr-041-retire-particle-morph.md) |
 | [041](./adr-041-retire-particle-morph.md) | Retire the real-time particle morph and the Morph Lab — hero WOW pivots to premium AI film | Accepted |
+| [042](./adr-042-mission-control.md) | Mission Control — the first Brain surface (deterministic daily briefing on existing data) | Accepted |
 
 ### Writing a new ADR
 
