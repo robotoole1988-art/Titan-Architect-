@@ -111,3 +111,31 @@ both demos.
 - **Server-rendered `<video autoplay>`** — risks LCP and ships bytes to
   reduced-data users. The client-only fade-in keeps the still as the LCP.
   Rejected.
+
+## Addendum (2026-07-08) — hero LCP image priority, and an honest measurement
+
+A production performance audit (prod `next build` + `next start`, Lighthouse
+mobile+desktop 5× median on Summit + Kerbside) recorded the real baseline —
+**desktop 100, mobile high-80s** (the dev-server "60" was a dev-mode artifact:
+unminified JS, ~1 MB unused JS, ~3s JS exec — none present in prod). The public
+`/sites/*` bundle is **clean** (~236 KB compressed initial JS; **zero** CRM /
+dashboard / editor / AI / admin code — verified by grepping the served chunks
+for 15 app-only markers).
+
+The LCP element on both demos is the **hero backdrop photograph**
+(`CinematicImage`). Lighthouse's `lcp-discovery-insight` flagged it as **not
+priority-hinted**: next/image's `priority` emitted the preload link but not the
+`fetchpriority=high` hint, and an explicit `loading` prop suppressed it. Fix
+(one file, `cinematic-image.tsx`): drop the redundant `loading` on the eager
+hero image and set `fetchPriority="high"` explicitly — the LCP image now fetches
+at high priority (`priorityHinted: true`), no regression (desktop 100, CLS 0).
+
+**Honest caveat:** this did **not** move the mobile lab score. The hero image
+downloads in ~4ms; its LCP phase is **render delay**, not fetch. Under
+Lighthouse's simulated 4× mobile CPU throttle, that render is blocked behind
+main-thread work (script eval + style/layout), which is what inflates the
+*simulated* mobile LCP to ~3.9s. So `fetchpriority=high` is correct hygiene
+(and helps real mid-range devices on slow networks) but is **not** the mobile
+ceiling. Lifting mobile ≥ 90 would require reducing/deferring the client JS
+(framer-motion hydration, hero entrance) — a separate, larger change, not taken
+here.
