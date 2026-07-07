@@ -184,6 +184,7 @@ export function generateExperienceStrategy(
       "a callback request",
     ],
     trustSignals: profile.trustSignals,
+    accreditations: profile.accreditations,
   };
 
   const seoStrategy: SeoStrategy = {

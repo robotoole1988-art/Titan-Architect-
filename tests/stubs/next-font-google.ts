@@ -17,3 +17,4 @@ function fontStub(): FontStub {
 export const Bricolage_Grotesque = fontStub;
 export const Instrument_Sans = fontStub;
 export const Spline_Sans_Mono = fontStub;
+export const Fraunces = fontStub;

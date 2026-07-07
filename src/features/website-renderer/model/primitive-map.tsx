@@ -1,9 +1,10 @@
 /**
  * The PrimitiveComponentMap: registry primitive id → the hand-crafted React
  * component that realises it (ADR-022). The Renderer composes 1:1 from these
- * ids and never free-generates layout (ADR-021). The emergency (ADR-022) and
- * premium/project (ADR-029) sets are crafted; the care/recurring primitives
- * resolve to the labelled placeholder until their crafted components land.
+ * ids and never free-generates layout (ADR-021). The emergency (ADR-022),
+ * premium/project (ADR-029), and care/trust (ADR-043) sets are crafted; any
+ * remaining unmapped primitive resolves to the labelled placeholder until its
+ * crafted component lands.
  */
 
 import {
@@ -22,8 +23,10 @@ import { ProcessJourneyMap } from "../primitives/process-journey-map";
 import { ProofCredentialBand } from "../primitives/proof-credential-band";
 import { ServicesInteractiveExplorer } from "../primitives/services-interactive-explorer";
 import { PremiumSectionPlaceholder } from "../primitives/premium-placeholder";
+import { StoryGentleWelcome } from "../primitives/story-gentle-welcome";
 import { StoryTransformationArc } from "../primitives/story-transformation-arc";
 import { TrustReviewWall } from "../primitives/trust-review-wall";
+import { TrustTeamIntroduction } from "../primitives/trust-team-introduction";
 import type { PrimitiveComponent, PrimitiveComponentMap } from "./types";
 
 export const PRIMITIVE_COMPONENT_MAP: PrimitiveComponentMap = {
@@ -40,6 +43,8 @@ export const PRIMITIVE_COMPONENT_MAP: PrimitiveComponentMap = {
   "process.journey-map": ProcessJourneyMap,
   "faq.reassurance-accordion": FaqReassuranceAccordion,
   "story.transformation-arc": StoryTransformationArc,
+  "story.gentle-welcome": StoryGentleWelcome,
+  "trust.team-introduction": TrustTeamIntroduction,
 };
 
 /**
