@@ -14,6 +14,9 @@ const CLOSE_RATE_BY_ARCHETYPE: Record<TradeArchetype, number> = {
   care: 0.35,
   recurring: 0.35,
   general: 0.3,
+  // Certified installs — considered, credentials-led (ADR-044). Solar/EV/battery
+  // drop further via CONSIDERED_PURCHASE_TRADES.
+  technical: 0.3,
   project: 0.25,
   event: 0.25,
   premium: 0.2,

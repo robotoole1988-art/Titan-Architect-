@@ -16,6 +16,7 @@ export type TradeArchetype =
   | "project"
   | "premium"
   | "care"
+  | "technical"
   | "recurring"
   | "event"
   | "general";
@@ -81,10 +82,18 @@ const ARCHETYPE_KEYWORDS: Array<[TradeArchetype, ReadonlyArray<string>]> = [
     ["cleaning", "cleaner", "garden", "window clean", "maintenance", "lawn", "grounds", "waste"],
   ],
   [
+    // Skilled / energy-tech INSTALLERS (ADR-044) — considered, certified,
+    // clean-workmanship purchases. Checked BEFORE emergency so the planned
+    // electrical/heating/renewable installs leave the storm theme; genuine
+    // 999-jobs (emergency plumbing, damp, drains) stay emergency below.
+    "technical",
+    ["electric", "solar", "battery", "ev charger", "ev-charger", "charger", "hvac", "air con", "air conditioning", "boiler", "heat pump", "renewable", "underfloor heating"],
+  ],
+  [
     "emergency",
     // "emergency glazing"/"glazier" = boarding-up urgency; plain "glazing"
     // belongs to double-glazing PROJECT trades (v2 taxonomy expansion).
-    ["plumb", "heating", "boiler", "gas", "electric", "locksmith", "drain", "emergency glazing", "glazier", "pest", "lock", "damp", "hvac", "air con"],
+    ["plumb", "heating", "gas", "locksmith", "drain", "emergency glazing", "glazier", "pest", "lock", "damp"],
   ],
   [
     "project",
@@ -106,6 +115,9 @@ export function classifyArchetype(tradeLower: string): TradeArchetype {
 function accreditationsFor(tradeLower: string): string[] {
   const map: Array<[ReadonlyArray<string>, ReadonlyArray<string>]> = [
     [["plumb", "heating", "boiler", "gas"], ["Gas Safe registered", "CIPHE / WaterSafe"]],
+    // Energy-tech installers (ADR-044): the real UK bodies.
+    [["solar", "battery", "ev charger", "ev-charger", "renewable", "heat pump"], ["MCS certified", "NICEIC approved"]],
+    [["hvac", "air con", "air conditioning"], ["F-Gas certified", "REFCOM registered"]],
     [["electric", "electrician"], ["NICEIC approved", "Part P certified"]],
     [["roof"], ["NFRC member", "CompetentRoofer"]],
     [["window", "glazing", "glazier"], ["FENSA / CERTASS registered"]],
@@ -462,6 +474,88 @@ export function buildTradeProfile(
           "reassuring 'what to expect' guides",
           "meet-the-team & credentials",
           "real client stories",
+          `${location} & area pages`,
+        ],
+      };
+
+    case "technical":
+      return {
+        archetype,
+        buyingMode:
+          "Considered and credentials-led — chosen on capability, certification, and clean workmanship, not urgency.",
+        positioning: `${trade} done to a certified, future-proof standard — precise, tidy, and built to last.`,
+        thesis: `Lead with capability and proof: the certifications, the spec, and the clean install — competence a buyer can verify.`,
+        dominantEmotions: ["confidence", "assurance", "future-proofed", "in safe hands"],
+        primaryObjection:
+          "Will it be installed properly, safely, and to standard — by someone genuinely qualified?",
+        decisionTriggers: [
+          "certifications and registrations",
+          "clear, fixed quotes",
+          "real installs and workmanship",
+          "tidy, safe working",
+        ],
+        isUrgent: false,
+        hero: {
+          headline: `Certified, future-proof ${tradeLower} in ${location}`,
+          subheadline: `${business} — precise, tidy installs, fully certified and built to last.`,
+          visualConcept: `Real UK tradespeople at work on a clean, modern install — a solar array, an EV charger, a consumer unit — precise, tidy, high-quality workmanship in natural light.`,
+        },
+        primaryCta: "Get a fixed quote",
+        secondaryCta: "Book a free survey",
+        storyArc: `Question (will it be done right?) → Capability (certified, precise) → Install (clean, safe) → Confidence (future-proofed and certified).`,
+        customerJourney: [
+          "A free survey and honest advice",
+          "A clear, fixed quote",
+          "A clean, certified install",
+          "Handover, certificates and aftercare",
+        ],
+        keyMessages: [
+          "Fully certified and registered",
+          "Precise, tidy workmanship",
+          "Clear, fixed pricing",
+          "Future-proof and built to last",
+        ],
+        aesthetic: "Modern, precise, engineered — capable and clean",
+        moodKeywords: ["modern", "precise", "capable", "clean", "future-proof"],
+        colourDirection: [
+          "cool, engineered neutrals (clean and clear)",
+          "a confident electric-blue signal (energy & trust)",
+          "crisp light and clear structure",
+        ],
+        typographyDirection:
+          "A precise, technical sans — confident and highly legible; mono for specs, kW figures, and labels.",
+        photographyStyle: `Real UK ${business} tradespeople at work — clean, modern installs (solar arrays, EV chargers, consumer units, heat pumps), precise and tidy workmanship in natural light. Authentic, no stock.`,
+        videoStyle: "Precise and capable — the install coming together cleanly, then the certificate handover.",
+        shotList: [
+          "a clean, finished install (panels / charger / unit)",
+          "a certified tradesperson at work, focused",
+          "tidy cable management — a detail close-up",
+          "handover with certificates",
+        ],
+        animationIntensity: "balanced",
+        animationSignatureMoments: [
+          "crisp, precise reveals",
+          "a confident, engineered feel",
+          "no gimmicks — clarity over flourish",
+        ],
+        trustSignals: [
+          "certifications & registrations",
+          "real installs",
+          "fixed quotes",
+          ...accreditations,
+        ],
+        accreditations,
+        interactiveTools: [
+          "online quote & survey booking",
+          "a spec & sizing guide",
+          "a real install gallery",
+          "a cost & savings guide",
+        ],
+        seoModifiers: ["cost", "installers", "quote", "near me"],
+        contentPillars: [
+          "capability & certifications",
+          "how the install works",
+          "real installs & results",
           `${location} & area pages`,
         ],
       };

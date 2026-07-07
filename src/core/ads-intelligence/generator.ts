@@ -27,6 +27,7 @@ const INTENT_MODIFIERS: Record<TradeArchetype, ReadonlyArray<string>> = {
   project: ["cost", "quote", "prices", "near me"],
   premium: ["cost", "quote", "ideas", "near me"],
   care: ["near me", "prices", "reviews"],
+  technical: ["cost", "installers", "quote", "near me"],
   recurring: ["near me", "cost", "local"],
   event: ["quote", "prices", "near me"],
   general: ["cost", "quote", "near me"],
