@@ -52,8 +52,15 @@ export function CinematicImage({
         src={asset.url}
         alt={alt}
         fill
+        // The hero backdrop is the LCP. `priority` emits the image PRELOAD
+        // link (early discovery); an explicit fetchPriority="high" adds the
+        // high-priority HINT next/image alone omits here — together they satisfy
+        // lcp-discovery-insight so the LCP image fetches at high priority on
+        // throttled mobile. Below-fold images stay lazy (prod audit, ADR-036).
         priority={eager}
-        loading={eager ? "eager" : "lazy"}
+        {...(eager
+          ? { fetchPriority: "high" as const }
+          : { loading: "lazy" as const })}
         quality={45}
         sizes={sizes}
         // Blurred micro-preview (ADR-033): a photograph is visible from the
