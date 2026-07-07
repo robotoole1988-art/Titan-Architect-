@@ -138,6 +138,42 @@ const TITAN_CARE: RendererTheme = {
   },
 };
 
+/**
+ * "Live Wire" — the technical/skilled-trades archetype (ADR-044). Skilled and
+ * energy-tech installers (electricians, HVAC, solar, battery, EV) sell on
+ * capability, certification, and clean workmanship. A modern, precise,
+ * ENGINEERED register: a crisp cool-white/blue-grey ground and near-white cards
+ * (reliable and clean), a deep ink-navy, and ONE confident electric-blue signal
+ * accent (energy & trust) with a supporting energy-teal. Mono labels (kW
+ * figures, spec/eyebrow text) read like a spec sheet. Distinct from storm
+ * (dark/amber), Golden Hour (warm/bronze), and care (sage/serif): cool, crisp,
+ * electric. Scene tones are blueprint blue-grey so media frames read engineered.
+ */
+const TITAN_TECHNICAL: RendererTheme = {
+  ref: "titan-technical",
+  name: "Live Wire",
+  vars: {
+    ...SCALE_VARS,
+    "--wr-bg": "#eef2f7",
+    "--wr-bg-raised": "#ffffff",
+    "--wr-storm-1": "#d9e5f5",
+    "--wr-storm-2": "#b3cbec",
+    "--wr-ink": "#152131",
+    "--wr-ink-muted": "rgba(21, 33, 49, 0.68)",
+    "--wr-ink-faint": "rgba(21, 33, 49, 0.44)",
+    "--wr-line": "rgba(21, 44, 82, 0.14)",
+    "--wr-line-strong": "rgba(21, 44, 82, 0.26)",
+    "--wr-surface": "rgba(21, 44, 82, 0.035)",
+    "--wr-surface-raised": "rgba(21, 44, 82, 0.06)",
+    "--wr-accent": "#1f6feb",
+    "--wr-accent-strong": "#1858c4",
+    "--wr-accent-ink": "#f1f7ff",
+    "--wr-accent-glow": "rgba(31, 111, 235, 0.26)",
+    "--wr-calm": "#1f9c95",
+    "--wr-ok": "#2f9265",
+  },
+};
+
 /** Restrained fallback for archetypes without a crafted theme yet. */
 const TITAN_DEFAULT: RendererTheme = {
   ref: "titan-general",
@@ -171,6 +207,7 @@ const THEMES: Readonly<Record<string, RendererTheme>> = {
   // Golden Hour mood, keeping its own ref for data-theme targeting.
   "titan-project": { ...TITAN_PREMIUM, ref: "titan-project" },
   [TITAN_CARE.ref]: TITAN_CARE,
+  [TITAN_TECHNICAL.ref]: TITAN_TECHNICAL,
   [TITAN_DEFAULT.ref]: TITAN_DEFAULT,
 };
 

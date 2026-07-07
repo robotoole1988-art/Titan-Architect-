@@ -48,6 +48,12 @@ const HERO_CSS = `
 .wr-gh-bloom { animation: wr-gh-bloom 14s ease-in-out infinite; }
 .wr-gh-rule { animation: wr-gh-rule 1.1s 0.55s cubic-bezier(0.16,1,0.3,1) both; transform-origin: left; }
 .wr-gh-shimmer { animation: wr-gh-shimmer 9s ease-in-out infinite; }
+/* The no-photo hero ground is warm golden-hour by default; the technical
+   theme (ADR-044) swaps to a cool, engineered atmosphere so it reads
+   energy-tech, not warm. Theme-scoped so the other themes never change. */
+.wr-hero-cool { display: none; }
+[data-theme="titan-technical"] .wr-hero-warm { display: none; }
+[data-theme="titan-technical"] .wr-hero-cool { display: block; }
 @media (prefers-reduced-motion: reduce) {
   .wr-gh-bloom, .wr-gh-shimmer { animation: none; }
   .wr-gh-rule { animation: none; transform: scaleX(1); }
@@ -80,40 +86,69 @@ function CssSettle({
 function GoldenAtmosphere({ dim = false }: { dim?: boolean }) {
   return (
     <div aria-hidden className="absolute inset-0 overflow-hidden">
-      {/* golden-hour ground — a generated, checked-in poster (composed
-          gradients + ordered dither, never fake photography). A real <img>
-          so the largest paint is a tiny cacheable image, not font-gated
-          text (the Renderer v1 LCP lesson). */}
-      {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size
-          generated poster; next/image adds nothing here */}
-      <img
-        src="/renderer/golden-poster.png"
-        alt=""
-        width={416}
-        height={260}
-        fetchPriority="high"
-        loading="eager"
-        decoding="sync"
-        className="absolute inset-0 h-full w-full object-cover"
-        style={dim ? { opacity: 0.55 } : undefined}
-      />
-      {/* sun bloom — a slow breath of light (radial, never filter:blur) */}
-      <div
-        className="wr-gh-bloom absolute right-[8%] top-[30%] h-[55%] w-[45%] rounded-full"
-        style={{
-          background:
-            "radial-gradient(closest-side, rgba(255, 214, 140, 0.5) 8%, rgba(255, 200, 120, 0.16) 48%, transparent 75%)",
-        }}
-      />
-      {/* one long evening shadow, anchoring the composition */}
-      <div
-        className="absolute inset-y-0 left-0 w-[52%]"
-        style={{
-          background:
-            "linear-gradient(100deg, rgba(36, 31, 24, 0.34), rgba(36,31,24,0.08) 55%, transparent 80%)",
-        }}
-      />
-      {/* settle into the page ground */}
+      {/* WARM golden-hour ground (default) — a generated, checked-in poster
+          (composed gradients + ordered dither, never fake photography). A real
+          <img> so the largest paint is a tiny cacheable image, not font-gated
+          text (the Renderer v1 LCP lesson). Swapped out under the technical
+          theme (ADR-044) via [data-theme] CSS. */}
+      <div className="wr-hero-warm absolute inset-0">
+        {/* eslint-disable-next-line @next/next/no-img-element -- fixed-size
+            generated poster; next/image adds nothing here */}
+        <img
+          src="/renderer/golden-poster.png"
+          alt=""
+          width={416}
+          height={260}
+          fetchPriority="high"
+          loading="eager"
+          decoding="sync"
+          className="absolute inset-0 h-full w-full object-cover"
+          style={dim ? { opacity: 0.55 } : undefined}
+        />
+        {/* sun bloom — a slow breath of light (radial, never filter:blur) */}
+        <div
+          className="wr-gh-bloom absolute right-[8%] top-[30%] h-[55%] w-[45%] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, rgba(255, 214, 140, 0.5) 8%, rgba(255, 200, 120, 0.16) 48%, transparent 75%)",
+          }}
+        />
+        {/* one long evening shadow, anchoring the composition */}
+        <div
+          className="absolute inset-y-0 left-0 w-[52%]"
+          style={{
+            background:
+              "linear-gradient(100deg, rgba(36, 31, 24, 0.34), rgba(36,31,24,0.08) 55%, transparent 80%)",
+          }}
+        />
+      </div>
+      {/* COOL engineered ground — the technical archetype (ADR-044). Composed
+          gradients on the theme's blueprint scene tones with an electric-blue
+          bloom; no warm poster. Reads energy-tech, not golden hour. */}
+      <div className="wr-hero-cool absolute inset-0" style={dim ? { opacity: 0.72 } : undefined}>
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "linear-gradient(150deg, var(--wr-storm-1), var(--wr-storm-2) 52%, var(--wr-bg))",
+          }}
+        />
+        <div
+          className="wr-gh-bloom absolute right-[10%] top-[24%] h-[52%] w-[46%] rounded-full"
+          style={{
+            background:
+              "radial-gradient(closest-side, var(--wr-accent-glow) 4%, transparent 72%)",
+          }}
+        />
+        <div
+          className="absolute inset-y-0 left-0 w-[50%]"
+          style={{
+            background:
+              "linear-gradient(100deg, rgba(21, 44, 82, 0.16), rgba(21,44,82,0.05) 55%, transparent 82%)",
+          }}
+        />
+      </div>
+      {/* settle into the page ground (both variants) */}
       <div
         className="absolute inset-x-0 bottom-0 h-44"
         style={{ background: "linear-gradient(180deg, transparent, var(--wr-bg))" }}
@@ -292,7 +327,7 @@ export function HeroCinematicReveal({
               <MediaSlotFrame
                 media={media}
                 label="hero frame · the finished space"
-                scene="linear-gradient(160deg, var(--wr-storm-1), var(--wr-storm-2) 60%, #8a6d47)"
+                scene="linear-gradient(160deg, var(--wr-storm-1), var(--wr-storm-2) 60%, color-mix(in oklab, var(--wr-storm-2) 68%, var(--wr-ink)))"
                 minHeight="26rem"
                 mode={mode}
               />

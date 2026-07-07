@@ -99,6 +99,20 @@ const ARCHETYPE_SEQUENCES: Record<TradeArchetype, ReadonlyArray<SectionPlan>> = 
     { primitive: "faq.reassurance-accordion", variant: "accordion" },
     { primitive: "conversion.lead-capture", variant: "consultation-booking" },
   ],
+  // Skilled / energy-tech installers (ADR-044) — capability-led: lead with the
+  // certifications, make the offer explorable, show the clean install process
+  // and real workmanship, then a fixed-quote flow.
+  technical: [
+    { primitive: "hero.cinematic-reveal", variant: "split-editorial" },
+    { primitive: "proof.credential-band", variant: "badge-row" },
+    { primitive: "services.interactive-explorer", variant: "card-grid" },
+    { primitive: "process.journey-map", variant: "numbered-steps" },
+    { primitive: "proof.portfolio-showcase", variant: "filterable-grid" },
+    { primitive: "trust.review-wall", variant: "carousel" },
+    { primitive: "location.service-area", variant: "map-focus" },
+    { primitive: "faq.reassurance-accordion", variant: "accordion" },
+    { primitive: "conversion.lead-capture", variant: "multi-step" },
+  ],
   recurring: [
     { primitive: "hero.cinematic-reveal", variant: "full-bleed" },
     { primitive: "services.interactive-explorer", variant: "card-grid" },

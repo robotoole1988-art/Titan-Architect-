@@ -33,6 +33,13 @@ const dentalBlueprint = buildWebsiteBlueprint({
     location: "Sheffield",
   }),
 });
+const technicalBlueprint = buildWebsiteBlueprint({
+  strategy: generateExperienceStrategy({
+    businessName: "Voltway Renewables",
+    trade: "Solar PV",
+    location: "Leeds",
+  }),
+});
 
 describe("registry coverage", () => {
   for (const primitive of Object.values(SECTION_PRIMITIVE_REGISTRY)) {
@@ -103,8 +110,8 @@ describe("registry coverage", () => {
     expect(() => renderPage(multi, { pageId: "page.nope" })).toThrowError(/page/i);
   });
 
-  it("premium/project AND care sequences resolve to CRAFTED components — never the placeholder (ADR-029/043)", () => {
-    for (const blueprint of [drivewaysBlueprint, dentalBlueprint]) {
+  it("premium/project, care AND technical sequences resolve to CRAFTED components — never the placeholder (ADR-029/043/044)", () => {
+    for (const blueprint of [drivewaysBlueprint, dentalBlueprint, technicalBlueprint]) {
       for (const page of blueprint.pages.pages) {
         for (const section of page.sections) {
           expect(
@@ -129,6 +136,19 @@ describe("registry coverage", () => {
     // The care-only primitives are present and crafted.
     expect(html).toContain('data-primitive="story.gentle-welcome"');
     expect(html).toContain('data-primitive="trust.team-introduction"');
+  });
+
+  it("the technical (solar) homepage renders CRAFTED in the titan-technical theme (ADR-044)", () => {
+    const html = renderToStaticMarkup(renderPage(technicalBlueprint));
+    expect(html).not.toContain("data-placeholder=");
+    // The technical theme is realised (not the generic default).
+    expect(html).toContain('data-theme="titan-technical"');
+    // The capability-led sequence — credential band + install process — is present.
+    expect(html).toContain('data-primitive="proof.credential-band"');
+    expect(html).toContain('data-primitive="process.journey-map"');
+    expect(html).toContain('data-primitive="proof.portfolio-showcase"');
+    // Real accreditations from the taxonomy (MCS for solar).
+    expect(html).toContain("MCS certified");
   });
 
   it("the placeholder mechanism still holds for any future unmapped primitive", () => {

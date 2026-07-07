@@ -46,6 +46,7 @@ const ALL_ARCHETYPES: ReadonlyArray<TradeArchetype> = [
   "project",
   "premium",
   "care",
+  "technical",
   "recurring",
   "event",
   "general",
@@ -58,7 +59,7 @@ const PRIMITIVES: ReadonlyArray<SectionPrimitive> = [
     description:
       "A full-viewport cinematic opening that lands the positioning in one held breath — imagery-led, headline-forward, one primary action.",
     variants: ["full-bleed", "split-editorial", "video-backdrop"],
-    archetypeAffinities: ["project", "premium", "care", "recurring", "event", "general"],
+    archetypeAffinities: ["project", "premium", "care", "technical", "recurring", "event", "general"],
     contentSlots: ["headline", "subheadline", "primary-cta", "backdrop-direction"],
     aspects: { animation: true, interaction: false, media: true },
   },
@@ -98,7 +99,7 @@ const PRIMITIVES: ReadonlyArray<SectionPrimitive> = [
     description:
       "A compact strip of accreditations, guarantees, and registrations — scannable proof that de-risks the decision at a glance.",
     variants: ["badge-row", "inline-strip"],
-    archetypeAffinities: ["emergency", "project", "care", "recurring", "general"],
+    archetypeAffinities: ["emergency", "project", "care", "technical", "recurring", "general"],
     contentSlots: ["credentials"],
     aspects: { animation: false, interaction: false, media: false },
   },
@@ -108,7 +109,7 @@ const PRIMITIVES: ReadonlyArray<SectionPrimitive> = [
     description:
       "Finished work presented as the hero of the argument — galleries, case studies, and before/after reveals that prove the craft.",
     variants: ["filterable-grid", "cinematic-carousel", "before-after-reveal"],
-    archetypeAffinities: ["project", "premium", "event", "general"],
+    archetypeAffinities: ["project", "premium", "technical", "event", "general"],
     contentSlots: ["portfolio-direction", "captions-direction"],
     aspects: { animation: true, interaction: true, media: true },
   },
@@ -118,7 +119,7 @@ const PRIMITIVES: ReadonlyArray<SectionPrimitive> = [
     description:
       "The service offer made explorable — visitors drill into what's offered, how it works, and what it costs, without leaving the page.",
     variants: ["tabbed", "card-grid", "guided-accordion"],
-    archetypeAffinities: ["emergency", "project", "care", "recurring", "general"],
+    archetypeAffinities: ["emergency", "project", "care", "technical", "recurring", "general"],
     contentSlots: ["services", "service-explainers"],
     aspects: { animation: true, interaction: true, media: true },
   },
@@ -168,7 +169,7 @@ const PRIMITIVES: ReadonlyArray<SectionPrimitive> = [
     description:
       "Where the business actually operates — a map or area list that grounds the service locally and reassures on coverage and response.",
     variants: ["map-focus", "area-list"],
-    archetypeAffinities: ["emergency", "project", "recurring", "general"],
+    archetypeAffinities: ["emergency", "project", "technical", "recurring", "general"],
     contentSlots: ["coverage", "response-notes"],
     aspects: { animation: false, interaction: true, media: true },
   },
@@ -178,7 +179,7 @@ const PRIMITIVES: ReadonlyArray<SectionPrimitive> = [
     description:
       "The engagement made predictable — numbered steps or a timeline that shows exactly what happens from enquiry to completion.",
     variants: ["numbered-steps", "timeline"],
-    archetypeAffinities: ["project", "premium", "care", "recurring", "general"],
+    archetypeAffinities: ["project", "premium", "care", "technical", "recurring", "general"],
     contentSlots: ["steps", "guarantees"],
     aspects: { animation: true, interaction: false, media: false },
   },
