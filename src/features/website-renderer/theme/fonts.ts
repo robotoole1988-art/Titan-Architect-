@@ -13,6 +13,7 @@
 
 import {
   Bricolage_Grotesque,
+  Fraunces,
   Instrument_Sans,
   Spline_Sans_Mono,
 } from "next/font/google";
@@ -49,5 +50,17 @@ const mono = Spline_Sans_Mono({
   preload: false,
 });
 
-/** Class applying all three font variables to a subtree. */
-export const rendererFontClass = `${display.variable} ${body.variable} ${mono.variable}`;
+// Serif display — Fraunces: a soft, warm, high-optical-size variable serif. It
+// is the care/trust archetype's heading face (ADR-043) — quiet, established
+// credibility for dentists, healthcare, and professional services. The care
+// theme points --wr-font-display at --wr-font-serif; the grotesque themes never
+// see it. Preloaded so the care hero paints once in its final face (no CLS).
+const serif = Fraunces({
+  subsets: ["latin"],
+  variable: "--wr-font-serif",
+  weight: "variable",
+  display: "optional",
+});
+
+/** Class applying all four font variables to a subtree. */
+export const rendererFontClass = `${display.variable} ${body.variable} ${mono.variable} ${serif.variable}`;

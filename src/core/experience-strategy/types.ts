@@ -71,6 +71,12 @@ export interface ConversionStrategy extends StrategySection {
   primaryCta: string;
   leadCaptureFlows: ReadonlyArray<string>;
   trustSignals: ReadonlyArray<string>;
+  /**
+   * Real, recognised accreditations/registrations for the trade (e.g. "GDC
+   * registered"), separate from the broader trust signals — the credibility
+   * substance a credentials section shows honestly (ADR-043).
+   */
+  accreditations: ReadonlyArray<string>;
 }
 
 /** 8. SEO Strategy */

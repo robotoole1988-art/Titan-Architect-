@@ -214,9 +214,13 @@ function contentFor(
         `key-messages: ${storytelling.keyMessages.join(" · ")}`,
       ];
     case "story.gentle-welcome":
+      // Real, customer-facing reassurance points come from the strategy's key
+      // messages (gentle care, qualified & registered, no judgement, honest
+      // pricing) — warm copy, never internal direction.
       return [
+        `headline: A warm welcome to ${meta.businessName}`,
         `welcome-message: ${storytelling.summary}`,
-        `reassurances: Address "${conversionStrategy.summary}" in a warm, unhurried voice — emotional register: ${storytelling.emotionalHooks.join(", ")}.`,
+        `reassurances: ${storytelling.keyMessages.join(" · ")}`,
       ];
     case "proof.credential-band":
       return [`credentials: ${conversionStrategy.trustSignals.join(" · ")}`];
@@ -254,11 +258,23 @@ function contentFor(
         `review-themes: Curate reviews that echo the key messages — ${storytelling.keyMessages.join(" · ")}.`,
         `attribution-direction: Real, named customers in and around ${meta.location} — recent, specific, verifiable.`,
       ];
-    case "trust.team-introduction":
+    case "trust.team-introduction": {
+      // Honest by construction: portraits are art-directed slots that only
+      // populate from REAL approved team media; the credibility substance is
+      // the REAL accreditations (GDC, HCPC…), NOT the broader trust signals the
+      // credential-band already shows — so the two never duplicate (ADR-043).
+      // Fall back to trust signals for strategy artifacts saved before ADR-043.
+      const accreditations =
+        conversionStrategy.accreditations && conversionStrategy.accreditations.length > 0
+          ? conversionStrategy.accreditations
+          : conversionStrategy.trustSignals;
       return [
+        `headline: The people behind ${meta.businessName}`,
+        `intro: Qualified, registered, and genuinely on your side — the team who will look after you.`,
         `team-direction: ${mediaDirection.photographyStyle}`,
-        `credentials: ${conversionStrategy.trustSignals.join(" · ")}`,
+        `credentials: ${accreditations.join(" · ")}`,
       ];
+    }
     case "location.service-area":
       return [
         `coverage: ${meta.location} and surrounding areas — anchor the local terms: ${seoStrategy.localKeywords.join(", ")}.`,

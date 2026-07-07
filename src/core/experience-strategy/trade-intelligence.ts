@@ -71,8 +71,10 @@ const ARCHETYPE_KEYWORDS: Array<[TradeArchetype, ReadonlyArray<string>]> = [
     ["wedding", "photograph", "videograph", "cater", "event", "florist", "entertain", "dj"],
   ],
   [
+    // Trust-led trades — healthcare AND professional services (ADR-043): they
+    // close on credibility and reassurance, not urgency or luxury.
     "care",
-    ["dent", "physio", "chiro", "care home", "carer", "funeral", "optic", "clinic", "aesthetic", "cosmetic", "therap", "podiat", "vet", "hair", "beauty", "spa"],
+    ["dent", "physio", "chiro", "care home", "carer", "funeral", "optic", "clinic", "aesthetic", "cosmetic", "therap", "podiat", "vet", "hair", "beauty", "spa", "solicit", "legal", "law firm", "conveyanc", "accountant", "accountancy", "financial advis", "wealth manage", "mortgage advis"],
   ],
   [
     "recurring",

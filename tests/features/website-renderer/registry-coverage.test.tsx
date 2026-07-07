@@ -103,8 +103,8 @@ describe("registry coverage", () => {
     expect(() => renderPage(multi, { pageId: "page.nope" })).toThrowError(/page/i);
   });
 
-  it("premium/project sequences resolve to CRAFTED components — never the placeholder (ADR-029)", () => {
-    for (const blueprint of [drivewaysBlueprint]) {
+  it("premium/project AND care sequences resolve to CRAFTED components — never the placeholder (ADR-029/043)", () => {
+    for (const blueprint of [drivewaysBlueprint, dentalBlueprint]) {
       for (const page of blueprint.pages.pages) {
         for (const section of page.sections) {
           expect(
@@ -119,14 +119,25 @@ describe("registry coverage", () => {
     expect(html).toContain('data-theme="titan-project"');
   });
 
-  it("labels unbuilt primitives honestly — never passes one off as crafted", () => {
-    // The care set is next in line; its primitives still placeholder.
+  it("the care (dental) homepage renders CRAFTED in the titan-care theme (ADR-043)", () => {
     const html = renderToStaticMarkup(renderPage(dentalBlueprint));
-    expect(html).toContain('data-placeholder="story.gentle-welcome"');
-    expect(html.toLowerCase()).toContain("crafted component in production");
-    // Its registry name appears as the structural eyebrow.
-    expect(html).toContain(
-      SECTION_PRIMITIVE_REGISTRY["story.gentle-welcome"].name,
-    );
+    expect(html).not.toContain("data-placeholder=");
+    // The care theme is realised (not the generic default).
+    expect(html).toContain('data-theme="titan-care"');
+    // Its serif heading face rides the --wr-font-display override.
+    expect(html).toContain("--wr-font-serif");
+    // The care-only primitives are present and crafted.
+    expect(html).toContain('data-primitive="story.gentle-welcome"');
+    expect(html).toContain('data-primitive="trust.team-introduction"');
+  });
+
+  it("the placeholder mechanism still holds for any future unmapped primitive", () => {
+    // Every registered primitive is crafted today; prove the honest fallback
+    // survives by resolving against a map with one primitive removed.
+    const partial = { ...PRIMITIVE_COMPONENT_MAP };
+    delete (partial as Record<string, unknown>)["faq.reassurance-accordion"];
+    const resolved = resolvePrimitiveComponent("faq.reassurance-accordion", partial);
+    expect(resolved).toBeTypeOf("function");
+    expect(resolved).not.toBe(PRIMITIVE_COMPONENT_MAP["faq.reassurance-accordion"]);
   });
 });

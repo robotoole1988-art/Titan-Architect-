@@ -17,4 +17,12 @@ describe("archetypes for the taxonomy expansion (v2 workbook)", () => {
     // Emergency glaziers still classify emergency; double glazing must not.
     expect(classifyArchetype("emergency glazier")).toBe("emergency");
   });
+
+  it("maps trust-led professional services into the care cluster (ADR-043)", () => {
+    expect(classifyArchetype("solicitors")).toBe("care");
+    expect(classifyArchetype("conveyancing solicitors")).toBe("care");
+    expect(classifyArchetype("accountants")).toBe("care");
+    expect(classifyArchetype("chartered accountancy")).toBe("care");
+    expect(classifyArchetype("veterinary practice")).toBe("care");
+  });
 });

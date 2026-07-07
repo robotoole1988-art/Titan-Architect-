@@ -100,6 +100,44 @@ const TITAN_PREMIUM: RendererTheme = {
   },
 };
 
+/**
+ * "Quiet Confidence" — the care/trust archetype (ADR-043). Trust-led trades
+ * (dentists, healthcare, vets, solicitors, accountants) close on credibility
+ * and reassurance, not urgency or luxury. A calm, clean, cool register: soft
+ * sage-grey paper with near-white cards (light and breathing room), a deep
+ * forest-slate ink (warm, human, authoritative), and ONE calm eucalyptus accent
+ * for trust — never amber, never bronze. Headings take a serif (Fraunces via
+ * --wr-font-display override) for quiet, established credibility; the body stays
+ * the humanist Instrument Sans. Scene tones are sage → eucalyptus so every media
+ * frame carries the calm mood without photography.
+ */
+const TITAN_CARE: RendererTheme = {
+  ref: "titan-care",
+  name: "Quiet Confidence",
+  vars: {
+    ...SCALE_VARS,
+    "--wr-bg": "#eef3ef",
+    "--wr-bg-raised": "#f9fbf9",
+    "--wr-storm-1": "#dbe8df",
+    "--wr-storm-2": "#b7d0c2",
+    "--wr-ink": "#1a2b27",
+    "--wr-ink-muted": "rgba(26, 43, 39, 0.7)",
+    "--wr-ink-faint": "rgba(26, 43, 39, 0.46)",
+    "--wr-line": "rgba(26, 61, 50, 0.14)",
+    "--wr-line-strong": "rgba(26, 61, 50, 0.26)",
+    "--wr-surface": "rgba(26, 61, 50, 0.035)",
+    "--wr-surface-raised": "rgba(26, 61, 50, 0.06)",
+    "--wr-accent": "#2f6f5b",
+    "--wr-accent-strong": "#245a49",
+    "--wr-accent-ink": "#f4f9f5",
+    "--wr-accent-glow": "rgba(47, 111, 91, 0.22)",
+    "--wr-calm": "#4f7f96",
+    "--wr-ok": "#3f7d54",
+    // Headings speak with the quiet credibility of a serif; body stays humanist.
+    "--wr-font-display": "var(--wr-font-serif, 'Fraunces', Georgia, 'Times New Roman', serif)",
+  },
+};
+
 /** Restrained fallback for archetypes without a crafted theme yet. */
 const TITAN_DEFAULT: RendererTheme = {
   ref: "titan-general",
@@ -132,6 +170,7 @@ const THEMES: Readonly<Record<string, RendererTheme>> = {
   // Two archetypes, one emotional register (ADR-029): project shares the
   // Golden Hour mood, keeping its own ref for data-theme targeting.
   "titan-project": { ...TITAN_PREMIUM, ref: "titan-project" },
+  [TITAN_CARE.ref]: TITAN_CARE,
   [TITAN_DEFAULT.ref]: TITAN_DEFAULT,
 };
 
