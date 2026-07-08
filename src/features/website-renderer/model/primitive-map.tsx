@@ -22,6 +22,7 @@ import { LocationServiceArea } from "../primitives/location-service-area";
 import { ProcessJourneyMap } from "../primitives/process-journey-map";
 import { ProofCredentialBand } from "../primitives/proof-credential-band";
 import { ServicesInteractiveExplorer } from "../primitives/services-interactive-explorer";
+import { LegalNotice, LegalPrivacyPolicy } from "../primitives/legal-pages";
 import { PremiumSectionPlaceholder } from "../primitives/premium-placeholder";
 import { StoryGentleWelcome } from "../primitives/story-gentle-welcome";
 import { StoryTransformationArc } from "../primitives/story-transformation-arc";
@@ -45,6 +46,8 @@ export const PRIMITIVE_COMPONENT_MAP: PrimitiveComponentMap = {
   "story.transformation-arc": StoryTransformationArc,
   "story.gentle-welcome": StoryGentleWelcome,
   "trust.team-introduction": TrustTeamIntroduction,
+  "legal.privacy-policy": LegalPrivacyPolicy,
+  "legal.legal-notice": LegalNotice,
 };
 
 /**

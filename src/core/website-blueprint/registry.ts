@@ -203,6 +203,36 @@ const PRIMITIVES: ReadonlyArray<SectionPrimitive> = [
     contentSlots: ["gallery-direction"],
     aspects: { animation: true, interaction: true, media: true },
   },
+  {
+    id: "legal.privacy-policy",
+    name: "Privacy Policy",
+    description:
+      "The site's UK GDPR privacy notice — what the enquiry form collects, why, the lawful basis, retention, data-subject rights, the cookie position, and that the site operates on the business's behalf — populated from real business details, never fabricated.",
+    variants: ["standard"],
+    archetypeAffinities: ALL_ARCHETYPES,
+    contentSlots: [
+      "controller",
+      "collected",
+      "purpose",
+      "lawful-basis",
+      "retention",
+      "rights",
+      "contact",
+      "cookies",
+      "processor",
+    ],
+    aspects: { animation: false, interaction: false, media: false },
+  },
+  {
+    id: "legal.legal-notice",
+    name: "Terms & Legal Notice",
+    description:
+      "The site's terms and legal notice — business identity, service terms, a liability limitation, governing law (England & Wales), and contact.",
+    variants: ["standard"],
+    archetypeAffinities: ALL_ARCHETYPES,
+    contentSlots: ["identity", "service-terms", "liability", "governing-law", "contact"],
+    aspects: { animation: false, interaction: false, media: false },
+  },
 ];
 
 /**

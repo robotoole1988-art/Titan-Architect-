@@ -52,6 +52,11 @@ export interface PrimitiveSectionProps {
   serving?: ServingContext;
   /** APPROVED media by slotRef (ADR-033); slots without one stay honest frames. */
   mediaAssets?: Readonly<Record<string, ResolvedMediaAsset>>;
+  /**
+   * Real business contact (ADR-045) — the legal primitives name the controller
+   * contact; absent in previews and where the business hasn't supplied it.
+   */
+  contact?: RenderContact;
   /** The render mode (ADR-034). Public pages carry zero scaffolding. */
   mode: RenderMode;
 }

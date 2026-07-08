@@ -148,6 +148,17 @@ export function renderPage(
           .filter((link): link is SiteNavLink => link !== null)
       : [];
 
+  // Legal pages (ADR-045) are NOT in the header nav — they get their own
+  // footer links, resolved through the same pageHref seam.
+  const legalNav: SiteNavLink[] = collection
+    .filter((candidate) => candidate.type === "legal")
+    .map((legalPage) => ({
+      pageId: legalPage.id,
+      label: legalPage.name,
+      href: pageHref(legalPage.id, legalPage.suggestedUrl ?? "/"),
+      active: legalPage.id === page.id,
+    }));
+
   const isPublic = mode === "public";
   const primitiveBlueprint = isPublic ? redactBlueprint(blueprint) : blueprint;
   const sections = page.sections.map((section) => {
@@ -176,6 +187,7 @@ export function renderPage(
         blueprint={primitiveBlueprint}
         serving={options.serving}
         mediaAssets={options.media}
+        contact={options.contact}
         mode={mode}
       />
     );
@@ -200,7 +212,13 @@ export function renderPage(
       <MotionConfig reducedMotion="user">
         <SiteHeader blueprint={primitiveBlueprint} nav={nav} />
         <main>{sections}</main>
-        <SiteFooter blueprint={primitiveBlueprint} nav={nav} mode={mode} contact={options.contact} />
+        <SiteFooter
+          blueprint={primitiveBlueprint}
+          nav={nav}
+          legalNav={legalNav}
+          mode={mode}
+          contact={options.contact}
+        />
       </MotionConfig>
     </div>
   );

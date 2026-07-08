@@ -33,15 +33,21 @@ function areaPages(blueprint: WebsiteBlueprint): ReadonlyArray<PageBlueprint> {
   return blueprint.pages.pages.filter((page) => page.type === "landing");
 }
 
+// Standing legal pages (ADR-045) always accompany a site; they are NOT area
+// pages, so the doorway/count invariants are asserted over content pages only.
+function contentPages(blueprint: WebsiteBlueprint): ReadonlyArray<PageBlueprint> {
+  return blueprint.pages.pages.filter((page) => page.type !== "legal");
+}
+
 describe("multi-page blueprint generation", () => {
   it("stays homepage-only without coverage areas (back-compat)", () => {
-    expect(build().pages.pages).toHaveLength(1);
-    expect(build([]).pages.pages).toHaveLength(1);
+    expect(contentPages(build())).toHaveLength(1);
+    expect(contentPages(build([]))).toHaveLength(1);
   });
 
   it("emits homepage + one landing page per coverage area", () => {
     const blueprint = build(AREAS);
-    expect(blueprint.pages.pages).toHaveLength(4);
+    expect(contentPages(blueprint)).toHaveLength(4);
     expect(blueprint.pages.pages[0].type).toBe("home");
     expect(areaPages(blueprint)).toHaveLength(3);
   });

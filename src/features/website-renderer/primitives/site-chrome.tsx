@@ -91,11 +91,14 @@ export function SiteHeader({
 export function SiteFooter({
   blueprint,
   nav = [],
+  legalNav = [],
   mode = "preview",
   contact,
 }: {
   blueprint: WebsiteBlueprint;
   nav?: SiteNavLink[];
+  /** Privacy / Terms links (ADR-045) — footer only, never the header nav. */
+  legalNav?: SiteNavLink[];
   mode?: RenderMode;
   contact?: RenderContact;
 }) {
@@ -166,11 +169,39 @@ export function SiteFooter({
           </div>
         )}
         {isPublic ? (
+          // Legal bar (ADR-045): copyright + the honest no-cookie statement +
+          // Privacy / Terms links. This site sets no tracking cookies, so a
+          // short statement replaces any consent banner.
           <div
-            className="border-t pt-6 text-[11px] uppercase tracking-[0.16em]"
-            style={{ ...monoFont, borderColor: "var(--wr-line)", color: "var(--wr-ink-faint)" }}
+            className="flex flex-col gap-3 border-t pt-6 sm:flex-row sm:items-center sm:justify-between"
+            style={{ borderColor: "var(--wr-line)" }}
           >
-            © {new Date().getFullYear()} {identity.businessName}
+            <div
+              className="flex flex-wrap items-center gap-x-2.5 gap-y-2 text-[11px] uppercase tracking-[0.16em]"
+              style={{ ...monoFont, color: "var(--wr-ink-faint)" }}
+            >
+              <span>© {new Date().getFullYear()} {identity.businessName}</span>
+              <span aria-hidden>·</span>
+              <span>No tracking cookies</span>
+            </div>
+            {legalNav.length > 0 && (
+              <nav
+                aria-label="Legal"
+                className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] uppercase tracking-[0.16em]"
+                style={monoFont}
+              >
+                {legalNav.map((link) => (
+                  <a
+                    key={link.pageId}
+                    href={link.href}
+                    className="transition-colors hover:text-[var(--wr-ink)] focus-visible:outline-2 focus-visible:outline-offset-4"
+                    style={{ color: "var(--wr-ink-muted)", outlineColor: "var(--wr-accent)" }}
+                  >
+                    {link.label}
+                  </a>
+                ))}
+              </nav>
+            )}
           </div>
         ) : (
           (footer.legal?.length ?? 0) > 0 && (
