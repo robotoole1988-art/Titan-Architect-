@@ -39,11 +39,17 @@ describe("buildWebsiteBlueprint", () => {
     expect(second).toEqual(first);
   });
 
-  it("produces a homepage-only page collection", () => {
+  it("produces a homepage-only content collection (plus standing legal pages)", () => {
     const blueprint = buildWebsiteBlueprint({ strategy: strategyFor("project") });
-    expect(blueprint.pages.pages).toHaveLength(1);
-    expect(blueprint.pages.pages[0].type).toBe("home");
-    expect(blueprint.pages.pages[0].suggestedUrl).toBe("/");
+    // Content pages: just the homepage when there are no coverage areas.
+    const content = blueprint.pages.pages.filter((page) => page.type !== "legal");
+    expect(content).toHaveLength(1);
+    expect(content[0].type).toBe("home");
+    expect(content[0].suggestedUrl).toBe("/");
+    // Legal pages (ADR-045) always accompany a site: Privacy + Terms.
+    expect(
+      blueprint.pages.pages.filter((page) => page.type === "legal").map((page) => page.suggestedUrl),
+    ).toEqual(["/privacy", "/terms"]);
   });
 
   it("stamps the blueprint schema version", () => {

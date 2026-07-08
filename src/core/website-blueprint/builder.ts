@@ -309,6 +309,29 @@ function contentFor(
       return [
         `gallery-direction: ${mediaDirection.photographyStyle} Shot priorities: ${mediaDirection.shotList.join(" · ")}.`,
       ];
+    case "legal.privacy-policy":
+      // Crafted UK-GDPR baseline, parameterised with the business's real
+      // details (ADR-045). The controller CONTACT is supplied at serve time
+      // from the Business record; this slot is the honest fallback.
+      return [
+        `controller: ${meta.businessName}${meta.location ? `, ${meta.location}` : ""} is the data controller for the information you submit through this site.`,
+        `collected: Your name, phone number, and email address — only what you enter in the enquiry form. Nothing is collected in the background.`,
+        `purpose: To respond to your enquiry and provide the ${trade} service you asked about. Your details are not sold, and are not used for anything else.`,
+        `lawful-basis: Legitimate interests — responding to an enquiry you started — and, where you opt in, your consent.`,
+        `retention: Enquiry details are kept only as long as needed to handle your request and for a reasonable follow-up period, then securely deleted.`,
+        `rights: access · rectification · erasure · restriction · objection · data portability · complaint to the ICO (ico.org.uk)`,
+        `contact: To ask a question or exercise any of your rights, contact ${meta.businessName} using the details on this site.`,
+        `cookies: This site sets no tracking cookies and uses no third-party trackers. Visits are measured first-party as anonymous daily totals only — never per person.`,
+        `processor: This website is operated on behalf of ${meta.businessName} by TITAN, which acts as a data processor under ${meta.businessName}'s instructions.`,
+      ];
+    case "legal.legal-notice":
+      return [
+        `identity: ${meta.businessName} — ${meta.trade} in ${meta.location}.`,
+        `service-terms: These terms cover use of this website and any enquiry you send through it. The specifics of any work — scope, price, and timing — are agreed with you separately in writing before it begins.`,
+        `liability: ${meta.businessName} takes care to keep this site accurate but is not liable for indirect or consequential loss arising from its use. Nothing here limits any liability that cannot be limited by law, including for death or personal injury caused by negligence.`,
+        `governing-law: These terms are governed by the law of England & Wales, and the courts of England & Wales have exclusive jurisdiction.`,
+        `contact: For anything about these terms, contact ${meta.businessName} using the details on this site.`,
+      ];
     default:
       return [];
   }
@@ -792,6 +815,62 @@ const SIGNATURE_MOMENT_BY_TRADE: Record<
   },
 };
 
+/**
+ * A legal page (ADR-045) — Privacy or Terms — composed of the crafted legal
+ * primitive, populated from the business's real details. Universal: built for
+ * every site, indexable, in the sitemap; kept OUT of the header nav (footer
+ * only) and out of the anti-doorway check (which guards area pages).
+ */
+function buildLegalPage(
+  kind: "privacy" | "terms",
+  strategy: ExperienceStrategy,
+  archetype: TradeArchetype,
+): PageBlueprint {
+  const { meta } = strategy;
+  const primitiveId =
+    kind === "privacy" ? "legal.privacy-policy" : "legal.legal-notice";
+  const pageId = `legal.${kind}`;
+  const title = kind === "privacy" ? "Privacy Policy" : "Terms & Legal Notice";
+  const section = buildSection(
+    { primitive: primitiveId, variant: "standard" },
+    0,
+    strategy,
+    archetype,
+    pageId,
+  );
+  const description =
+    kind === "privacy"
+      ? `How ${meta.businessName} handles the details you submit through this site, and your rights.`
+      : `The terms of using ${meta.businessName}'s website, and the governing law (England & Wales).`;
+  return {
+    id: pageId,
+    confidence: strategyConfidence(
+      `${title} — a crafted UK legal baseline populated from ${meta.businessName}'s real details (ADR-045).`,
+    ),
+    name: title,
+    type: "legal",
+    purpose: `The site's ${title.toLowerCase()} — legally required for a UK site that collects enquiries.`,
+    targetAudience: `Visitors and regulators checking how ${meta.businessName} handles data and the site's terms.`,
+    primaryConversionGoal: "Understand how their data is handled and the terms of use.",
+    seoIntent: `${title} for ${meta.businessName}.`,
+    suggestedUrl: `/${kind}`,
+    sections: [section],
+    seo: {
+      id: `${pageId}.seo`,
+      confidence: strategyConfidence(
+        "Legal-page SEO — indexable and honest; no keyword targeting.",
+      ),
+      intent: `${title} for ${meta.businessName}.`,
+      titleDirection: `${title} — ${meta.businessName}`,
+      metaDescriptionDirection: description,
+      targetKeywords: [],
+      headingsOutline: [primitiveId],
+      schemaOpportunities: [],
+    },
+    extensions: { legal: kind },
+  };
+}
+
 function buildHomePage(
   strategy: ExperienceStrategy,
   archetype: TradeArchetype,
@@ -895,7 +974,16 @@ export function buildWebsiteBlueprint(
     buildAreaPage(area.trim(), index, strategy, archetype),
   );
   enforceAreaDifferentiation(homePage, areaPages);
-  const allPages = [homePage, ...areaPages];
+  // Legal pages (ADR-045) — Privacy + Terms for EVERY site, required for a UK
+  // site that collects enquiries. They join the page collection (routing +
+  // sitemap) but NOT the header nav (they belong in the footer), and are
+  // excluded from the anti-doorway check above (which guards area pages only).
+  const navPages = [homePage, ...areaPages];
+  const legalPages = [
+    buildLegalPage("privacy", strategy, archetype),
+    buildLegalPage("terms", strategy, archetype),
+  ];
+  const allPages = [...navPages, ...legalPages];
 
   return {
     id: "website-blueprint.home",
@@ -926,9 +1014,9 @@ export function buildWebsiteBlueprint(
     navigation: {
       id: "navigation",
       confidence: strategyConfidence(
-        "Navigation links every page of the collection (ADR-028).",
+        "Primary navigation links the homepage and area pages; legal pages live in the footer (ADR-028/045).",
       ),
-      items: allPages.map((page) => ({
+      items: navPages.map((page) => ({
         id: `navigation.${page.id}`,
         confidence: strategyConfidence(
           page.type === "home"

@@ -72,6 +72,7 @@ ADR that supersedes the old one and update the old one's status.
 | [042](./adr-042-mission-control.md) | Mission Control — the first Brain surface (deterministic daily briefing on existing data) | Accepted |
 | [043](./adr-043-care-archetype.md) | The care/trust archetype — Quiet Confidence theme + crafted primitive set for trust-led trades | Accepted |
 | [044](./adr-044-technical-archetype.md) | The technical/skilled-trades archetype — Live Wire theme for the energy-tech installer cluster | Accepted |
+| [045](./adr-045-legal-compliance.md) | Legal & compliance layer — crafted Privacy + Terms primitives, cookieless statement, per-site legal pages | Accepted |
 
 ### Writing a new ADR
 

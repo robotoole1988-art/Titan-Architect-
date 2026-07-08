@@ -7,9 +7,12 @@ import {
 const primitives = Object.values(SECTION_PRIMITIVE_REGISTRY);
 
 describe("section primitive registry", () => {
-  it("contains between 10 and 15 primitives", () => {
+  it("contains between 10 and 20 primitives", () => {
+    // Curated, not sprawling: the registry grows only when an ADR crafts new
+    // primitives (care ADR-043, technical ADR-044, legal ADR-045). The upper
+    // bound is a deliberate guardrail against free-generation creep.
     expect(primitives.length).toBeGreaterThanOrEqual(10);
-    expect(primitives.length).toBeLessThanOrEqual(15);
+    expect(primitives.length).toBeLessThanOrEqual(20);
   });
 
   it("keys every primitive by its own id", () => {
