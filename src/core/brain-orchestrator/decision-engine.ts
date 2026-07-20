@@ -524,13 +524,17 @@ function departmentHealthRule(
 // The engine.
 // ---------------------------------------------------------------------------
 
-/** Recommendation ids the founder has already actioned or dismissed. */
+/**
+ * Recommendation ids the founder has already actioned, dismissed, or —
+ * via Command Mode (ADR-052) — delegated.
+ */
 function suppressedIds(observations: ReadonlyArray<Observation>): Set<string> {
   const ids = new Set<string>();
   for (const observation of observations) {
     if (
       observation.kind !== "recommendation_accepted" &&
-      observation.kind !== "recommendation_dismissed"
+      observation.kind !== "recommendation_dismissed" &&
+      observation.kind !== "recommendation_delegated"
     ) {
       continue;
     }

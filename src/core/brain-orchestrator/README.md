@@ -69,5 +69,26 @@ brain-orchestrator/
 └── orchestrator.ts   # BrainOrchestrator (observe/decide/delegate/learn)
 ```
 
-See `docs/prd/prd-003-brain-orchestrator.md` and
-`docs/architecture/adr-015-brain-orchestrator.md`.
+## Guardrails — the execution constitution
+
+The Brain acts only inside guardrail tiers (ADR-052). Every executable
+action declares one:
+
+- **`auto` (low risk)** — may run without a founder click. *No action holds
+  this tier today.* The machinery exists (`core/command-mode`), but
+  classification into it is a **founder decision recorded in the learning
+  feed** (`tier_promoted`, `source: "founder"`) — never a code default.
+- **`recommend_first` (medium risk)** — the Brain may propose it
+  proactively; it runs only after founder approval.
+- **`approval_required` (high risk)** — only the founder initiates it, and
+  it still requires explicit approval.
+
+Corollaries: every execution is previewed exactly before approval, verified
+after running, fully traced (who approved, when, what ran, what changed,
+revert info), and remembered in the learning feed. Failures are reported
+honestly and never silently retried. Customer-visible actions, spending,
+and deletion are excluded from the catalogue by constitution.
+
+See `docs/prd/prd-003-brain-orchestrator.md`,
+`docs/architecture/adr-015-brain-orchestrator.md`, and
+`docs/architecture/adr-052-command-mode.md`.

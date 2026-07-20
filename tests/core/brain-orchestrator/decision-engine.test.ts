@@ -188,6 +188,14 @@ describe("suppression via the learning feed", () => {
     expect(suppressed).toHaveLength(4); // the other four still stand
   });
 
+  it("delegated recommendations (Command Mode, ADR-052) do not come back", () => {
+    const suppressed = generate([
+      feedEntry("recommendation_delegated", "stale_deal:b-deal"),
+    ]);
+    expect(suppressed.some((rec) => rec.id === "stale_deal:b-deal")).toBe(false);
+    expect(suppressed).toHaveLength(5);
+  });
+
   it("unrelated observations suppress nothing", () => {
     expect(generate([feedEntry("question", "whatever")])).toHaveLength(6);
   });

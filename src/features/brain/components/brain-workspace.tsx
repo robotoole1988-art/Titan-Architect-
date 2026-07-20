@@ -1,6 +1,7 @@
 import { BrainCommandBar } from "./brain-command-bar";
 import { BrainLeftPanel } from "./brain-left-panel";
 import { BrainCenterPanel } from "./brain-center-panel";
+import { CommandCentre } from "./command-centre";
 import { Recommendations } from "./recommendations";
 import { HealthPanel } from "./health-panel";
 import { BrainRightPanel } from "./brain-right-panel";
@@ -43,6 +44,8 @@ export function BrainWorkspace() {
           <div className="flex flex-col gap-4">
             {/* The Decision Engine's home (ADR-050). */}
             <Recommendations />
+            {/* Command Mode: the founder approval gate (ADR-052). */}
+            <CommandCentre />
             {/* Department health drill-down (ADR-051). */}
             <HealthPanel />
             <BrainCenterPanel />
