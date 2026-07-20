@@ -40,6 +40,7 @@ import {
   SECTION_PRIMITIVE_REGISTRY,
   type SectionPrimitive,
 } from "./registry";
+import { resolveFaqBank } from "./faq-content";
 import type { BlueprintPriority } from "./common";
 import type { SectionBlueprint } from "./section";
 import type { WebsiteBlueprint } from "./website-blueprint";
@@ -301,10 +302,16 @@ function contentFor(
         `steps-headline: How it works — from first call to finished ${trade}`,
         `guarantees: Close each step with proof: ${conversionStrategy.trustSignals.join(" · ")}.`,
       ];
-    case "faq.reassurance-accordion":
+    case "faq.reassurance-accordion": {
+      // Real, researched Q&A from the trade bank (ADR-047) rides the `qa:`
+      // channel the renderer + FAQPage JSON-LD already consume. No bank →
+      // no qa slots → the honest ADR-034 collapse.
+      const bank = resolveFaqBank({ trade: meta.trade });
       return [
         `questions-direction: Answer the objection behind "${conversionStrategy.summary}" and the questions implied by: ${seoStrategy.contentPillars.join(" · ")}.`,
+        ...(bank?.qas.map((qa) => `qa: ${qa.question} | ${qa.answer}`) ?? []),
       ];
+    }
     case "gallery.immersive-grid":
       return [
         `gallery-direction: ${mediaDirection.photographyStyle} Shot priorities: ${mediaDirection.shotList.join(" · ")}.`,

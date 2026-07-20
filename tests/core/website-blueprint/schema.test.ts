@@ -60,16 +60,32 @@ describe("buildPageJsonLd", () => {
   });
 
   it("emits FAQPage ONLY with complete Q&A copy — never placeholder answers (ADR-034)", () => {
-    // The builder emits direction, not answers — so no FAQPage anywhere:
-    for (const page of blueprint.pages.pages) {
+    // A trade WITHOUT a researched bank (ADR-047) emits direction, not
+    // answers — so no FAQPage anywhere:
+    const unbanked = buildWebsiteBlueprint({
+      strategy: generateExperienceStrategy({
+        businessName: "Northern Signs",
+        trade: "Signwriting",
+        location: "Bradford",
+      }),
+    });
+    for (const page of unbanked.pages.pages) {
       expect(
-        ofType(ldFor(page.id), "FAQPage"),
+        ofType(buildPageJsonLd(unbanked, page.id, { baseUrl: BASE }), "FAQPage"),
         `${page.id} must not fabricate FAQ answers`,
       ).toBeUndefined();
     }
 
+    // The banked blueprint (Kerbside — ADR-047) emits FAQPage from the
+    // trade bank's real answers on every page carrying the FAQ section:
+    const banked = ofType(ldFor("home"), "FAQPage");
+    expect(banked).toBeDefined();
+    expect(
+      (banked?.mainEntity as ReadonlyArray<unknown>).length,
+    ).toBeGreaterThanOrEqual(5);
+
     // Real `qa: question | answer` copy upgrades the markup:
-    const doctored = structuredClone(blueprint);
+    const doctored = structuredClone(unbanked);
     const faqSection = doctored.pages.pages[0].sections.find((section) =>
       section.identifier.startsWith("faq."),
     );

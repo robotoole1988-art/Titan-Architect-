@@ -96,6 +96,8 @@ export type { BlueprintValidationResult } from "./validator";
 export { validateBlueprint } from "./validator";
 
 export { buildWebsiteBlueprint, createWebsiteBlueprintEngine, pageSlug } from "./builder";
+export { resolveFaqBank } from "./faq-content";
+export type { FaqBank, TradeFaq } from "./faq-content";
 
 export type { JsonLdObject, PageJsonLdOptions } from "./schema";
 export { buildPageJsonLd } from "./schema";

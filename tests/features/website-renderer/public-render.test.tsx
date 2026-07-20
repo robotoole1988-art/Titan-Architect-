@@ -104,20 +104,39 @@ describe("public mode — empty-state policy: honesty means absence", () => {
     expect(html).not.toContain('data-primitive="trust.review-wall"');
   });
 
-  it("collapses the FAQ when the blueprint has no complete Q&A copy", () => {
+  it("renders the FAQ with real Q&A now the trade bank exists (ADR-047) — and still collapses without one", () => {
+    // Both demo trades are banked: the FAQ renders real content in public.
     for (const demo of DEMOS) {
       const html = renderPublicPage(demo.blueprint);
-      expect(html).not.toContain('data-primitive="faq.reassurance-accordion"');
+      expect(html).toContain('data-primitive="faq.reassurance-accordion"');
     }
+    // A trade without researched answers keeps the ADR-034 honest collapse.
+    const unbanked = buildWebsiteBlueprint({
+      strategy: generateExperienceStrategy({
+        businessName: "Northern Signs",
+        trade: "Signwriting",
+        location: "Bradford",
+      }),
+    });
+    expect(
+      renderToStaticMarkup(renderPage(unbanked, { mode: "public" })),
+    ).not.toContain('data-primitive="faq.reassurance-accordion"');
   });
 
-  it("never emits FAQPage JSON-LD without real answers", () => {
+  it("emits FAQPage JSON-LD ONLY from real answers — never from direction", () => {
     for (const demo of DEMOS) {
       for (const page of demo.blueprint.pages.pages) {
         const jsonLd = buildPageJsonLd(demo.blueprint, page.id, {
           baseUrl: "https://example.co.uk",
         });
-        expect(jsonLd.some((item) => item["@type"] === "FAQPage")).toBe(false);
+        const faqPage = jsonLd.find((item) => item["@type"] === "FAQPage");
+        // Pages carrying the FAQ section (home + area pages) emit FAQPage
+        // from the qa channel; legal pages carry no FAQ and emit none.
+        const hasFaqSection = page.sections.some(
+          (section) => section.identifier === "faq.reassurance-accordion",
+        );
+        expect(faqPage !== undefined, `${demo.name} · ${page.id}`).toBe(hasFaqSection);
+        // Whatever is emitted, scaffolding NEVER reaches search engines.
         expect(JSON.stringify(jsonLd)).not.toMatch(/answer slot|content pillar/i);
       }
     }
