@@ -9,14 +9,13 @@ import {
 } from "react";
 
 /**
- * AUTHENTICATION SEAM
- * -------------------
- * This provider is the single integration point for authentication.
- * Today it holds a placeholder user so the shell renders realistically.
+ * AUTHENTICATION SEAM — now REAL (ADR-054, delivering ADR-004).
  *
- * To wire in real auth (Clerk, Auth.js, Supabase, etc.) later, replace the
- * placeholder state below with the provider's session — every component that
- * calls `useAuth()` keeps working unchanged.
+ * The founder session is established server-side (Supabase magic link,
+ * httpOnly cookies); this provider simply carries the resolved user to the
+ * client shell. `signOut` invokes the server action passed down from the
+ * layout (providers sit below features in the layer model, so the action
+ * arrives as a prop, never an import).
  */
 
 export interface AuthUser {
@@ -36,25 +35,30 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-/** Temporary stand-in user. Remove once real auth is connected. */
-const PLACEHOLDER_USER: AuthUser = {
-  id: "placeholder-user",
-  name: "Robert O'Toole",
-  email: "robotoole1988@gmail.com",
-};
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(PLACEHOLDER_USER);
+export function AuthProvider({
+  children,
+  initialUser,
+  onSignOut,
+}: {
+  children: ReactNode;
+  initialUser: AuthUser | null;
+  onSignOut?: () => Promise<void> | void;
+}) {
+  const [user] = useState<AuthUser | null>(initialUser);
 
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       isAuthenticated: user !== null,
       isLoading: false,
-      signIn: (next = PLACEHOLDER_USER) => setUser(next),
-      signOut: () => setUser(null),
+      // Sign-in happens at /login via the server flow; this is a no-op kept
+      // for interface compatibility with early consumers.
+      signIn: () => undefined,
+      signOut: () => {
+        void onSignOut?.();
+      },
     }),
-    [user],
+    [user, onSignOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
