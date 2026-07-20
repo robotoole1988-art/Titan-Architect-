@@ -101,6 +101,13 @@ export interface BusinessDraft {
   budget?: string;
   urgency?: string;
   currentWebsiteUrl?: string;
+  /**
+   * Internal/test record (lab environments, seeded fixtures). Excluded from
+   * Brain surfaces (memory-spine snapshot) by default; visible in the CRM so
+   * it stays findable and recoverable. Auto-set at creation when the name
+   * matches {@link isInternalBusinessName}.
+   */
+  internal?: boolean;
 }
 
 /** The stored Business record. */
@@ -112,4 +119,13 @@ export interface Business extends BusinessDraft {
   /** ISO-8601 timestamps. System-managed. */
   createdAt: string;
   updatedAt: string;
+}
+
+/**
+ * The creation guard: names that declare themselves internal/test data.
+ * Conservative on purpose — "(internal)"/"(test)" suffixes and the TITAN lab
+ * convention, never plain words that could appear in a real trading name.
+ */
+export function isInternalBusinessName(name: string): boolean {
+  return /\((internal|test)\)|titan morph lab/i.test(name);
 }
