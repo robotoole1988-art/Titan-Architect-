@@ -1,11 +1,12 @@
 /**
  * TITAN Knowledge Kernel — public API.
  *
- * Interfaces only (no implementation, no AI, no database, no business logic).
- * This is the ONLY surface other modules may import from. Every future feature
- * queries and contributes knowledge through these contracts.
+ * The ADR-010 contracts, and — since ADR-046 — their real implementation:
+ * `createKnowledgeKernel` over a store seam (memory here, Supabase behind
+ * `resolveKnowledgeKernel`). This is the ONLY surface other modules may
+ * import from.
  *
- * See docs/architecture/adr-010-knowledge-kernel.md.
+ * See docs/architecture/adr-010-knowledge-kernel.md and adr-046-memory-spine.md.
  */
 
 export type {
@@ -37,3 +38,11 @@ export type {
   KnowledgeKernel,
   KnowledgeKernelProvider,
 } from "./knowledge-kernel";
+
+export { createKnowledgeKernel } from "./kernel";
+export {
+  createMemoryKnowledgeStore,
+  type KnowledgeStore,
+  type KnowledgeStoreRow,
+} from "./store";
+export { resolveKnowledgeKernel } from "./provider";
