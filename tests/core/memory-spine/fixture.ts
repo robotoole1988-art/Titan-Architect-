@@ -126,7 +126,32 @@ export const summitBuild: Build = {
   id: "build-summit",
   businessId: "b-summit",
   createdAt: "2026-06-10T09:00:00.000Z",
-  items: [],
+  items: [
+    {
+      id: "item-website",
+      buildId: "build-summit",
+      kind: "website",
+      status: "review", // waiting on the founder gate
+      manual: false,
+      updatedAt: "2026-07-07T09:00:00.000Z",
+    },
+    {
+      id: "item-google-ads",
+      buildId: "build-summit",
+      kind: "google_ads",
+      status: "building", // in progress, untouched for 5 days → stalled
+      manual: true,
+      updatedAt: "2026-07-03T09:00:00.000Z",
+    },
+    {
+      id: "item-seo",
+      buildId: "build-summit",
+      kind: "seo",
+      status: "queued", // queued is neither stalled nor waiting
+      manual: true,
+      updatedAt: "2026-07-03T09:00:00.000Z",
+    },
+  ],
 };
 
 export const summitDeal: ArtifactRecord = {
