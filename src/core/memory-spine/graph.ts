@@ -12,6 +12,7 @@ import type {
   ArtifactRecord,
   Build,
   Business,
+  CustomerReview,
   Enquiry,
   MediaRecord,
   Publication,
@@ -123,6 +124,16 @@ export function buildKnowledgeGraph(snapshot: MemorySnapshot): KnowledgeGraph {
   for (const entry of snapshot.activity satisfies ReadonlyArray<ActivityEntry>) {
     addNode(draft, "activity", entry.id, entry.message, "activity_log", entry);
   }
+  for (const review of snapshot.reviews satisfies ReadonlyArray<CustomerReview>) {
+    addNode(
+      draft,
+      "review",
+      review.id,
+      `${review.rating}★ review from ${review.customerName}${review.verification ? "" : " (unverified)"}`,
+      "business_reviews",
+      review,
+    );
+  }
   for (const market of snapshot.markets satisfies ReadonlyArray<MarketContext>) {
     addNode(
       draft,
@@ -188,6 +199,9 @@ export function buildKnowledgeGraph(snapshot: MemorySnapshot): KnowledgeGraph {
   }
   for (const entry of snapshot.activity) {
     addEdge(draft, "logged", ref("business", entry.businessId), ref("activity", entry.id), "activity_log", entry.id);
+  }
+  for (const review of snapshot.reviews) {
+    addEdge(draft, "has_review", ref("business", review.businessId), ref("review", review.id), "business_reviews", review.id);
   }
   for (const market of snapshot.markets) {
     addEdge(

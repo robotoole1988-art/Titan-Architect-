@@ -336,6 +336,65 @@ export interface MediaRepository {
   listApprovedForBusiness(businessId: string): Promise<MediaRecord[]>;
 }
 
+/**
+ * Where a review came from (ADR-053). Modelled as data so GBP API ingestion
+ * can slot in later as just another source — no schema change:
+ * "direct" = the customer gave it to the business directly;
+ * "google" = a Google review (today: founder-transcribed, screenshot on
+ * file; later: GBP API with `sourceRef` as the external id);
+ * "other" = any other named channel (say which in the attestation).
+ */
+export type ReviewSource = "direct" | "google" | "other";
+
+/**
+ * The verification attestation (ADR-053) — WHO verified the review and HOW
+ * ("email from customer on file", "Google review, screenshot on file").
+ * Never a bare boolean: the evidence trail is the point.
+ */
+export interface ReviewVerification {
+  /** Who attested, e.g. "founder". */
+  verifiedBy: string;
+  /** How it was verified, plain English, specific. */
+  method: string;
+  /** When the attestation was made (ISO-8601). */
+  verifiedAt: string;
+}
+
+/**
+ * A real customer review (ADR-053). HONESTY LAW: nothing renders and no
+ * Review/AggregateRating JSON-LD is emitted unless `verification` is
+ * present — unverified records are an ingestion buffer, not content.
+ */
+export interface CustomerReview {
+  id: string;
+  businessId: string;
+  customerName: string;
+  /** Integer 1–5 (validated at the workflow layer). */
+  rating: number;
+  text: string;
+  /** When the CUSTOMER gave the review (ISO date) — not when recorded. */
+  reviewedAt: string;
+  source: ReviewSource;
+  /** External reference (future GBP review id/URL). */
+  sourceRef?: string;
+  verification?: ReviewVerification;
+  createdAt: string;
+}
+
+export type CustomerReviewDraft = Omit<CustomerReview, "id" | "createdAt">;
+
+export interface ReviewRepository {
+  /** Throws {@link BusinessNotFoundError} for unknown businesses. */
+  create(draft: CustomerReviewDraft): Promise<CustomerReview>;
+  /** All reviews, newest reviewedAt first. */
+  listForBusiness(businessId: string): Promise<CustomerReview[]>;
+  /**
+   * ONLY verified reviews — the single read the renderer and JSON-LD path
+   * are allowed to use (ADR-053). Newest reviewedAt first.
+   */
+  listVerifiedForBusiness(businessId: string): Promise<CustomerReview[]>;
+}
+
 /** Everything the spine persists, resolved together. */
 export interface BusinessSpineRepositories {
   businesses: BusinessRepository;
@@ -346,4 +405,5 @@ export interface BusinessSpineRepositories {
   enquiries: EnquiryRepository;
   metrics: MetricsRepository;
   media: MediaRepository;
+  reviews: ReviewRepository;
 }

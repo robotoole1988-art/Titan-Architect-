@@ -73,6 +73,11 @@ export type {
   MediaRecordDraft,
   MediaRepository,
   MediaReviewStatus,
+  ReviewSource,
+  ReviewVerification,
+  CustomerReview,
+  CustomerReviewDraft,
+  ReviewRepository,
 } from "./repository";
 export { ENQUIRY_STATUSES } from "./repository";
 

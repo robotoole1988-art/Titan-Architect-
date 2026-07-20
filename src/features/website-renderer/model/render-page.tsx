@@ -189,6 +189,7 @@ export function renderPage(
         mediaAssets={options.media}
         contact={options.contact}
         mode={mode}
+        reviews={options.reviews}
       />
     );
   });
