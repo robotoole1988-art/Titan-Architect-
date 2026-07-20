@@ -23,6 +23,31 @@ describe("parseCommand", () => {
     }
   });
 
+  it("resolves the business even with trailing context after the name", () => {
+    const outcome = parseCommand(
+      "create a task to chase Rapid Roofing about the gutter quote",
+      graph,
+    );
+    expect(outcome).toEqual({
+      kind: "command",
+      actionId: "create_next_action",
+      params: { businessId: "b-roof", text: "chase Rapid Roofing about the gutter quote" },
+    });
+  });
+
+  it("resolves a partial name with trailing context (the real-world phrasing)", () => {
+    // "Northern" uniquely identifies Northern Signs even mid-sentence.
+    const outcome = parseCommand(
+      "create a task to call Northern about the signage refresh",
+      graph,
+    );
+    expect(outcome).toEqual({
+      kind: "command",
+      actionId: "create_next_action",
+      params: { businessId: "b-signs", text: "call Northern about the signage refresh" },
+    });
+  });
+
   it("resolves a note with its text intact", () => {
     const outcome = parseCommand(
       "add a note to Rapid Roofing: prefers calls after 5pm",

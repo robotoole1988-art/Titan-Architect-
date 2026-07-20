@@ -27,17 +27,37 @@ type Resolution =
   | { kind: "ambiguous"; candidates: ReadonlyArray<{ id: string; name: string }> }
   | null;
 
+/** Words that can never BE a business name on their own. */
+const STOP_WORDS = new Set([
+  "a", "an", "and", "about", "for", "from", "in", "of", "on",
+  "our", "re", "the", "their", "to", "with",
+]);
+
+function isStopFragment(words: ReadonlyArray<string>): boolean {
+  return words.every((word) => STOP_WORDS.has(word.toLowerCase()));
+}
+
 /**
- * Find a business name inside free text by trying suffix word-windows,
- * longest first ("chase Bright Smile Dental about the quote" → tries the
- * whole tail, then shorter tails). Unique match or honesty.
+ * Find a business name inside free text by trying contiguous word-windows,
+ * longest first ("chase Bright Smile about the proposal" → tries the whole
+ * tail, then every shorter window, so trailing context can't break the
+ * match). Unique match wins; ambiguity is surfaced; stop-word-only windows
+ * never match. Unique match or honesty.
  */
 function resolveBusinessInText(graph: KnowledgeGraph, tail: string): Resolution {
   const words = tail.split(/\s+/).filter(Boolean);
-  for (let start = 0; start < words.length; start += 1) {
-    const fragment = words.slice(start).join(" ");
-    const resolved = resolveBusinessByName(graph, fragment);
-    if (resolved) return resolved;
+  for (let length = words.length; length >= 1; length -= 1) {
+    let ambiguous: Extract<Resolution, { kind: "ambiguous" }> | null = null;
+    for (let start = 0; start + length <= words.length; start += 1) {
+      const window = words.slice(start, start + length);
+      if (isStopFragment(window) || window.join(" ").length < 2) continue;
+      const resolved = resolveBusinessByName(graph, window.join(" "));
+      if (resolved?.kind === "match") return resolved;
+      if (resolved?.kind === "ambiguous" && !ambiguous) ambiguous = resolved;
+    }
+    // The longest window that resolved at all is the honest answer — even
+    // when that answer is "which one do you mean?".
+    if (ambiguous) return ambiguous;
   }
   return null;
 }
