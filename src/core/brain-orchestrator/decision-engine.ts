@@ -29,6 +29,7 @@ import { resolveFaqBank } from "@/core/website-blueprint";
 import type { BrainReasoner } from "@/core/ask-brain";
 import type { Priority } from "./common";
 import type { BrainDecision, BrainObservation, BrainTask } from "./decision";
+import type { DepartmentHealth } from "@/core/health-engine";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const MINUTE_MS = 60 * 1000;
@@ -39,7 +40,8 @@ export type RecommendationRuleId =
   | "build_blocked"
   | "measurement_move"
   | "media_review"
-  | "missing_content";
+  | "missing_content"
+  | "department_health";
 
 export type RecommendationUrgency = "now" | "today" | "this_week";
 export type RecommendationConfidence = "high" | "medium";
@@ -76,10 +78,13 @@ export interface DecisionEngineInput {
   observations: ReadonlyArray<Observation>;
   now: string;
   thresholds?: Partial<MissionControlThresholds>;
+  /** Department health (ADR-051) — amber/red bands emit recommendations. */
+  health?: ReadonlyArray<DepartmentHealth>;
 }
 
 const SEVERITY: Record<RecommendationRuleId, number> = {
   enquiry_sla: 100,
+  department_health: 80,
   stale_deal: 70,
   build_blocked: 60,
   measurement_move: 50,
@@ -100,6 +105,7 @@ const CONFIDENCE_FACTOR: Record<RecommendationConfidence, number> = {
 
 const CAPABILITY: Record<RecommendationRuleId, string> = {
   enquiry_sla: "business-companion",
+  department_health: "business-intelligence",
   stale_deal: "business-companion",
   build_blocked: "website",
   measurement_move: "business-intelligence",
@@ -479,6 +485,41 @@ function missingContentRule(graph: KnowledgeGraph): RuleDraft[] {
   });
 }
 
+/** ADR-051: amber/red department health becomes a recommendation. */
+function departmentHealthRule(
+  health: ReadonlyArray<DepartmentHealth>,
+): RuleDraft[] {
+  return health.flatMap((department) => {
+    if (!department.scoreable || department.band === "green") return [];
+    const dragging = [...department.factors]
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 2);
+    const red = department.band === "red";
+    return [
+      {
+        rule: "department_health" as const,
+        subjectId: department.department,
+        whatHappened: `${department.department} health is ${department.band} (${department.score}/100) — dragging factors: ${dragging
+          .map((factor) => `${factor.label.toLowerCase()} (${factor.detail})`)
+          .join("; ")}.`,
+        whyItMatters:
+          "Department health falling is the early warning — the point is to act before it becomes a customer-visible problem.",
+        recommendedAction: `Work the ${department.department} factors: ${dragging
+          .map((factor) => factor.label.toLowerCase())
+          .join(" and ")}.`,
+        urgency: red ? ("today" as const) : ("this_week" as const),
+        confidence:
+          department.confidence === "high" ? ("high" as const) : ("medium" as const),
+        expectedImpact: `Moves ${department.department} back toward green; the formula shows exactly which inputs shift it.`,
+        riskLevel: red ? ("high" as const) : ("medium" as const),
+        evidence: dragging.flatMap((factor) => factor.evidence.slice(0, 2)),
+        link: "/brain",
+        successCriteria: [`${department.department} health back above amber`],
+      },
+    ];
+  });
+}
+
 // ---------------------------------------------------------------------------
 // The engine.
 // ---------------------------------------------------------------------------
@@ -513,6 +554,7 @@ export function generateRecommendations(
     ...measurementMoveRule(input.graph, input.now, thresholds),
     ...mediaReviewRule(input.graph),
     ...missingContentRule(input.graph),
+    ...(input.health ? departmentHealthRule(input.health) : []),
   ];
   const suppressed = suppressedIds(input.observations);
   return drafts

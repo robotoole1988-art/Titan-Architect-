@@ -16,6 +16,7 @@ import {
   narrateRecommendation,
   type Recommendation,
 } from "@/core/brain-orchestrator";
+import { computeDepartmentHealth } from "@/core/health-engine";
 import { resolveBusinessSpine } from "@/core/business";
 import {
   buildKnowledgeGraph,
@@ -48,7 +49,9 @@ export async function loadRecommendations(): Promise<RecommendationsPayload> {
   ]);
   const now = new Date().toISOString();
   const graph = buildKnowledgeGraph(snapshot);
-  const recommendations = generateRecommendations({ graph, observations, now });
+  // Health-threshold crossings become recommendations too (ADR-051).
+  const health = computeDepartmentHealth({ graph, observations, now });
+  const recommendations = generateRecommendations({ graph, observations, now, health });
 
   // Log each FIRST issuance (the feed is the memory of what was recommended).
   const alreadyIssued = new Set(
