@@ -591,5 +591,62 @@ export function runRepositoryContract(
         expect(await enquiries.listForBusiness(business.id)).toEqual([]);
       });
     });
+
+    it("customer reviews: attestation round-trip, verified-only read, source seam (ADR-053)", async () => {
+      await withRepos(async ({ businesses, reviews }) => {
+        const business = await businesses.create(DRAFT);
+
+        const verified = await reviews.create({
+          businessId: business.id,
+          customerName: "Priya Patel",
+          rating: 5,
+          text: "Roof fixed the same day we called — brilliant.",
+          reviewedAt: "2026-07-01",
+          source: "direct",
+          verification: {
+            verifiedBy: "founder",
+            method: "email from customer on file",
+            verifiedAt: "2026-07-02T09:00:00.000Z",
+          },
+        });
+        expect(verified.id).toBeTruthy();
+        expect(verified.verification?.method).toContain("email from customer");
+
+        // An UNVERIFIED record (future ingestion buffer) — stored, never served.
+        await reviews.create({
+          businessId: business.id,
+          customerName: "Anon Later",
+          rating: 4,
+          text: "Great service.",
+          reviewedAt: "2026-07-10",
+          source: "google",
+          sourceRef: "gbp:abc123",
+        });
+
+        const all = await reviews.listForBusiness(business.id);
+        expect(all).toHaveLength(2);
+        expect(all[0].customerName).toBe("Anon Later"); // newest reviewedAt first
+        expect(all[0].sourceRef).toBe("gbp:abc123"); // the future-GBP seam
+
+        // HONESTY LAW: the render/JSON-LD read returns ONLY attested reviews.
+        const servable = await reviews.listVerifiedForBusiness(business.id);
+        expect(servable).toHaveLength(1);
+        expect(servable[0].customerName).toBe("Priya Patel");
+
+        await expect(
+          reviews.create({
+            businessId: "nope",
+            customerName: "X",
+            rating: 5,
+            text: "x",
+            reviewedAt: "2026-07-01",
+            source: "direct",
+          }),
+        ).rejects.toBeInstanceOf(BusinessNotFoundError);
+
+        await businesses.remove(business.id);
+        expect(await reviews.listForBusiness(business.id)).toEqual([]);
+      });
+    });
   });
 }

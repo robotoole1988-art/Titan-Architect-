@@ -49,6 +49,10 @@ import {
   type PublicationRepository,
   type PublicationStatus,
   type SaveArtifactInput,
+  type CustomerReview,
+  type CustomerReviewDraft,
+  type ReviewRepository,
+  type ReviewSource,
 } from "./repository";
 
 export interface SupabaseSpineConfig {
@@ -1041,6 +1045,109 @@ class SupabaseMetricsRepository implements MetricsRepository {
   }
 }
 
+interface ReviewRow {
+  id: string;
+  business_id: string;
+  customer_name: string;
+  rating: number;
+  text: string;
+  reviewed_at: string;
+  source: ReviewSource;
+  source_ref: string | null;
+  verified_by: string | null;
+  verification_method: string | null;
+  verified_at: string | null;
+  created_at: string;
+}
+
+function toReview(row: ReviewRow): CustomerReview {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    customerName: row.customer_name,
+    rating: row.rating,
+    text: row.text,
+    reviewedAt: row.reviewed_at,
+    source: row.source,
+    ...(row.source_ref !== null ? { sourceRef: row.source_ref } : {}),
+    // The attestation is all-or-nothing: a row is verified only when the
+    // full who/how/when trio is present (ADR-053).
+    ...(row.verified_by !== null &&
+    row.verification_method !== null &&
+    row.verified_at !== null
+      ? {
+          verification: {
+            verifiedBy: row.verified_by,
+            method: row.verification_method,
+            verifiedAt: row.verified_at,
+          },
+        }
+      : {}),
+    createdAt: row.created_at,
+  };
+}
+
+class SupabaseReviewRepository implements ReviewRepository {
+  constructor(private readonly client: SupabaseClient) {}
+
+  async create(draft: CustomerReviewDraft): Promise<CustomerReview> {
+    const owner = await this.client
+      .from("businesses")
+      .select("id")
+      .eq("id", draft.businessId)
+      .maybeSingle();
+    if (owner.error) throw new Error(`Supabase error: ${owner.error.message}`);
+    if (!owner.data) throw new BusinessNotFoundError(draft.businessId);
+
+    const inserted = must(
+      await this.client
+        .from("business_reviews")
+        .insert({
+          id: crypto.randomUUID(),
+          business_id: draft.businessId,
+          customer_name: draft.customerName,
+          rating: draft.rating,
+          text: draft.text,
+          reviewed_at: draft.reviewedAt,
+          source: draft.source,
+          source_ref: draft.sourceRef ?? null,
+          verified_by: draft.verification?.verifiedBy ?? null,
+          verification_method: draft.verification?.method ?? null,
+          verified_at: draft.verification?.verifiedAt ?? null,
+          created_at: nowIso(),
+        })
+        .select()
+        .single<ReviewRow>(),
+    );
+    return toReview(inserted);
+  }
+
+  async listForBusiness(businessId: string): Promise<CustomerReview[]> {
+    const { data, error } = await this.client
+      .from("business_reviews")
+      .select()
+      .eq("business_id", businessId)
+      .order("reviewed_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return (data as ReviewRow[]).map(toReview);
+  }
+
+  async listVerifiedForBusiness(businessId: string): Promise<CustomerReview[]> {
+    const { data, error } = await this.client
+      .from("business_reviews")
+      .select()
+      .eq("business_id", businessId)
+      .not("verified_at", "is", null)
+      .not("verified_by", "is", null)
+      .not("verification_method", "is", null)
+      .order("reviewed_at", { ascending: false })
+      .order("id", { ascending: false });
+    if (error) throw new Error(`Supabase error: ${error.message}`);
+    return (data as ReviewRow[]).map(toReview);
+  }
+}
+
 /** Build the durable spine from server-side configuration. */
 export function createSupabaseBusinessSpine(
   config: SupabaseSpineConfig,
@@ -1057,5 +1164,6 @@ export function createSupabaseBusinessSpine(
     enquiries: new SupabaseEnquiryRepository(client),
     metrics: new SupabaseMetricsRepository(client),
     media: new SupabaseMediaRepository(client),
+    reviews: new SupabaseReviewRepository(client),
   };
 }

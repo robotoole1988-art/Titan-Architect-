@@ -52,6 +52,7 @@ describe("buildKnowledgeGraph", () => {
     expect(edgesOf("measured")).toHaveLength(3);
     expect(edgesOf("has_media")).toHaveLength(1);
     expect(edgesOf("logged")).toHaveLength(3);
+    expect(edgesOf("has_review")).toHaveLength(1); // ADR-053
     expect(edgesOf("in_market")).toHaveLength(1);
   });
 
@@ -103,6 +104,7 @@ describe("buildKnowledgeGraph", () => {
       metrics: [],
       media: [],
       activity: [],
+      reviews: [],
       markets: [],
     });
     expect(Object.keys(empty.nodes)).toHaveLength(0);

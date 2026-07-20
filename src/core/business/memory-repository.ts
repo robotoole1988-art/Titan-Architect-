@@ -41,6 +41,9 @@ import {
   type Publication,
   type PublicationRepository,
   type SaveArtifactInput,
+  type CustomerReview,
+  type CustomerReviewDraft,
+  type ReviewRepository,
 } from "./repository";
 
 interface MemoryState {
@@ -56,6 +59,7 @@ interface MemoryState {
   nextSequence: number;
   metrics: Map<string, SiteMetricRow>;
   media: MediaRecord[];
+  reviews: CustomerReview[];
 }
 
 function nowIso(): string {
@@ -155,6 +159,9 @@ class MemoryBusinessRepository implements BusinessRepository {
     }
     this.state.media = this.state.media.filter(
       (record) => record.businessId !== id,
+    );
+    this.state.reviews = this.state.reviews.filter(
+      (review) => review.businessId !== id,
     );
     for (const [hostname, owner] of this.state.domains) {
       if (owner === id) this.state.domains.delete(hostname);
@@ -527,6 +534,36 @@ class MemoryArtifactRepository implements ArtifactRepository {
   }
 }
 
+class MemoryReviewRepository implements ReviewRepository {
+  constructor(private readonly state: MemoryState) {}
+
+  async create(draft: CustomerReviewDraft): Promise<CustomerReview> {
+    if (!this.state.businesses.has(draft.businessId)) {
+      throw new BusinessNotFoundError(draft.businessId);
+    }
+    const review: CustomerReview = {
+      ...structuredClone(draft),
+      id: crypto.randomUUID(),
+      createdAt: nowIso(),
+    };
+    this.state.reviews.push(review);
+    return structuredClone(review);
+  }
+
+  async listForBusiness(businessId: string): Promise<CustomerReview[]> {
+    return this.state.reviews
+      .filter((review) => review.businessId === businessId)
+      .sort((a, b) => b.reviewedAt.localeCompare(a.reviewedAt))
+      .map((review) => structuredClone(review));
+  }
+
+  async listVerifiedForBusiness(businessId: string): Promise<CustomerReview[]> {
+    return (await this.listForBusiness(businessId)).filter(
+      (review) => review.verification !== undefined,
+    );
+  }
+}
+
 /** A fresh, isolated in-memory spine (each call is its own universe). */
 export function createMemoryBusinessSpine(): BusinessSpineRepositories {
   const state: MemoryState = {
@@ -539,6 +576,7 @@ export function createMemoryBusinessSpine(): BusinessSpineRepositories {
     enquiries: [],
     metrics: new Map(),
     media: [],
+    reviews: [],
     sequence: new Map(),
     nextSequence: 1,
   };
@@ -551,5 +589,6 @@ export function createMemoryBusinessSpine(): BusinessSpineRepositories {
     enquiries: new MemoryEnquiryRepository(state),
     metrics: new MemoryMetricsRepository(state),
     media: new MemoryMediaRepository(state),
+    reviews: new MemoryReviewRepository(state),
   };
 }

@@ -181,6 +181,7 @@ export function fixtureSnapshot(): MemorySnapshot {
     ],
     media: [mediaInReview],
     activity: [],
+    reviews: [],
     markets: [],
   };
 }
@@ -200,6 +201,7 @@ export function emptyGraph(): KnowledgeGraph {
     metrics: [],
     media: [],
     activity: [],
+    reviews: [],
     markets: [],
   });
 }

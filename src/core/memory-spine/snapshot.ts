@@ -44,7 +44,7 @@ export async function loadMemorySnapshot(
 
   const perBusiness = await Promise.all(
     businesses.map(async (business) => {
-      const [enquiries, metrics, build, publications, deal, campaign, media, activity] =
+      const [enquiries, metrics, build, publications, deal, campaign, media, activity, reviews] =
         await Promise.all([
           repos.enquiries.listForBusiness(business.id),
           repos.metrics.listForBusiness(business.id),
@@ -54,6 +54,7 @@ export async function loadMemorySnapshot(
           repos.artifacts.latest(business.id, "campaign_plan"),
           repos.media.listForBusiness(business.id),
           repos.activity.list(business.id),
+          repos.reviews.listForBusiness(business.id),
         ]);
 
       let market: MarketContext | null = null;
@@ -78,7 +79,7 @@ export async function loadMemorySnapshot(
         }
       }
 
-      return { enquiries, metrics, build, publications, deal, campaign, media, activity, market };
+      return { enquiries, metrics, build, publications, deal, campaign, media, activity, reviews, market };
     }),
   );
 
@@ -98,6 +99,7 @@ export async function loadMemorySnapshot(
     metrics: perBusiness.flatMap((detail) => detail.metrics),
     media: perBusiness.flatMap((detail) => detail.media),
     activity: perBusiness.flatMap((detail) => detail.activity),
+    reviews: perBusiness.flatMap((detail) => detail.reviews),
     markets: perBusiness
       .map((detail) => detail.market)
       .filter((market): market is MarketContext => market !== null),

@@ -220,6 +220,23 @@ export const activityEntries: ActivityEntry[] = [
   },
 ];
 
+/** One VERIFIED review (ADR-053) — attestation on file. */
+export const summitReview = {
+  id: "rev-1",
+  businessId: "b-summit",
+  customerName: "Priya Patel",
+  rating: 5,
+  text: "Roof fixed the same day we called — brilliant.",
+  reviewedAt: "2026-07-01",
+  source: "direct" as const,
+  verification: {
+    verifiedBy: "founder",
+    method: "email from customer on file",
+    verifiedAt: "2026-07-02T09:00:00.000Z",
+  },
+  createdAt: "2026-07-02T09:00:00.000Z",
+};
+
 export function fixtureSnapshot(): MemorySnapshot {
   return {
     businesses: [summit, kerbside, bright],
@@ -231,6 +248,7 @@ export function fixtureSnapshot(): MemorySnapshot {
     metrics: metricsRows,
     media: [summitMedia],
     activity: activityEntries,
+    reviews: [summitReview],
     markets: [
       {
         businessId: "b-summit",

@@ -12,6 +12,7 @@ import type {
   ArtifactRecord,
   Build,
   Business,
+  CustomerReview,
   Enquiry,
   MediaRecord,
   Publication,
@@ -30,6 +31,7 @@ export type NodeKind =
   | "metric-day"
   | "media-asset"
   | "activity"
+  | "review"
   | "market";
 
 /** A stable reference to one node: kind + source-record id. */
@@ -70,6 +72,7 @@ export type EdgeKind =
   | "measured"
   | "has_media"
   | "logged"
+  | "has_review"
   | "in_market";
 
 export interface KnowledgeEdge {
@@ -117,6 +120,8 @@ export interface MemorySnapshot {
   metrics: ReadonlyArray<SiteMetricRow>;
   media: ReadonlyArray<MediaRecord>;
   activity: ReadonlyArray<ActivityEntry>;
+  /** Customer reviews (ADR-053) — verified AND unverified; consumers gate. */
+  reviews: ReadonlyArray<CustomerReview>;
   markets: ReadonlyArray<MarketContext>;
 }
 
