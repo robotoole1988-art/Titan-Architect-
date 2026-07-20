@@ -18,7 +18,7 @@ import { resolveTradePitch } from "@/core/pitch-intelligence";
 import { confidenceLabel } from "@/core/market-intelligence";
 import type { Deal } from "@/core/pricing";
 import { EstimateCard } from "@/features/market";
-import { addBusinessNote, moveBusinessStage } from "../api/actions";
+import { addBusinessNote, addVerifiedReview, moveBusinessStage } from "../api/actions";
 import { ActivityLog, CrmChrome, StageBadge } from "./crm-atoms";
 import { SellingTools } from "./selling-tools";
 
@@ -141,10 +141,11 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
   const spine = await resolveBusinessSpine();
   const business = await spine.businesses.get(businessId);
   if (!business) notFound();
-  const [entries, marketProvider, dealArtifact] = await Promise.all([
+  const [entries, marketProvider, dealArtifact, reviews] = await Promise.all([
     spine.activity.list(businessId),
     resolveMarketDataProvider(),
     spine.artifacts.latest<Deal>(businessId, "deal"),
+    spine.reviews.listForBusiness(businessId),
   ]);
   // The founder pitches with this lead's own economics on screen (ADR-025);
   // taxonomy ids resolve exactly, legacy free text falls back (ADR-026).
@@ -292,6 +293,124 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
               <IntakeDatum label="Urgency" value={business.urgency} />
               <IntakeDatum label="Current site" value={business.currentWebsiteUrl} />
             </div>
+          </section>
+
+          {/* Verified reviews (ADR-053) — real reviews with attestation. */}
+          <section
+            aria-label="Verified reviews"
+            className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-card/40 p-5"
+          >
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-semibold">Verified reviews</h2>
+              <span className="text-[11px] text-muted-foreground">
+                no fake reviews, ever — every entry carries who verified it and how
+              </span>
+            </div>
+            <form
+              action={async (formData: FormData) => {
+                "use server";
+                await addVerifiedReview(business.id, {
+                  customerName: String(formData.get("customerName") ?? ""),
+                  rating: Number.parseInt(String(formData.get("rating") ?? ""), 10),
+                  text: String(formData.get("text") ?? ""),
+                  reviewedAt: String(formData.get("reviewedAt") ?? ""),
+                  source: String(formData.get("source") ?? "direct") as
+                    | "direct"
+                    | "google"
+                    | "other",
+                  verificationMethod: String(formData.get("verificationMethod") ?? ""),
+                });
+              }}
+              className="flex flex-col gap-2.5"
+            >
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <input
+                  name="customerName"
+                  required
+                  placeholder="Customer name"
+                  aria-label="Customer name"
+                  className="h-9 rounded-lg border border-border/60 bg-background px-2 text-sm"
+                />
+                <select
+                  name="rating"
+                  required
+                  aria-label="Rating"
+                  defaultValue="5"
+                  className="h-9 rounded-lg border border-border/60 bg-background px-2 text-sm"
+                >
+                  {[5, 4, 3, 2, 1].map((rating) => (
+                    <option key={rating} value={rating}>
+                      {rating} star{rating === 1 ? "" : "s"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Textarea
+                name="text"
+                required
+                rows={2}
+                placeholder="What the customer actually said"
+                aria-label="Review text"
+              />
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <input
+                  name="reviewedAt"
+                  type="date"
+                  required
+                  aria-label="Date of review"
+                  className="h-9 rounded-lg border border-border/60 bg-background px-2 text-sm"
+                />
+                <select
+                  name="source"
+                  aria-label="Source"
+                  defaultValue="direct"
+                  className="h-9 rounded-lg border border-border/60 bg-background px-2 text-sm"
+                >
+                  <option value="direct">Direct from customer</option>
+                  <option value="google">Google review</option>
+                  <option value="other">Other (say how in verification)</option>
+                </select>
+              </div>
+              <input
+                name="verificationMethod"
+                required
+                placeholder='How verified? e.g. "email from customer on file"'
+                aria-label="Verification method"
+                className="h-9 rounded-lg border border-border/60 bg-background px-2 text-sm"
+              />
+              <div className="flex justify-end">
+                <Button size="sm" type="submit">
+                  Record verified review
+                </Button>
+              </div>
+            </form>
+            {reviews.length > 0 && (
+              <ul className="flex flex-col gap-2">
+                {reviews.map((review) => (
+                  <li
+                    key={review.id}
+                    className="rounded-xl border border-border/50 bg-background/40 px-3 py-2.5"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium">{review.customerName}</span>
+                      <span className="text-xs tabular-nums text-amber-300">
+                        {"★".repeat(review.rating)}
+                        <span className="text-muted-foreground/50">
+                          {"★".repeat(5 - review.rating)}
+                        </span>
+                      </span>
+                    </div>
+                    <p className="mt-1 text-xs text-foreground/85">{review.text}</p>
+                    <p className="mt-1.5 text-[11px] text-muted-foreground">
+                      {review.reviewedAt.slice(0, 10)} · {review.source}
+                      {review.verification
+                        ? ` · verified by ${review.verification.verifiedBy}: ${review.verification.method}`
+                        : " · NOT VERIFIED — will not render or reach search engines"}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
           </section>
 
           {/* Activity */}

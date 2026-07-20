@@ -19,6 +19,7 @@ import {
   createSupabaseStorage,
   deriveMediaPlan,
   generateMissingMedia,
+  ingestCustomerImage,
   resolveMediaProvider,
   type VideoModelKey,
 } from "@/core/media";
@@ -102,6 +103,70 @@ export async function addBusinessNote(
   const spine = await resolveBusinessSpine();
   await spine.activity.log({ businessId, kind: "note", message: trimmed });
   revalidateCrm(businessId);
+}
+
+export interface AddReviewState {
+  ok: boolean;
+  message: string;
+}
+
+/**
+ * Record a real customer review with its verification attestation
+ * (ADR-053). HONESTY LAW: the founder flow REQUIRES the attestation — who
+ * verified it and how — before the review can ever render or reach JSON-LD.
+ */
+export async function addVerifiedReview(
+  businessId: string,
+  input: {
+    customerName: string;
+    rating: number;
+    text: string;
+    reviewedAt: string;
+    source: "direct" | "google" | "other";
+    verificationMethod: string;
+  },
+): Promise<AddReviewState> {
+  const customerName = input.customerName.trim();
+  const text = input.text.trim();
+  const method = input.verificationMethod.trim();
+  const reviewedAt = input.reviewedAt.trim().slice(0, 10);
+  const problems: string[] = [];
+  if (!customerName) problems.push("Customer name is required.");
+  if (!text) problems.push("The review text is required.");
+  if (!Number.isInteger(input.rating) || input.rating < 1 || input.rating > 5) {
+    problems.push("Rating must be a whole number from 1 to 5.");
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(reviewedAt)) {
+    problems.push("The review date is required (YYYY-MM-DD).");
+  }
+  if (!method) {
+    problems.push(
+      'Verification is required — say how you verified it (e.g. "email from customer on file").',
+    );
+  }
+  if (problems.length > 0) return { ok: false, message: problems.join(" ") };
+
+  const spine = await resolveBusinessSpine();
+  await spine.reviews.create({
+    businessId,
+    customerName,
+    rating: input.rating,
+    text,
+    reviewedAt,
+    source: input.source,
+    verification: {
+      verifiedBy: "founder",
+      method,
+      verifiedAt: new Date().toISOString(),
+    },
+  });
+  await spine.activity.log({
+    businessId,
+    kind: "note",
+    message: `Verified review recorded: ${input.rating}★ from ${customerName} (${method})`,
+  });
+  revalidateCrm(businessId);
+  return { ok: true, message: `Review from ${customerName} recorded and verified.` };
 }
 
 /**
@@ -334,6 +399,53 @@ function mediaStorage() {
         serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,
       })
     : createLocalDiskStorage();
+}
+
+export interface UploadImageState {
+  ok: boolean;
+  message: string;
+}
+
+/**
+ * Upload one of the business's OWN photographs (ADR-053): validated,
+ * variant-derived (dimensions + LQIP), stored beside generated media, and
+ * born in the founder review gate like everything else. Founder/CRM only —
+ * there is no public upload surface.
+ */
+export async function uploadCustomerImage(
+  businessId: string,
+  formData: FormData,
+): Promise<UploadImageState> {
+  const file = formData.get("photo");
+  const slotRef = String(formData.get("slotRef") ?? "").trim();
+  const note = String(formData.get("note") ?? "").trim();
+  if (!(file instanceof File) || file.size === 0) {
+    return { ok: false, message: "Choose a photo to upload." };
+  }
+  const spine = await resolveBusinessSpine();
+  const business = await spine.businesses.get(businessId);
+  if (!business) throw new BusinessNotFoundError(businessId);
+
+  const result = await ingestCustomerImage(spine, mediaStorage(), business, {
+    slotRef,
+    bytes: new Uint8Array(await file.arrayBuffer()),
+    // Prefer the MIME type; fall back to the filename extension.
+    format: file.type || (file.name.split(".").pop() ?? ""),
+    ...(note ? { note } : {}),
+  });
+  if (!result.ok) return { ok: false, message: result.problems.join(" ") };
+
+  await spine.activity.log({
+    businessId,
+    kind: "note",
+    message: `Customer photo uploaded for slot ${slotRef} — awaiting your review in the media gate`,
+    meta: { mediaId: result.record.id, slotRef },
+  });
+  revalidateCrm(businessId);
+  return {
+    ok: true,
+    message: `Photo saved for ${slotRef} — approve it in the gate below before it can serve.`,
+  };
 }
 
 export async function commissionHeroFilm(

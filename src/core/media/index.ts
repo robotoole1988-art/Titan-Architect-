@@ -47,3 +47,11 @@ export {
 } from "./generate";
 export type { GenerateMediaSummary, MediaStorage } from "./generate";
 export { createLqip } from "./lqip";
+export {
+  CUSTOMER_UPLOAD_PROVIDER,
+  MAX_UPLOAD_BYTES,
+  ingestCustomerImage,
+  normaliseImageFormat,
+  type CustomerImageInput,
+  type IngestResult,
+} from "./ingest";

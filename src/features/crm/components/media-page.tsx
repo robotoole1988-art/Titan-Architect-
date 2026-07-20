@@ -21,6 +21,7 @@ import {
   commissionMorphFilm,
   generateBusinessMedia,
   setMediaStatus,
+  uploadCustomerImage,
 } from "../api/actions";
 
 /**
@@ -331,6 +332,65 @@ export async function MediaPage({ businessId }: { businessId: string }) {
         <p className="rounded-2xl border border-amber-400/30 bg-amber-400/10 px-3 py-2 text-xs text-amber-300">
           Set FAL_KEY (native-4K + O1 morph) or REPLICATE_API_TOKEN (standard film) in .env.local to commission film.
         </p>
+      )}
+
+      {/* Customer imagery (ADR-053): the business's OWN photos, same gate. */}
+      {plan.length > 0 && (
+        <form
+          action={async (formData: FormData) => {
+            "use server";
+            await uploadCustomerImage(businessId, formData);
+          }}
+          className="flex flex-col gap-3 rounded-2xl border border-emerald-400/30 bg-emerald-400/[0.04] p-4"
+          data-upload-customer-photo
+        >
+          <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-emerald-300/80">
+            <Images className="size-3.5" /> Upload the business&apos;s own photo (ADR-053)
+          </span>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+              Photo (webp / jpeg / png, ≤8MB)
+              <input
+                name="photo"
+                type="file"
+                required
+                accept="image/webp,image/jpeg,image/png"
+                className="rounded-lg border border-border/60 bg-transparent px-2.5 py-1.5 text-sm outline-none file:mr-2 file:rounded file:border-0 file:bg-muted/40 file:px-2 file:py-1 file:text-xs"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-[11px] text-muted-foreground">
+              Slot the photo dresses
+              <select
+                name="slotRef"
+                required
+                className="rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-sm outline-none"
+              >
+                {plan
+                  .filter((item) => item.modality === "image")
+                  .map((item) => (
+                    <option key={item.slotRef} value={item.slotRef}>
+                      {item.slotRef}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          </div>
+          <input
+            name="note"
+            placeholder="What the photo shows (optional — stored as the brief)"
+            className="rounded-lg border border-border/60 bg-transparent px-2.5 py-1.5 text-sm outline-none"
+          />
+          <div className="flex items-center gap-3">
+            <Button type="submit" variant="outline" className="gap-2">
+              <Images className="size-4" />
+              Upload to the review gate
+            </Button>
+            <span className="text-[11px] text-muted-foreground">
+              Real photos beat generated ones: once approved, a customer photo
+              serves ahead of the AI asset in the same slot.
+            </span>
+          </div>
+        </form>
       )}
 
       {records.length === 0 ? (
