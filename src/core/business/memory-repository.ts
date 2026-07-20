@@ -6,6 +6,7 @@
  * server restart. The Supabase adapter is the durable store.
  */
 
+import { isInternalBusinessName } from "./model";
 import type { Business, BusinessDraft, LifecycleStage } from "./model";
 import {
   BUILD_ITEM_KINDS,
@@ -68,6 +69,11 @@ class MemoryBusinessRepository implements BusinessRepository {
     const createdAt = nowIso();
     const business: Business = {
       ...draft,
+      // The creation guard (ADR-049): self-declared internal names are
+      // flagged automatically and never pollute Brain surfaces.
+      ...(draft.internal ?? isInternalBusinessName(draft.name)
+        ? { internal: true }
+        : {}),
       id: crypto.randomUUID(),
       stage: "lead",
       stageHistory: [{ stage: "lead", enteredAt: createdAt }],

@@ -9,6 +9,7 @@
 
 import "server-only";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { isInternalBusinessName } from "./model";
 import type { Business, BusinessDraft, LifecycleStage, StageTransition } from "./model";
 import {
   BUILD_ITEM_KINDS,
@@ -73,6 +74,7 @@ interface BusinessRow {
   current_website_url: string | null;
   stage: LifecycleStage;
   stage_history: StageTransition[];
+  internal: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -111,6 +113,7 @@ function toBusiness(row: BusinessRow): Business {
     ...(row.goal !== null ? { goal: row.goal } : {}),
     ...(row.budget !== null ? { budget: row.budget } : {}),
     ...(row.urgency !== null ? { urgency: row.urgency } : {}),
+    ...(row.internal ? { internal: true } : {}),
     ...(row.current_website_url !== null
       ? { currentWebsiteUrl: row.current_website_url }
       : {}),
@@ -161,6 +164,8 @@ class SupabaseBusinessRepository implements BusinessRepository {
       budget: draft.budget ?? null,
       urgency: draft.urgency ?? null,
       current_website_url: draft.currentWebsiteUrl ?? null,
+      // The creation guard (ADR-049).
+      internal: draft.internal ?? isInternalBusinessName(draft.name),
       stage: "lead" as const,
       stage_history: [{ stage: "lead", enteredAt: createdAt }],
       created_at: createdAt,

@@ -20,6 +20,12 @@ import type { MarketContext, MemorySnapshot } from "./model";
 
 export interface LoadSnapshotOptions {
   /**
+   * Include internal/test businesses (ADR-049). Default FALSE: Brain
+   * surfaces (Mission Control, Ask the Brain) never see them; the CRM,
+   * which reads repositories directly, keeps them findable and recoverable.
+   */
+  includeInternal?: boolean;
+  /**
    * When supplied, businesses with a canonical tradeId gain market context
    * (business —in_market→ market), attributed to the provider by name.
    * Absent → no market nodes. Never fabricated for unclassified trades.
@@ -31,7 +37,10 @@ export async function loadMemorySnapshot(
   repos: BusinessSpineRepositories,
   options: LoadSnapshotOptions = {},
 ): Promise<MemorySnapshot> {
-  const businesses = await repos.businesses.list();
+  const all = await repos.businesses.list();
+  const businesses = options.includeInternal
+    ? all
+    : all.filter((business) => !business.internal);
 
   const perBusiness = await Promise.all(
     businesses.map(async (business) => {

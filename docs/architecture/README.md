@@ -76,6 +76,7 @@ ADR that supersedes the old one and update the old one's status.
 | [046](./adr-046-memory-spine.md) | Memory Spine v1 — derived knowledge graph + learning feed; the Knowledge Kernel (ADR-010) implemented | Accepted |
 | [047](./adr-047-faq-content-bank.md) | Trade FAQ content bank — crafted, researched Q&A lights up the FAQ + FAQPage machinery | Accepted |
 | [048](./adr-048-ask-the-brain.md) | Ask the Brain v1 — deterministic-first universal search over the memory spine, LLM narration behind a seam | Accepted |
+| [049](./adr-049-internal-business-flag.md) | Internal-business flag — test data flagged at creation, excluded from Brain surfaces, recoverable | Accepted |
 
 ### Writing a new ADR
 

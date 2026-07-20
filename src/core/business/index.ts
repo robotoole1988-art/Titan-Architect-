@@ -14,6 +14,7 @@ export {
   LOST_STAGES,
   ALL_LIFECYCLE_STATES,
   stageIndex,
+  isInternalBusinessName,
   isStageAtLeast,
   isLostStage,
   stageLabel,
