@@ -78,6 +78,7 @@ ADR that supersedes the old one and update the old one's status.
 | [048](./adr-048-ask-the-brain.md) | Ask the Brain v1 — deterministic-first universal search over the memory spine, LLM narration behind a seam | Accepted |
 | [049](./adr-049-internal-business-flag.md) | Internal-business flag — test data flagged at creation, excluded from Brain surfaces, recoverable | Accepted |
 | [050](./adr-050-decision-engine.md) | Decision Engine v1 — ADR-015 implemented: ranked, evidence-backed recommendations with reasons | Accepted |
+| [051](./adr-051-health-engine.md) | Business Health Engine v1 — deterministic department health with inspectable formulas and honest gaps | Accepted |
 
 ### Writing a new ADR
 
