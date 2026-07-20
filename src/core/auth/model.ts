@@ -46,5 +46,9 @@ export function isProtectedAppPath(pathname: string): boolean {
   if (pathname.startsWith("/sites/")) return false;
   if (pathname.startsWith("/api/")) return false;
   if (pathname.startsWith("/_next/") || pathname === "/favicon.ico") return false;
+  // Public static assets the SITES render (audit fault F1: gating these
+  // 307'd the renderer's poster fallbacks into broken-image glyphs).
+  if (pathname.startsWith("/renderer/")) return false;
+  if (pathname.startsWith("/generated-media/")) return false;
   return true;
 }

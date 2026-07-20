@@ -61,6 +61,11 @@ describe("isProtectedAppPath", () => {
       "/api/keepalive",
       "/_next/static/x.js",
       "/favicon.ico",
+      // Static assets the SITES render (audit F1: gating these broke the
+      // renderer's poster fallbacks with a 307-to-login broken image).
+      "/renderer/golden-poster.png",
+      "/renderer/storm-poster.png",
+      "/generated-media/some-business/hero.webp",
     ]) {
       expect(isProtectedAppPath(path), path).toBe(false);
     }
