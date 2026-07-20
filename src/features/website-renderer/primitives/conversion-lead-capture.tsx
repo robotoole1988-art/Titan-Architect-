@@ -33,6 +33,34 @@ function extractQuote(text: string | undefined): string | undefined {
   return text?.match(/[“"]([^”"]+)[”"]/)?.[1];
 }
 
+/**
+ * Audit fault F2: the submit button used to echo the page's primary CTA
+ * ("Call now") — misleading on a form that SENDS AN ENQUIRY. The label is
+ * now crafted per archetype (keyed by the blueprint's themeRef), with a
+ * `form-cta-label` content slot as the override seam.
+ */
+const SUBMIT_LABELS: Record<string, string> = {
+  "titan-emergency": "Request urgent callback",
+  "titan-premium": "Request my quote",
+  "titan-project": "Request my quote",
+  "titan-care": "Request an appointment",
+  "titan-technical": "Request a callback",
+};
+const SUBMIT_LABEL_DEFAULT = "Request a callback";
+
+/** Post-submit copy — premium, and honest: no invented SLA figures. */
+const SENT_COPY: Record<string, string> = {
+  "titan-emergency":
+    "Request received — a rapid callback is on its way. Urgent jobs come first.",
+  "titan-care":
+    "Request received — we'll be in touch shortly to arrange your appointment.",
+  "titan-premium":
+    "Request received — expect a callback shortly to talk through your quote.",
+  "titan-project":
+    "Request received — expect a callback shortly to talk through your quote.",
+};
+const SENT_COPY_DEFAULT = "Request received — expect a call back shortly.";
+
 const FIELD_CLASS =
   "w-full rounded-xl border bg-transparent px-4 py-3.5 text-base outline-none transition-colors focus-visible:border-[var(--wr-accent)]";
 
@@ -41,6 +69,7 @@ export function ConversionLeadCapture({
   slots,
   serving,
   mode,
+  blueprint,
 }: PrimitiveSectionProps) {
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">(
     "idle",
@@ -49,6 +78,10 @@ export function ConversionLeadCapture({
   const [started, setStarted] = useState(false);
   const objection = extractQuote(slots.objective);
   const ctaLabel = slots["cta-label"] ?? "";
+  const themeRef = blueprint?.designSystem?.themeRef ?? "";
+  const submitLabel =
+    slots["form-cta-label"] ?? SUBMIT_LABELS[themeRef] ?? SUBMIT_LABEL_DEFAULT;
+  const sentCopy = SENT_COPY[themeRef] ?? SENT_COPY_DEFAULT;
 
   // Measurement (ADR-030): form_start once on first interaction, published only.
   function onFormInteract() {
@@ -196,7 +229,7 @@ export function ConversionLeadCapture({
                   }}
                   data-enquiry-sent
                 >
-                  Request received — expect a call back shortly.
+                  {sentCopy}
                 </p>
               ) : (
                 <button
@@ -210,7 +243,7 @@ export function ConversionLeadCapture({
                     outlineColor: "var(--wr-accent)",
                   }}
                 >
-                  {status === "sending" ? "Sending…" : ctaLabel}
+                  {status === "sending" ? "Sending…" : submitLabel}
                 </button>
               )}
               {serving && status === "failed" && (

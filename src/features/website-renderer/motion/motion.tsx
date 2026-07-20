@@ -17,20 +17,54 @@ import {
   useTransform,
 } from "framer-motion";
 import {
+  useEffect,
   useRef,
   useState,
   type CSSProperties,
   type PointerEvent,
   type ReactNode,
+  type RefObject,
 } from "react";
 
 const EASE_OUT = [0.16, 1, 0.3, 1] as const;
 
-/** Rise-and-settle scroll reveal. The workhorse: calm, decisive, once. */
+/**
+ * Reveal guard (audit fault F3): a cheap interval that force-reveals an
+ * element ONLY once it is actually in the viewport and the intersection
+ * observer has not fired — the same rise animation runs, just on a backup
+ * trigger. Never pins elements ahead of time (late sections keep their
+ * full reveal), disposes itself the moment the element is revealed.
+ */
+function useRevealGuard(
+  ref: RefObject<HTMLDivElement | null>,
+  revealed: boolean,
+  reveal: () => void,
+): void {
+  useEffect(() => {
+    if (revealed) return;
+    const id = window.setInterval(() => {
+      const el = ref.current;
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight && rect.bottom > 0) reveal();
+    }, 900);
+    return () => window.clearInterval(id);
+  }, [ref, revealed, reveal]);
+}
+
+/**
+ * Rise-and-settle scroll reveal. The workhorse: calm, decisive, once.
+ *
+ * Audit fault F3 tuning: the viewport margin LOOKS AHEAD (positive bottom
+ * margin) so sections start revealing ~a fifth of a screen before they
+ * enter, travel is short, and a CSS guard in the page root (`data-reveal`,
+ * see render-page ROOT_CSS) forces full visibility if the intersection
+ * observer ever lags — content can never be stuck invisible.
+ */
 export function Reveal({
   children,
   delay = 0,
-  y = 28,
+  y = 18,
   duration = 0.7,
   className,
   style,
@@ -43,13 +77,20 @@ export function Reveal({
   className?: string;
   style?: CSSProperties;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [revealed, setRevealed] = useState(false);
+  useRevealGuard(ref, revealed, () => setRevealed(true));
   return (
     <motion.div
+      ref={ref}
       className={className}
       style={style}
+      data-reveal
       initial={{ opacity: 0, y }}
+      animate={revealed ? { opacity: 1, y: 0 } : undefined}
       whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
+      onViewportEnter={() => setRevealed(true)}
+      viewport={{ once: true, margin: "0px 0px 20% 0px" }}
       transition={{ duration, delay, ease: EASE_OUT }}
     >
       {children}
@@ -67,12 +108,18 @@ export function Stagger({
   className?: string;
   gap?: number;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [revealed, setRevealed] = useState(false);
+  useRevealGuard(ref, revealed, () => setRevealed(true));
   return (
     <motion.div
+      ref={ref}
       className={className}
       initial="hidden"
+      animate={revealed ? "visible" : undefined}
       whileInView="visible"
-      viewport={{ once: true, margin: "-60px" }}
+      onViewportEnter={() => setRevealed(true)}
+      viewport={{ once: true, margin: "0px 0px 15% 0px" }}
       variants={{ visible: { transition: { staggerChildren: gap } }, hidden: {} }}
     >
       {children}
@@ -94,8 +141,9 @@ export function StaggerItem({
     <motion.div
       className={className}
       style={style}
+      data-reveal
       variants={{
-        hidden: { opacity: 0, y: 24 },
+        hidden: { opacity: 0, y: 16 },
         visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT } },
       }}
     >
