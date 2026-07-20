@@ -77,6 +77,7 @@ ADR that supersedes the old one and update the old one's status.
 | [047](./adr-047-faq-content-bank.md) | Trade FAQ content bank — crafted, researched Q&A lights up the FAQ + FAQPage machinery | Accepted |
 | [048](./adr-048-ask-the-brain.md) | Ask the Brain v1 — deterministic-first universal search over the memory spine, LLM narration behind a seam | Accepted |
 | [049](./adr-049-internal-business-flag.md) | Internal-business flag — test data flagged at creation, excluded from Brain surfaces, recoverable | Accepted |
+| [050](./adr-050-decision-engine.md) | Decision Engine v1 — ADR-015 implemented: ranked, evidence-backed recommendations with reasons | Accepted |
 
 ### Writing a new ADR
 

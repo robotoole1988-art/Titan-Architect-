@@ -6,13 +6,11 @@ import {
   ArrowUpRight,
   Boxes,
   BrainCircuit,
-  CheckCircle2,
   ClipboardCheck,
   Clock,
   Handshake,
   Inbox,
   LineChart,
-  Mail,
   Radio,
 } from "lucide-react";
 import type {
@@ -21,9 +19,8 @@ import type {
   BuildQueueSection,
   EnquiryAttention,
   PipelineSection,
-  TopAction,
-  TopActionKind,
 } from "@/core/mission-control";
+import { Recommendations } from "@/features/brain";
 import { resolveBriefing } from "../data/resolve-briefing";
 
 /**
@@ -77,71 +74,6 @@ function EmptyLine({ children }: { children: React.ReactNode }) {
     <p className="rounded-xl border border-dashed border-border/50 px-4 py-3 text-sm text-muted-foreground">
       {children}
     </p>
-  );
-}
-
-const ACTION_META: Record<
-  TopActionKind,
-  { icon: typeof Inbox; accent: string; dot: string }
-> = {
-  enquiry_sla: { icon: AlertTriangle, accent: "border-rose-400/40 bg-rose-400/5", dot: "bg-rose-400" },
-  new_enquiry: { icon: Mail, accent: "border-emerald-400/40 bg-emerald-400/5", dot: "bg-emerald-400" },
-  build_stalled: { icon: Clock, accent: "border-amber-400/40 bg-amber-400/5", dot: "bg-amber-400" },
-  build_review: { icon: ClipboardCheck, accent: "border-sky-400/40 bg-sky-400/5", dot: "bg-sky-400" },
-  deal_stale: { icon: Handshake, accent: "border-amber-400/40 bg-amber-400/5", dot: "bg-amber-400" },
-};
-
-function TopActions({ actions }: { actions: TopAction[] }) {
-  return (
-    <section
-      className="flex flex-col gap-3 rounded-2xl border border-border/60 bg-gradient-to-br from-card/70 to-card/30 p-5"
-      data-top-actions
-    >
-      <h2 className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
-        <BrainCircuit className="size-3.5 text-sky-300" />
-        Today&apos;s top actions
-      </h2>
-      {actions.length === 0 ? (
-        <div className="flex items-center gap-3 rounded-xl border border-emerald-400/30 bg-emerald-400/5 px-4 py-4 text-sm text-emerald-200">
-          <CheckCircle2 className="size-5 shrink-0" />
-          Nothing needs you right now — every lead is actioned, no build is
-          stalled, and no deal has gone quiet. You&apos;re on top of it.
-        </div>
-      ) : (
-        <ol className="flex flex-col gap-2">
-          {actions.map((action, index) => {
-            const meta = ACTION_META[action.kind];
-            const Icon = meta.icon;
-            return (
-              <li key={`${action.kind}-${action.link}-${index}`}>
-                <Link
-                  href={action.link}
-                  className={`group flex items-start gap-3 rounded-xl border px-4 py-3 transition-colors hover:border-foreground/30 ${meta.accent}`}
-                  data-top-action={action.kind}
-                >
-                  <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full bg-background/60 text-[11px] font-semibold tabular-nums text-foreground/80">
-                    {index + 1}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2 text-sm font-medium">
-                      <Icon className="size-4 shrink-0 text-muted-foreground" />
-                      {action.what}
-                    </span>
-                    <span className="mt-0.5 block text-xs text-muted-foreground">
-                      {action.why}
-                    </span>
-                    <span className="mt-1 block text-xs text-foreground/70">
-                      → {action.recommendedAction}
-                    </span>
-                  </span>
-                  <ArrowRight className="mt-1 size-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </li>
-            );
-          })}
-        </ol>
-      )}
-    </section>
   );
 }
 
@@ -377,7 +309,8 @@ function AccountsCard({ accounts }: { accounts: AccountSummary[] }) {
 function BriefingSections({ briefing }: { briefing: Briefing }) {
   return (
     <>
-      <TopActions actions={briefing.topActions} />
+      {/* Today's top actions — Decision Engine driven (ADR-050). */}
+      <Recommendations />
       <div className="grid gap-4 lg:grid-cols-2">
         <EnquiriesCard enquiries={briefing.enquiriesNeedingAttention} />
         <PipelineCard pipeline={briefing.pipeline} />
