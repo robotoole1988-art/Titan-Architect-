@@ -8,6 +8,9 @@ import {
 
 // Publications are immutable snapshots (ADR-027) — cache and revalidate;
 // a republish is picked up within a minute.
+// force-static: uncached spine reads otherwise mark the route dynamic and
+// silently defeat revalidate (found in production, ADR-054).
+export const dynamic = "force-static";
 export const revalidate = 60;
 
 /** Thin route: an AREA landing page by hostname (ADR-028). */
