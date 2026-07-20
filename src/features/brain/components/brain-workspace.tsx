@@ -1,6 +1,7 @@
 import { BrainCommandBar } from "./brain-command-bar";
 import { BrainLeftPanel } from "./brain-left-panel";
 import { BrainCenterPanel } from "./brain-center-panel";
+import { Recommendations } from "./recommendations";
 import { BrainRightPanel } from "./brain-right-panel";
 
 /**
@@ -38,7 +39,11 @@ export function BrainWorkspace() {
           className="order-1 animate-in fade-in-0 zoom-in-95 duration-700 xl:order-2"
           style={{ animationDelay: "60ms", animationFillMode: "backwards" }}
         >
-          <BrainCenterPanel />
+          <div className="flex flex-col gap-4">
+            {/* The Decision Engine's home (ADR-050). */}
+            <Recommendations />
+            <BrainCenterPanel />
+          </div>
         </div>
         <div
           className="order-3 animate-in fade-in-0 slide-in-from-right-2 duration-700"

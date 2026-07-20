@@ -65,3 +65,17 @@ export type {
   BrainOrchestratorProvider,
 } from "./orchestrator";
 export { BRAIN_ORCHESTRATOR_VERSION } from "./orchestrator";
+
+// ADR-050: the Decision Engine — ADR-015's contracts, implemented for real.
+export {
+  generateRecommendations,
+  narrateRecommendation,
+} from "./decision-engine";
+export type {
+  DecisionEngineInput,
+  Recommendation,
+  RecommendationConfidence,
+  RecommendationRisk,
+  RecommendationRuleId,
+  RecommendationUrgency,
+} from "./decision-engine";
