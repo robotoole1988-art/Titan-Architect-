@@ -8,7 +8,11 @@ import {
 } from "@/core/website-blueprint";
 import { renderPage } from "../model/render-page";
 import { toStreamUrl } from "../api/media-stream";
-import type { RenderContact, ResolvedMediaAsset } from "../model/types";
+import type {
+  RenderContact,
+  ResolvedMediaAsset,
+  ResolvedReview,
+} from "../model/types";
 import { rendererFontClass } from "../theme/fonts";
 import { SiteMetricsBeacon } from "./site-metrics-beacon";
 
@@ -31,6 +35,8 @@ export interface ResolvedPublication {
   media: Readonly<Record<string, ResolvedMediaAsset>>;
   /** Real contact details from the Business record (ADR-034). */
   contact?: RenderContact;
+  /** VERIFIED customer reviews (ADR-053) — the wall + JSON-LD source. */
+  reviews: ReadonlyArray<ResolvedReview>;
   /** How the site is being served — drives internal link hrefs. */
   servingMode: "slug" | "hostname";
 }
@@ -60,7 +66,7 @@ export async function resolvePublishedSite(
   }
   if (!publication) return null;
 
-  const [artifact, business, approved] = await Promise.all([
+  const [artifact, business, approved, verifiedReviews] = await Promise.all([
     spine.artifacts.getVersion<WebsiteBlueprint>(
       publication.businessId,
       "blueprint",
@@ -68,11 +74,26 @@ export async function resolvePublishedSite(
     ),
     spine.businesses.get(publication.businessId),
     spine.media.listApprovedForBusiness(publication.businessId),
+    spine.reviews.listVerifiedForBusiness(publication.businessId),
   ]);
   if (!artifact || !business) return null;
-  const media: Record<string, ResolvedMediaAsset> = {};
+  // Slot resolution (ADR-053): the customer's own approved photograph beats
+  // a generated asset for the same slot; otherwise newest approved wins
+  // (the list arrives newest first).
+  const chosen = new Map<string, (typeof approved)[number]>();
   for (const record of approved) {
-    media[record.slotRef] = {
+    const current = chosen.get(record.slotRef);
+    if (!current) {
+      chosen.set(record.slotRef, record);
+      continue;
+    }
+    const currentIsCustomer = current.provenance.provider === "customer-upload";
+    const recordIsCustomer = record.provenance.provider === "customer-upload";
+    if (recordIsCustomer && !currentIsCustomer) chosen.set(record.slotRef, record);
+  }
+  const media: Record<string, ResolvedMediaAsset> = {};
+  for (const [slotRef, record] of chosen) {
+    media[slotRef] = {
       // Video streams through the same-origin Range proxy (ADR-037); images
       // go through next/image and need no rewrite.
       url: record.modality === "video" ? toStreamUrl(record.url) : record.url,
@@ -86,6 +107,13 @@ export async function resolvePublishedSite(
         : {}),
     };
   }
+  const reviews: ResolvedReview[] = verifiedReviews.map((review) => ({
+    customerName: review.customerName,
+    rating: review.rating,
+    text: review.text,
+    reviewedAt: review.reviewedAt,
+    source: review.source,
+  }));
 
   const pages = artifact.payload.pages.pages;
   const page = lookup.pagePath
@@ -101,6 +129,7 @@ export async function resolvePublishedSite(
     page,
     businessName: business.name,
     media,
+    reviews,
     ...(business.contact ? { contact: business.contact } : {}),
     ...(business.ga4MeasurementId
       ? { ga4MeasurementId: business.ga4MeasurementId }
@@ -146,7 +175,17 @@ export function PublishedSitePage({
   baseUrl: string;
 }) {
   const { blueprint, page, publication, servingMode } = resolved;
-  const jsonLd = buildPageJsonLd(blueprint, page.id, { baseUrl });
+  const jsonLd = buildPageJsonLd(blueprint, page.id, {
+    baseUrl,
+    // ONLY verified reviews reach this array (ADR-053) — the resolution
+    // seam reads listVerifiedForBusiness exclusively.
+    reviews: resolved.reviews.map((review) => ({
+      customerName: review.customerName,
+      rating: review.rating,
+      text: review.text,
+      reviewedAt: review.reviewedAt,
+    })),
+  });
   const pageHref =
     servingMode === "slug"
       ? (pageId: string, url: string) =>
@@ -198,6 +237,7 @@ export function PublishedSitePage({
           slug: publication.slug,
         },
         media: resolved.media,
+        reviews: resolved.reviews,
         // The customer's building — zero internal scaffolding (ADR-034).
         mode: "public",
         ...(resolved.contact ? { contact: resolved.contact } : {}),

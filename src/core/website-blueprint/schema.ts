@@ -12,9 +12,26 @@
 import type { PageBlueprint } from "./page";
 import type { WebsiteBlueprint } from "./website-blueprint";
 
+/**
+ * A VERIFIED review supplied by the caller (ADR-053). This module never
+ * reads a database: whoever calls it is responsible for passing ONLY
+ * attested reviews (`listVerifiedForBusiness`); passing none reproduces
+ * today's output byte-for-byte.
+ */
+export interface VerifiedReviewInput {
+  customerName: string;
+  /** Integer 1–5. */
+  rating: number;
+  text: string;
+  /** ISO date the customer gave the review. */
+  reviewedAt: string;
+}
+
 export interface PageJsonLdOptions {
   /** Site origin the published page serves from, e.g. "https://example.com". */
   baseUrl: string;
+  /** VERIFIED reviews only (ADR-053) — gates Review/AggregateRating markup. */
+  reviews?: ReadonlyArray<VerifiedReviewInput>;
 }
 
 export type JsonLdObject = Record<string, unknown>;
@@ -74,6 +91,46 @@ export function buildPageJsonLd(
 
   const items: JsonLdObject[] = [];
 
+  // Review/AggregateRating (ADR-053): ONLY from ingested VERIFIED reviews,
+  // content-gated exactly like FAQPage. No reviews → no markup at all.
+  const verified = (options.reviews ?? []).filter(
+    (review) =>
+      Number.isInteger(review.rating) &&
+      review.rating >= 1 &&
+      review.rating <= 5 &&
+      review.text.trim() !== "" &&
+      review.customerName.trim() !== "",
+  );
+  const ratingMarkup: JsonLdObject =
+    verified.length > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue:
+              Math.round(
+                (verified.reduce((sum, review) => sum + review.rating, 0) /
+                  verified.length) *
+                  10,
+              ) / 10,
+            reviewCount: verified.length,
+            bestRating: 5,
+            worstRating: 1,
+          },
+          review: verified.map((review) => ({
+            "@type": "Review",
+            author: { "@type": "Person", name: review.customerName },
+            reviewRating: {
+              "@type": "Rating",
+              ratingValue: review.rating,
+              bestRating: 5,
+              worstRating: 1,
+            },
+            reviewBody: review.text,
+            datePublished: review.reviewedAt.slice(0, 10),
+          })),
+        }
+      : {};
+
   items.push({
     "@context": "https://schema.org",
     "@type": "LocalBusiness",
@@ -81,6 +138,7 @@ export function buildPageJsonLd(
     url: `${base}/`,
     ...(identity.positioning ? { description: identity.positioning } : {}),
     areaServed: servedEverywhere,
+    ...ratingMarkup,
   });
 
   const area = pageAreaName(page);

@@ -99,5 +99,5 @@ export { buildWebsiteBlueprint, createWebsiteBlueprintEngine, pageSlug } from ".
 export { resolveFaqBank } from "./faq-content";
 export type { FaqBank, TradeFaq } from "./faq-content";
 
-export type { JsonLdObject, PageJsonLdOptions } from "./schema";
+export type { JsonLdObject, PageJsonLdOptions, VerifiedReviewInput } from "./schema";
 export { buildPageJsonLd } from "./schema";

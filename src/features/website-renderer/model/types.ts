@@ -39,6 +39,22 @@ export interface ResolvedMediaAsset {
   durationSeconds?: number;
 }
 
+/**
+ * A VERIFIED customer review, resolved for rendering (ADR-053). Only
+ * attested reviews ever reach this shape — the resolution seam reads
+ * `listVerifiedForBusiness` exclusively. The attestation itself stays
+ * server-side; the page carries what the customer said.
+ */
+export interface ResolvedReview {
+  customerName: string;
+  /** Integer 1–5. */
+  rating: number;
+  text: string;
+  /** ISO date the customer gave the review. */
+  reviewedAt: string;
+  source: "direct" | "google" | "other";
+}
+
 /** Everything a primitive component may draw from. */
 export interface PrimitiveSectionProps {
   section: SectionBlueprint;
@@ -59,6 +75,8 @@ export interface PrimitiveSectionProps {
   contact?: RenderContact;
   /** The render mode (ADR-034). Public pages carry zero scaffolding. */
   mode: RenderMode;
+  /** VERIFIED reviews (ADR-053); absent/empty → the wall collapses in public. */
+  reviews?: ReadonlyArray<ResolvedReview>;
 }
 
 export type PrimitiveComponent = ComponentType<PrimitiveSectionProps>;
@@ -98,4 +116,6 @@ export interface RenderPageOptions {
   mode?: RenderMode;
   /** Real contact data for public chrome (from the Business record). */
   contact?: RenderContact;
+  /** VERIFIED reviews (ADR-053), resolved at serve time like media. */
+  reviews?: ReadonlyArray<ResolvedReview>;
 }

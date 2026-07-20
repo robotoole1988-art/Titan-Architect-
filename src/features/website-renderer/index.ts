@@ -31,6 +31,7 @@ export {
 } from "./model/primitive-map";
 export type {
   ResolvedMediaAsset,
+  ResolvedReview,
   PrimitiveSectionProps,
   PrimitiveComponent,
   PrimitiveComponentMap,
