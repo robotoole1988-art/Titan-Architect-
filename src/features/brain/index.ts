@@ -8,4 +8,5 @@
 export { BrainWorkspace } from "./components/brain-workspace";
 export { AskBrain } from "./components/ask-brain";
 export { Recommendations } from "./components/recommendations";
+export { CommandCentre } from "./components/command-centre";
 export { HealthPanel, HealthStrip } from "./components/health-panel";

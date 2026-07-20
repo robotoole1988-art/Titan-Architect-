@@ -20,7 +20,7 @@ import type {
   EnquiryAttention,
   PipelineSection,
 } from "@/core/mission-control";
-import { HealthStrip, Recommendations } from "@/features/brain";
+import { CommandCentre, HealthStrip, Recommendations } from "@/features/brain";
 import { resolveBriefing } from "../data/resolve-briefing";
 
 /**
@@ -311,6 +311,8 @@ function BriefingSections({ briefing }: { briefing: Briefing }) {
     <>
       {/* Today's top actions — Decision Engine driven (ADR-050). */}
       <Recommendations />
+      {/* Command Mode approval queue (ADR-052) — nothing runs without you. */}
+      <CommandCentre />
       {/* Department health strip (ADR-051) — full drill-down in the Brain. */}
       <HealthStrip />
       <div className="grid gap-4 lg:grid-cols-2">

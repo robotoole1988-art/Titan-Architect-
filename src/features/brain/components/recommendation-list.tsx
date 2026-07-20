@@ -16,6 +16,8 @@ import {
   CheckCircle2,
   ChevronDown,
   ExternalLink,
+  ListPlus,
+  Share2,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +27,14 @@ import {
   acceptRecommendation,
   dismissRecommendation,
 } from "../api/decision-actions";
+import { requestCommandAction } from "../api/command-actions";
 import type { NarratedRecommendation } from "../api/decisions";
+
+/** The business a recommendation concerns, when its link is a CRM record. */
+function businessIdOf(recommendation: NarratedRecommendation): string | null {
+  const match = recommendation.link.match(/^\/crm\/([^/]+)$/);
+  return match && match[1] !== "build-queue" ? match[1] : null;
+}
 
 const URGENCY_STYLES: Record<string, string> = {
   now: "border-rose-400/40 bg-rose-400/10 text-rose-300",
@@ -62,6 +71,34 @@ function RecommendationCard({
         reason || undefined,
       );
       onGone();
+    });
+  }
+
+  // Command Mode (ADR-052): both buttons QUEUE a pending approval card — the
+  // exact preview is approved (or declined) in the Command Mode queue below.
+  const businessId = businessIdOf(recommendation);
+
+  function queueNextAction() {
+    startTransition(async () => {
+      if (!businessId) return;
+      await requestCommandAction(
+        "create_next_action",
+        { businessId, text: recommendation.recommendedAction },
+        "recommendation",
+      );
+    });
+  }
+
+  function delegate() {
+    startTransition(async () => {
+      await requestCommandAction(
+        "delegate_recommendation",
+        {
+          recommendationId: recommendation.id,
+          summary: recommendation.recommendedAction,
+        },
+        "recommendation",
+      );
     });
   }
 
@@ -170,6 +207,28 @@ function RecommendationCard({
             <Check className="size-3.5" />
             Accept
           </Button>
+          {businessId && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={queueNextAction}
+              disabled={pending}
+              title="Queue this as a next action on the business (lands as a pending approval)"
+            >
+              <ListPlus className="size-3.5" />
+              Queue task
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={delegate}
+            disabled={pending}
+            title="Mark as delegated (lands as a pending approval)"
+          >
+            <Share2 className="size-3.5" />
+            Delegate
+          </Button>
           {!dismissing && (
             <Button
               size="sm"
@@ -204,7 +263,7 @@ export function RecommendationList({
         <BrainCircuit className="size-3.5 text-sky-300" />
         Today&apos;s top actions
         <span className="ml-auto font-normal normal-case tracking-normal">
-          Decision Engine · {backend} narration · read-only
+          Decision Engine · {backend} narration · approval-gated (ADR-052)
         </span>
       </h2>
       {visible.length === 0 ? (
