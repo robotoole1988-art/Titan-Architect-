@@ -73,6 +73,7 @@ ADR that supersedes the old one and update the old one's status.
 | [043](./adr-043-care-archetype.md) | The care/trust archetype — Quiet Confidence theme + crafted primitive set for trust-led trades | Accepted |
 | [044](./adr-044-technical-archetype.md) | The technical/skilled-trades archetype — Live Wire theme for the energy-tech installer cluster | Accepted |
 | [045](./adr-045-legal-compliance.md) | Legal & compliance layer — crafted Privacy + Terms primitives, cookieless statement, per-site legal pages | Accepted |
+| [046](./adr-046-memory-spine.md) | Memory Spine v1 — derived knowledge graph + learning feed; the Knowledge Kernel (ADR-010) implemented | Accepted |
 
 ### Writing a new ADR
 

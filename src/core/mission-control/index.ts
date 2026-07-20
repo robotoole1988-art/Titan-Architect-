@@ -10,6 +10,7 @@
 
 export { buildBriefing } from "./briefing";
 export type { BuildBriefingOptions } from "./briefing";
+export { projectMissionControlData } from "./project";
 export { DEFAULT_THRESHOLDS } from "./config";
 export type { MissionControlThresholds, MissionControlWeights } from "./config";
 export type {

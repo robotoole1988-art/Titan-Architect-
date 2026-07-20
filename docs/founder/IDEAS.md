@@ -79,3 +79,13 @@ anti-doorway differentiation enforced by the generator and CI.
 published page — LocalBusiness with areaServed, Service, FAQPage mirroring
 rendered content, BreadcrumbList on area pages; review markup deliberately
 waits for real review data.
+
+## Keep the Platform Awake
+
+**Observed (2026-07-20, ADR-046 verification).** The free-tier Supabase
+project auto-paused after ~12 idle days — every published demo site, enquiry
+form, and Mission Control read was down until it was manually restored from
+the dashboard. Anything shown to a prospect dies with it. When the hosting
+milestone lands: either the small Pro upgrade (no auto-pause) or a scheduled
+keep-alive ping, decided deliberately — a demo that 404s is worse than no
+demo.
