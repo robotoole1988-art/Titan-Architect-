@@ -6,3 +6,4 @@
  * §4 and ADR-008). Everything else in this folder is private to the feature.
  */
 export { BrainWorkspace } from "./components/brain-workspace";
+export { AskBrain } from "./components/ask-brain";
