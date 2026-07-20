@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -40,14 +41,17 @@ export function UserMenu() {
         </span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel>
-          <div className="flex flex-col">
-            <span className="text-sm font-medium">{user?.name ?? "Guest"}</span>
-            <span className="text-xs font-normal text-muted-foreground">
-              {user?.email ?? "Not signed in"}
-            </span>
-          </div>
-        </DropdownMenuLabel>
+        {/* Base UI: GroupLabel must live inside a Group (ADR-007). */}
+        <DropdownMenuGroup>
+          <DropdownMenuLabel>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">{user?.name ?? "Guest"}</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                {user?.email ?? "Not signed in"}
+              </span>
+            </div>
+          </DropdownMenuLabel>
+        </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem disabled>
           <User className="size-4" />

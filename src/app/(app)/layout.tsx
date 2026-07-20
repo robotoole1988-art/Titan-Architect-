@@ -5,6 +5,7 @@ import "../globals.css";
 import { AppProviders } from "@/providers";
 import { siteConfig } from "@/config/site";
 import { AppShell } from "@/components/layout/app-shell";
+import { requireFounder, signOutAction } from "@/features/auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,13 +31,12 @@ export const metadata: Metadata = {
  * deliberately loads none of the OS chrome — see ADR-022). Every page in
  * this group is wrapped in the shell (sidebar + command bar).
  *
- * AUTH SEAM: this is where server-side authentication will be enforced.
- * When real auth is wired in, read the session here and redirect, e.g.:
- *
- *   const session = await getSession();
- *   if (!session) redirect("/login");
+ * AUTH (ADR-054, delivering ADR-004's seam): the middleware gates every
+ * internal route; this layout enforces the founder session AGAIN server-side
+ * (defense in depth) and hands the real user to the providers.
  */
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  const session = await requireFounder();
   return (
     <html
       lang="en"
@@ -44,7 +44,10 @@ export default function AppLayout({ children }: { children: ReactNode }) {
       suppressHydrationWarning
     >
       <body className="min-h-svh bg-background text-foreground antialiased">
-        <AppProviders>
+        <AppProviders
+          user={{ id: session.userId, name: session.name, email: session.email }}
+          onSignOut={signOutAction}
+        >
           <AppShell>{children}</AppShell>
         </AppProviders>
       </body>

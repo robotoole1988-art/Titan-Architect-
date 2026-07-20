@@ -1,6 +1,4 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { redirect } from "next/navigation";
 import {
   Card,
   CardContent,
@@ -9,14 +7,26 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { siteConfig } from "@/config/site";
+import { LoginForm, getFounderSession } from "@/features/auth";
 
 export const metadata = { title: "Sign in" };
 
-/**
- * Placeholder sign-in screen. The form is intentionally non-functional —
- * it marks where real authentication will be wired into the auth seam.
- */
-export default function LoginPage() {
+const NOTICES: Record<string, string> = {
+  "not-authorised": "That account is not the founder — this instance is founder-only.",
+  "link-expired": "That sign-in link has expired or was already used. Request a fresh one.",
+  "missing-code": "The sign-in link was incomplete. Request a fresh one.",
+  "auth-unconfigured":
+    "Auth is not configured on this server — set SUPABASE_ANON_KEY and TITAN_FOUNDER_EMAIL.",
+};
+
+/** The real founder door (ADR-054): magic link, founder-only. */
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ notice?: string }>;
+}) {
+  if (await getFounderSession()) redirect("/dashboard");
+  const { notice } = await searchParams;
   return (
     <Card className="w-full max-w-sm">
       <CardHeader className="space-y-2 text-center">
@@ -25,22 +35,12 @@ export default function LoginPage() {
         </div>
         <CardTitle className="text-xl">Sign in to {siteConfig.name}</CardTitle>
         <CardDescription>
-          Authentication is not wired up yet — this is a placeholder.
+          Founder access only. Enter your email and we&apos;ll send a one-time
+          sign-in link — no passwords exist on this platform.
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
-        <Input type="email" placeholder="you@titan.dev" disabled />
-        <Input type="password" placeholder="Password" disabled />
-        <Button className="w-full" disabled>
-          Continue
-        </Button>
-        <Button
-          variant="ghost"
-          className="w-full"
-          render={<Link href="/dashboard" />}
-        >
-          Skip to dashboard →
-        </Button>
+      <CardContent>
+        <LoginForm notice={notice ? NOTICES[notice] : undefined} />
       </CardContent>
     </Card>
   );

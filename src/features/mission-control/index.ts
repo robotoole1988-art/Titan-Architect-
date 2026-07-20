@@ -9,3 +9,4 @@
 
 export { MissionControlPage } from "./components/mission-control-page";
 export { resolveBriefing } from "./data/resolve-briefing";
+export { keepAliveProbe, type KeepAliveResult } from "./data/keep-alive";
