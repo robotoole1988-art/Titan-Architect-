@@ -14,7 +14,11 @@ import { Play, RotateCcw } from "lucide-react";
 
 const STAGE_CSS = `
 .demo-stage { position: fixed; inset: 0; overflow: hidden; background: #0a0c10; }
-.demo-after { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.demo-after {
+  position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  /* contain the rendered site's own z-indexes beneath the Before layer */
+  z-index: 0; isolation: isolate;
+}
 .demo-before {
   position: absolute; inset: 0; z-index: 20; display: grid; place-items: center;
   background: #0f1218;

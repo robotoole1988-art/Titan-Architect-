@@ -60,10 +60,22 @@ export function isFetchableSiteUrl(raw: string): boolean {
   return true;
 }
 
+/** The handful of entities real-world titles/descriptions actually carry. */
+function decodeEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#0?39;|&apos;/g, "'")
+    .replace(/&nbsp;/g, " ");
+}
+
 /** Pull the first content= for a meta tag matching the attribute pattern. */
 function metaContent(html: string, pattern: RegExp): string | undefined {
   const tag = html.match(pattern)?.[0];
-  return tag?.match(/content=["']([^"']+)["']/i)?.[1]?.trim() || undefined;
+  const content = tag?.match(/content=["']([^"']+)["']/i)?.[1]?.trim();
+  return content ? decodeEntities(content) : undefined;
 }
 
 export interface SiteSignals {
@@ -74,10 +86,11 @@ export interface SiteSignals {
 
 /** The real signals a site exposes — never invented, empty when absent. */
 export function extractSiteSignals(html: string, baseUrl: string): SiteSignals {
-  const title = html
+  const rawTitle = html
     .match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]
     ?.replace(/\s+/g, " ")
     .trim();
+  const title = rawTitle ? decodeEntities(rawTitle) : undefined;
   const description =
     metaContent(html, /<meta[^>]+name=["']description["'][^>]*>/i) ??
     metaContent(html, /<meta[^>]+property=["']og:description["'][^>]*>/i);

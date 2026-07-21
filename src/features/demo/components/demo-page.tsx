@@ -203,6 +203,21 @@ export async function DemoPage({
           </button>
         </form>
       )}
+      <form
+        action={async () => {
+          "use server";
+          await prepareDemoAction(businessId);
+        }}
+      >
+        <button
+          type="submit"
+          data-demo-reprepare
+          title="Re-capture their current presence"
+          className="rounded-full border border-white/15 bg-black/40 px-3 py-2 text-[11px] text-white/60 backdrop-blur"
+        >
+          Re-prep
+        </button>
+      </form>
     </>
   );
 
