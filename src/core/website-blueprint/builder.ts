@@ -690,6 +690,17 @@ function localiseAreaSection(
       `area-proof: Real jobs and reviews from ${area} — populate from verified ${area} work when it exists; until then this slot is an explicit empty-state brief, never fabricated.`,
     ];
   }
+  if (primitiveId === "location.service-area") {
+    // The radar must ground the visitor in THEIR area (area-page bug fix):
+    // centre/label the page's area; the renderer shows the base as a
+    // secondary "based in …" point. Coverage heading re-anchors to match.
+    requirements = withSlot(requirements, "focus-place", area);
+    requirements = withSlot(
+      requirements,
+      "coverage",
+      `${area} and surrounding areas — anchor the local terms: ${strategy.seoStrategy.localKeywords.join(", ")}.`,
+    );
+  }
   return {
     ...section,
     contentRequirements: requirements,

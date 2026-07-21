@@ -38,8 +38,11 @@ function areaTerms(coverage: string | undefined): string[] {
     .filter(Boolean);
 }
 
-function Radar({ place }: { place?: string }) {
+function Radar({ place, base }: { place?: string; base?: string }) {
   const reduced = useReducedMotion();
+  // The base is a secondary point ONLY when the radar centres somewhere
+  // else (an area page): "based in Oxford, covering Greater London".
+  const showBase = Boolean(base && place && base !== place);
   return (
     <div className="relative mx-auto aspect-square w-full max-w-md" aria-hidden>
       {/* range rings */}
@@ -91,8 +94,27 @@ function Radar({ place }: { place?: string }) {
               {place}
             </span>
           )}
+          {showBase && (
+            <span
+              className="text-[11px] leading-none"
+              style={{ color: "var(--wr-ink-faint)" }}
+            >
+              based in {base}
+            </span>
+          )}
         </div>
       </div>
+      {/* the base as a quiet secondary point on the outer ring */}
+      {showBase && (
+        <span
+          className="absolute size-1.5 rounded-full"
+          style={{
+            background: "var(--wr-ink-faint)",
+            left: "18%",
+            top: "26%",
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -101,13 +123,17 @@ export function LocationServiceArea({ section, variant, slots, blueprint, mode }
   const heading = headingOf(slots.coverage);
   const terms = areaTerms(slots.coverage);
   const radarFirst = variant !== "area-list";
+  // Area pages centre the PAGE'S area (the `focus-place` slot, ADR-028
+  // localisation); the homepage — and legacy blueprints without the slot —
+  // centre the business base as before.
+  const focusPlace = slots["focus-place"] ?? blueprint.identity.location;
 
   return (
     <SectionShell section={section}>
       <Container wide>
         <div className={`grid items-center gap-12 lg:grid-cols-2 ${radarFirst ? "" : "lg:[direction:rtl]"}`}>
           <Reveal className="lg:[direction:ltr]">
-            <Radar place={blueprint.identity.location} />
+            <Radar place={focusPlace} base={blueprint.identity.location} />
           </Reveal>
           <div className="lg:[direction:ltr]">
             <Reveal>
