@@ -122,6 +122,12 @@ export interface ExperienceStrategyRequest {
   location: string;
   /** Optional full Industry DNA; a mock strategy is produced with or without it. */
   industryDna?: IndustryDna;
+  /**
+   * Render-as-if archetype (ADR-055 taste-by-comparison). Absent → the
+   * trade classifies itself as always. Preview-only surfaces use this to
+   * show alternates; nothing persists it unless explicitly saved.
+   */
+  archetypeOverride?: import("./trade-intelligence").TradeArchetype;
   extensions?: StrategyExtensions;
 }
 

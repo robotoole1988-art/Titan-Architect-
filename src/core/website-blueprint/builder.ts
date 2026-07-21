@@ -725,6 +725,10 @@ function buildAreaPage(
     businessName: base.meta.businessName,
     trade: base.meta.trade,
     location: area,
+    // Keeps variant renders coherent (ADR-055): the area strategy speaks
+    // the same archetype the page is being built as. For the primary
+    // archetype this equals the trade's own classification — a no-op.
+    archetypeOverride: archetype,
   });
   const sections = areaSequence(archetype, areaIndex).map((plan, index) =>
     localiseAreaSection(
@@ -980,7 +984,7 @@ export function buildWebsiteBlueprint(
 ): WebsiteBlueprint {
   const { strategy } = request;
   const { meta } = strategy;
-  const archetype = classifyArchetype(meta.trade.toLowerCase());
+  const archetype = request.archetypeOverride ?? classifyArchetype(meta.trade.toLowerCase());
   const homePage = buildHomePage(strategy, archetype);
   const coverageAreas = (request.coverageAreas ?? []).filter(
     (area) => area.trim().length > 0,

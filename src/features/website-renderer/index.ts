@@ -24,6 +24,7 @@ export {
   isProxyableMediaUrl,
 } from "./api/media-stream";
 export { renderPage } from "./model/render-page";
+export { rendererFontClass } from "./theme/fonts";
 export { resolveSignatureMoment } from "./moments/registry";
 export {
   PRIMITIVE_COMPONENT_MAP,

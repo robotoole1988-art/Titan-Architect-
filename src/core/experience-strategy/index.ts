@@ -37,7 +37,7 @@ export type {
 } from "./generator";
 
 export type { TradeArchetype, TradeProfile } from "./trade-intelligence";
-export { classifyArchetype, buildTradeProfile } from "./trade-intelligence";
+export { ARCHETYPE_ALTERNATES, classifyArchetype, buildTradeProfile } from "./trade-intelligence";
 
 export {
   EXPERIENCE_STRATEGY_VERSION,

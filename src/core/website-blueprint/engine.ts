@@ -11,7 +11,7 @@
  * coordination.
  */
 
-import type { ExperienceStrategy } from "@/core/experience-strategy";
+import type { ExperienceStrategy, TradeArchetype } from "@/core/experience-strategy";
 import type { IndustryDna } from "@/core/industry-dna";
 import type { KnowledgeReader } from "@/core/knowledge-kernel";
 import type { ExperienceEngine } from "@/core/experience-engine";
@@ -26,6 +26,13 @@ export interface WebsiteBlueprintRequest {
   /** Coverage areas (ADR-028): one unique landing page is built per area. */
   coverageAreas?: ReadonlyArray<string>;
   industryDna?: IndustryDna;
+  /**
+   * Render-as-if archetype (ADR-055 taste-by-comparison): overrides the
+   * trade's self-classification for sequence + theme. Pair with a strategy
+   * generated under the SAME override for a coherent variant. Preview-only
+   * surfaces use this; persisting a variant is an explicit founder save.
+   */
+  archetypeOverride?: TradeArchetype;
   extensions?: BlueprintExtensions;
 }
 

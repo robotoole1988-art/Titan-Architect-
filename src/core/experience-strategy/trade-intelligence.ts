@@ -138,13 +138,33 @@ function accreditationsFor(tradeLower: string): string[] {
  * Build the resolved strategic profile for a business. This is the heart of the
  * intelligence: one coherent thesis and archetype-specific reasoning.
  */
+/**
+ * Plausible alternate archetypes per primary — the demo mode's
+ * taste-by-comparison seam (ADR-055). Curated, max two, never the primary
+ * itself: each alternate is a direction a founder could genuinely pitch for
+ * the trade, not a random theme swap.
+ */
+export const ARCHETYPE_ALTERNATES: Readonly<
+  Record<TradeArchetype, ReadonlyArray<TradeArchetype>>
+> = {
+  emergency: ["technical", "general"],
+  project: ["premium", "technical"],
+  premium: ["project", "care"],
+  care: ["premium", "general"],
+  technical: ["project", "premium"],
+  recurring: ["general", "care"],
+  event: ["premium", "care"],
+  general: ["project", "technical"],
+};
+
 export function buildTradeProfile(
   business: string,
   trade: string,
   tradeLower: string,
   location: string,
+  archetypeOverride?: TradeArchetype,
 ): TradeProfile {
-  const archetype = classifyArchetype(tradeLower);
+  const archetype = archetypeOverride ?? classifyArchetype(tradeLower);
   const accreditations = accreditationsFor(tradeLower);
 
   switch (archetype) {

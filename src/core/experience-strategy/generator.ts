@@ -114,7 +114,13 @@ export function generateExperienceStrategy(
   const location = request.location.trim();
   const tradeLower = trade.toLowerCase();
 
-  const profile = buildTradeProfile(business, trade, tradeLower, location);
+  const profile = buildTradeProfile(
+    business,
+    trade,
+    tradeLower,
+    location,
+    request.archetypeOverride,
+  );
 
   const meta: StrategyDocumentMeta = {
     businessName: business,

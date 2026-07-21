@@ -71,6 +71,15 @@ describe("isProtectedAppPath", () => {
     }
   });
 
+  it("the demo route (ADR-055) is INSIDE the wall", () => {
+    for (const path of [
+      "/demo/01e4392a-fbf4-4344-b1df-0e17f5a48a88",
+      "/demo/x",
+    ]) {
+      expect(isProtectedAppPath(path), path).toBe(true);
+    }
+  });
+
   it("does not let look-alike paths escape the gate", () => {
     expect(isProtectedAppPath("/sitesX")).toBe(true);
     expect(isProtectedAppPath("/loginX")).toBe(true);
