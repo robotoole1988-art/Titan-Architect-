@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-21 — Area-page radar centres the page's area
+
+- The `location.service-area` radar on area landing pages centred and
+  labelled the business BASE (e.g. the Greater London page showed
+  "Oxford"). Area pages now ground the visitor in THEIR area: the builder's
+  ADR-028 localisation seam writes a `focus-place` slot + re-anchored
+  coverage heading per area, and the primitive centres that slot with the
+  base shown as a quiet secondary point ("based in Oxford"). Homepages and
+  already-published blueprints (no slot) keep centring the base. Pinned by
+  builder + renderer tests across all four Liberty Contractors areas.
+
 ## 2026-07-20 — Pre-deploy fix-pack (audit F1–F3)
 
 - **F1 · Broken poster assets**: the ADR-054 auth middleware was gating

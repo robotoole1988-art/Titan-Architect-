@@ -160,3 +160,47 @@ describe("anti-doorway differentiation (ADR-028)", () => {
     }
   });
 });
+
+describe("area radar centring (area-page bug fix)", () => {
+  const blueprint = build(AREAS);
+
+  function serviceAreaSlots(page: PageBlueprint): Record<string, string> {
+    const section = page.sections.find(
+      (candidate) => candidate.identifier === "location.service-area",
+    )!;
+    const slots: Record<string, string> = {};
+    for (const req of section.contentRequirements ?? []) {
+      const i = req.indexOf(":");
+      if (i !== -1) slots[req.slice(0, i).trim()] = req.slice(i + 1).trim();
+    }
+    return slots;
+  }
+
+  it("pins every area page's radar to the PAGE'S area via focus-place", () => {
+    for (const page of areaPages(blueprint)) {
+      const area = String(page.extensions?.area);
+      const slots = serviceAreaSlots(page);
+      expect(slots["focus-place"], page.name).toBe(area);
+      // The coverage heading re-anchors to the area, never the base.
+      expect(slots.coverage.startsWith(`${area} and surrounding areas`), page.name).toBe(true);
+      expect(slots.coverage.startsWith("Manchester")).toBe(false);
+    }
+  });
+
+  it("the homepage radar keeps the business base (no focus-place slot)", () => {
+    // The emergency archetype's HOMEPAGE carries the radar (project's does
+    // not) — that page must keep centring the base location, untouched.
+    const emergency = buildWebsiteBlueprint({
+      strategy: generateExperienceStrategy({
+        businessName: "Summit Roofing Rescue",
+        trade: "Emergency Roofing & Drainage",
+        location: "Leeds",
+      }),
+      coverageAreas: ["Headingley"],
+    });
+    const home = contentPages(emergency)[0];
+    const slots = serviceAreaSlots(home);
+    expect(slots["focus-place"]).toBeUndefined();
+    expect(slots.coverage.startsWith("Leeds and surrounding areas")).toBe(true);
+  });
+});
