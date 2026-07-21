@@ -692,14 +692,11 @@ function localiseAreaSection(
   }
   if (primitiveId === "location.service-area") {
     // The radar must ground the visitor in THEIR area (area-page bug fix):
-    // centre/label the page's area; the renderer shows the base as a
-    // secondary "based in …" point. Coverage heading re-anchors to match.
+    // `focus-place` centres/labels the page's area; the renderer shows the
+    // base as a secondary "based in …" point. Coverage copy needs no
+    // rewrite — area sections are already built from the area-scoped
+    // strategy, so the heading and local terms anchor to the area.
     requirements = withSlot(requirements, "focus-place", area);
-    requirements = withSlot(
-      requirements,
-      "coverage",
-      `${area} and surrounding areas — anchor the local terms: ${strategy.seoStrategy.localKeywords.join(", ")}.`,
-    );
   }
   return {
     ...section,
