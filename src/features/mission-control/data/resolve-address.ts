@@ -24,8 +24,9 @@ export interface ResolvedAddress extends SituationAddress {
   narrated?: string;
 }
 
-/** Reject narrations that break the voice contract (Law §1). */
-function acceptableNarration(text: string, quiet: boolean): boolean {
+/** Reject narrations that break the voice contract (Law §1). Exported
+ * for the guard's own tests — unvetted LLM text must never open the page. */
+export function acceptableNarration(text: string, quiet: boolean): boolean {
   const trimmed = text.trim();
   if (!trimmed || trimmed.length > 220) return false;
   if (trimmed.includes("!")) return false;

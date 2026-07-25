@@ -124,3 +124,63 @@ describe("composeSituationAddress", () => {
     expect(address.line).not.toContain("!");
   });
 });
+
+describe("honest absence holds against EVERY dimension alone (review finding)", () => {
+  it("each single non-zero input defeats the quiet line", () => {
+    const cases = [
+      {
+        name: "waiting enquiry only",
+        input: {
+          briefing: briefing({ enquiriesNeedingAttention: [attention(false)] }),
+          health: [],
+          pendingApprovals: 0,
+        },
+        expectContains: "one new enquiry waits",
+      },
+      {
+        name: "red department only",
+        input: { briefing: briefing(), health: [red("Measurement")], pendingApprovals: 0 },
+        expectContains: "Measurement health is red",
+      },
+      {
+        name: "stale deal only",
+        input: {
+          briefing: briefing({
+            pipeline: {
+              byStage: [],
+              total: 1,
+              stale: [],
+              dealsNeedingAction: [
+                { businessId: "b", businessName: "B", stage: "proposed", daysSinceMovement: 9, stale: true, link: "/crm/b" },
+              ],
+            },
+          }),
+          health: [],
+          pendingApprovals: 0,
+        },
+        expectContains: "one proposal has gone quiet",
+      },
+      {
+        name: "review-gate item only",
+        input: {
+          briefing: briefing({
+            buildQueue: {
+              inProgress: [
+                { businessId: "b", businessName: "B", inProgressCount: 1, reviewWaiting: ["website"], stalled: [], link: "/crm/b" },
+              ],
+              total: 1,
+            },
+          }),
+          health: [],
+          pendingApprovals: 0,
+        },
+        expectContains: "one build item waits on your review",
+      },
+    ] as const;
+    for (const testCase of cases) {
+      const address = composeSituationAddress(testCase.input);
+      expect(address.quiet, testCase.name).toBe(false);
+      expect(address.line.toLowerCase(), testCase.name).toContain(testCase.expectContains.toLowerCase());
+    }
+  });
+});

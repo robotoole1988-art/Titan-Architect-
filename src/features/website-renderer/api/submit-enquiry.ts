@@ -8,7 +8,7 @@
  * and NEVER breaks the enquiry — the lead is already safe in the spine.
  */
 
-import { processEnquiry, resolveBusinessSpine } from "@/core/business";
+import { isTestEnquiry, processEnquiry, resolveBusinessSpine } from "@/core/business";
 import {
   buildEnquiryNotification,
   resolveNotificationChannel,
@@ -51,7 +51,11 @@ export async function submitEnquiry(
       honeypot: String(input.website ?? ""),
     });
 
-    if (outcome.enquiry && !outcome.dropped) {
+    // Test artifacts never ring ANY notification channel (ADR-056, Law §7):
+    // the row still stores (CRM findability), but no email reaches the
+    // client owner or the founder — a verification run must never make a
+    // real client chase a test enquiry (review-workflow finding).
+    if (outcome.enquiry && !outcome.dropped && !isTestEnquiry(outcome.enquiry)) {
       const business = await spine.businesses.get(outcome.enquiry.businessId);
       if (business) {
         await sendSafely(

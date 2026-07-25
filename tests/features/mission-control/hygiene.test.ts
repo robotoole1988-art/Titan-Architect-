@@ -117,3 +117,29 @@ describe("test artifacts never steer (ADR-056)", () => {
     expect(names).not.toContain("Lab Visitor");
   });
 });
+
+describe("surface seams beyond the choke point (review finding)", () => {
+  it("Ask the Brain's enquiries intent and Command Mode's latest-enquiry never surface a test row", async () => {
+    const { runIntent } = await import("@/core/ask-brain");
+    const { latestEnquiryFor } = await import("@/core/command-mode");
+    const spine = await resolveBusinessSpine();
+    const { real } = await seedMixedWorld(spine);
+
+    const snapshot = await loadMemorySnapshot(spine);
+    const graph = buildKnowledgeGraph(snapshot);
+
+    // Ask the Brain: "show enquiries for X" lists only the real row.
+    const result = runIntent(
+      "enquiries_for",
+      { graph, observations: [], now: NOW },
+      { businessId: real.id },
+    );
+    expect(result.records.map((record) => record.label).join(" ")).not.toContain("Verification");
+    expect(result.records.length).toBeGreaterThan(0);
+
+    // Command Mode: a follow-up draft preview resolves the REAL latest
+    // enquiry, even though the test rows are newer.
+    const latest = latestEnquiryFor(graph, real.id);
+    expect(latest?.name).toBe("Dana Homeowner");
+  });
+});

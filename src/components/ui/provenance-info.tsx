@@ -15,12 +15,15 @@ import { Info } from "lucide-react";
 export function ProvenanceInfo({
   lines,
   label = "Provenance",
+  defaultOpen = false,
 }: {
   /** The exact lineage text, verbatim — one entry per line. */
   lines: ReadonlyArray<string>;
   label?: string;
+  /** Tests only: render the popover open so verbatim content is assertable. */
+  defaultOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(defaultOpen);
   if (lines.length === 0) return null;
   return (
     <span className="relative inline-flex">

@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { ProvenanceInfo } from "@/components/ui/provenance-info";
+import { recommendationBadge } from "../model/badges";
 import {
   acceptRecommendation,
   dismissRecommendation,
@@ -127,7 +128,7 @@ function RecommendationCard({
             {/* Exceptional badges only (ADR-056 Decision 3): NOW, or high
                 risk when it isn't already now. Everything else is unlabelled
                 — a badge is a signal, not a decoration. */}
-            {recommendation.urgency === "now" && (
+            {recommendationBadge(recommendation.urgency, recommendation.riskLevel) === "now" && (
               <Badge
                 variant="outline"
                 className={`text-[10px] uppercase tracking-wide ${URGENCY_STYLES.now}`}
@@ -136,7 +137,7 @@ function RecommendationCard({
                 now
               </Badge>
             )}
-            {recommendation.urgency !== "now" && recommendation.riskLevel === "high" && (
+            {recommendationBadge(recommendation.urgency, recommendation.riskLevel) === "high-risk" && (
               <Badge
                 variant="outline"
                 className={`text-[10px] uppercase tracking-wide ${URGENCY_STYLES.today}`}

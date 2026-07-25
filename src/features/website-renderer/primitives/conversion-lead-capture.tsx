@@ -113,7 +113,14 @@ export function ConversionLeadCapture({
         }),
       });
       setStatus(response.ok ? "sent" : "failed");
-      if (response.ok) {
+      // Test submissions never pollute the aggregate conversion counters
+      // (ADR-056, Law §7): the beacon is identity-free once recorded, so
+      // the only honest place to exclude is at the source.
+      const isTest = isTestEnquiry({
+        name: String(form.get("name") ?? ""),
+        contact: String(form.get("phone") ?? ""),
+      });
+      if (response.ok && !isTest) {
         sendSiteMetric(serving.slug, siteRelativePath(serving.slug, window.location.pathname), "form_submit");
       }
     } catch {

@@ -23,9 +23,13 @@ then rolled out. Four decisions below are the exemplar's contracts.
 
 1. **Explicit convention markers** (the ADR-049 mirror): name contains
    `(test)` or `(internal)`.
-2. **Verification-run naming**: name contains the whole word `test` or
-   `verification` — words that appear in the platform's own verification
-   submissions and in no real customer's name.
+2. **Verification-run naming**: name contains the whole word
+   `verification`. Bare `test` is deliberately EXCLUDED from this rule —
+   it collides with real UK names ("Test Valley Roofing", the Hampshire
+   borough), and a silently erased real lead is the worst failure a
+   lead-gen product can have (adversarial-review finding). The
+   parenthesised convention and rule 3 still catch every
+   platform-authored row.
 3. **Fiction-reserved identifiers — the principled backbone**: a contact
    that CANNOT belong to a real customer: RFC-2606/6761 reserved domains
    (`example.com/.org/.net`, `.test`, `.invalid`, `.example`) or the UK
@@ -44,6 +48,21 @@ then rolled out. Four decisions below are the exemplar's contracts.
 - **CRM detail surfaces keep test rows findable** (repositories stay
   unfiltered), exactly as internal businesses remain findable — exclusion
   is about steering, not erasure.
+- **Outbound email is a notification surface too** (adversarial-review
+  finding): the enquiry-notification send is gated on the same rule — a
+  test submission stores its row (findability) but emails nobody. A
+  verification run must never make a real client chase a test enquiry.
+- **Aggregate metrics are excluded at the SOURCE, honestly bounded**
+  (adversarial-review finding): the form-submit beacon is skipped for
+  test submissions from this change forward. Page-VIEW beacons from
+  verification visits are identity-free aggregates and cannot be
+  row-filtered — historical counters and view-side noise remain in
+  measurement figures, age out of the rolling windows, and are
+  acknowledged here rather than papered over.
+- **Legacy pending approvals** created from test rows before this ADR
+  surface in the queue for explicit founder decline (append-only feed;
+  one click, visible, honest). New command requests cannot reference test
+  rows — previews resolve through the filtered snapshot.
 - The learning feed is append-only: historical observations issued from
   test rows stand as history (constitution), but no longer steer — every
   current computation excludes the rows themselves. Health trend deltas may

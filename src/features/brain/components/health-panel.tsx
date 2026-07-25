@@ -7,6 +7,7 @@
 
 import Link from "next/link";
 import { ProvenanceInfo } from "@/components/ui/provenance-info";
+import { healthDotVisible, trendVisible } from "../model/badges";
 import {
   Activity,
   ChevronDown,
@@ -47,6 +48,9 @@ function Trend({ health }: { health: DepartmentHealth }) {
     );
   }
   const { delta, direction } = health.trend;
+  // A trend indicator marks MOVEMENT (ADR-056 Decision 3): a flat "− 0"
+  // on every tile is decoration, not a signal.
+  if (!trendVisible(health.trend)) return null;
   const Icon = direction === "up" ? TrendingUp : direction === "down" ? TrendingDown : Minus;
   const tone =
     direction === "up" ? "text-emerald-300" : direction === "down" ? "text-rose-300" : "text-muted-foreground";
@@ -83,7 +87,7 @@ export async function HealthStrip() {
             <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
               {/* The dot is a signal, not a decoration (ADR-056): it
                   renders only when a department needs the eye. */}
-              {health.scoreable && health.band !== "green" && (
+              {healthDotVisible(health.scoreable, health.band) && (
                 <span className={`size-1.5 rounded-full ${BAND_DOT[health.band]}`} />
               )}
               {DEPARTMENT_LABEL[health.department]}

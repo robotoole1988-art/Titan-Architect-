@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { ProvenanceInfo } from "@/components/ui/provenance-info";
+import { historyStatusBadged } from "../model/badges";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type {
@@ -147,7 +148,7 @@ function HistoryCard({ entry }: { entry: CommandHistoryEntry }) {
       <div className="flex flex-wrap items-center gap-1.5">
         {/* Exceptional-only badges (ADR-056): failure and partiality are
             signals; a clean execution is the default state — quiet check. */}
-        {entry.status === "executed" ? (
+        {!historyStatusBadged(entry.status) ? (
           <CheckCircle2 className="size-3.5 text-muted-foreground/60" aria-label="executed" />
         ) : (
           <Badge

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProvenanceInfo } from "@/components/ui/provenance-info";
+import { confidenceBadged } from "../model/badges";
 import {
   askBrainAction,
   recordBrainFollowUp,
@@ -89,7 +90,7 @@ export function AskBrain({ placeholder }: { placeholder?: string }) {
             <p className="min-w-0 flex-1 text-sm leading-relaxed">{response.answer}</p>
             {/* Confidence badges only when NOT high (ADR-056): uncertainty
                 is the signal; confidence is the default state. */}
-            {response.confidence !== "high" && (
+            {confidenceBadged(response.confidence) && (
               <Badge
                 variant="outline"
                 className={`shrink-0 text-[10px] uppercase tracking-wide ${CONFIDENCE_STYLES[response.confidence]}`}
@@ -114,9 +115,6 @@ export function AskBrain({ placeholder }: { placeholder?: string }) {
                       {record.detail && (
                         <span className="block text-xs text-muted-foreground">{record.detail}</span>
                       )}
-                      <span className="block text-[10px] uppercase tracking-wide text-muted-foreground/70">
-                        {record.provenance}
-                      </span>
                     </span>
                   </Link>
                 </li>
@@ -124,13 +122,17 @@ export function AskBrain({ placeholder }: { placeholder?: string }) {
             </ul>
           )}
 
-          {/* How it was derived — staged behind ⓘ (Law §3), verbatim. */}
+          {/* How it was derived — staged behind ⓘ (Law §3), verbatim,
+              including each evidence record's store lineage. */}
           <div className="mt-3 flex justify-end border-t border-border/60 pt-2">
             <ProvenanceInfo
               label="How this was answered"
               lines={[
                 response.derivation,
                 `answered by the ${response.backend} reasoner · read-only`,
+                ...response.records.map(
+                  (record) => `${record.label} — ${record.provenance}`,
+                ),
               ]}
             />
           </div>

@@ -17,8 +17,15 @@
 
 import type { Enquiry } from "./repository";
 
-/** Explicit convention markers + verification-run naming (whole words). */
-const NAME_MARKERS = /\((test|internal)\)|\b(test|verification)\b/i;
+/**
+ * Explicit convention markers + verification-run naming. Bare `test` is
+ * deliberately ABSENT: it collides with real UK names ("Test Valley
+ * Roofing" — the Hampshire borough on the river Test), and a silently
+ * erased real lead is the worst failure a lead-gen product can have.
+ * The parenthesised `(test)` convention and the fiction-reserved contact
+ * rules still catch every platform-authored row.
+ */
+const NAME_MARKERS = /\((test|internal)\)|\bverification\b/i;
 
 /** RFC-2606/6761 reserved domains — documentation/testing only, forever. */
 const RESERVED_DOMAIN =

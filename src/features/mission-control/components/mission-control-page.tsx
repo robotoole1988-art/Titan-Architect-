@@ -377,7 +377,7 @@ export async function MissionControlPage() {
               label="This briefing"
               lines={[
                 "Live from your CRM and first-party measurement. Every figure is measured; nothing here is invented.",
-                "Test artifacts are excluded from every figure on this screen (ADR-056).",
+                "Test enquiries are excluded from every enquiry-derived figure; identity-free view beacons from past verification visits age out of the measurement windows (ADR-056).",
                 ...(address.narrated
                   ? ["Opening line narrated from the live briefing payload — ADR-048 seam; the deterministic line stands whenever narration declines."]
                   : []),

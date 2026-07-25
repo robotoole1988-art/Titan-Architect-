@@ -37,6 +37,11 @@ describe("isTestEnquiry", () => {
       enquiry("Steve Protester", "steve@btinternet.com"), // substring, not word
       enquiry("Vera Kation", "vera@examplebakery.co.uk"), // domain merely contains 'example'
       enquiry("John Smith", "07700 800123"), // 07700 8xxxxx is a REAL range
+      // The review-workflow finding: real UK place names contain the bare
+      // word "test" — they must NEVER be erased (bare \btest\b is banned
+      // from the rule for exactly this reason).
+      enquiry("Test Valley Roofing", "office@tvroofing.co.uk"),
+      enquiry("Test Valley Borough Council", "07911 123456"),
     ]) {
       expect(isTestEnquiry(real), real.name).toBe(false);
     }

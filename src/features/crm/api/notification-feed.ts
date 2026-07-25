@@ -26,10 +26,14 @@ export async function getNotificationFeed(): Promise<NotificationFeed> {
   );
   // The bell reads repositories directly, so it applies the exclusion
   // rules itself (ADR-056, Law §7): no test artifact and no internal
-  // business ever rings or counts.
-  const recent = (await spine.enquiries.listRecent(20)).filter(
-    (enquiry) => !isTestEnquiry(enquiry) && !internal.has(enquiry.businessId),
-  );
+  // business ever rings or counts. Fetch WIDE then filter then cap —
+  // filtering after a tight cap would let a burst of excluded rows push
+  // real enquiries out of the window (review-workflow finding).
+  const recent = (await spine.enquiries.listRecent(60))
+    .filter(
+      (enquiry) => !isTestEnquiry(enquiry) && !internal.has(enquiry.businessId),
+    )
+    .slice(0, 20);
   return {
     newCount: recent.filter((enquiry) => enquiry.status === "new").length,
     recent: recent.slice(0, 8).map((enquiry) => ({
