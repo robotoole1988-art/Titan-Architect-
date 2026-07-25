@@ -3,7 +3,7 @@
  * The enquiry store IS the inbox — no parallel notifications table.
  */
 
-import { resolveBusinessSpine } from "@/core/business";
+import { isTestEnquiry, resolveBusinessSpine } from "@/core/business";
 
 export interface NotificationFeed {
   newCount: number;
@@ -19,9 +19,16 @@ export interface NotificationFeed {
 
 export async function getNotificationFeed(): Promise<NotificationFeed> {
   const spine = await resolveBusinessSpine();
-  const recent = await spine.enquiries.listRecent(20);
-  const businesses = new Map(
-    (await spine.businesses.list()).map((business) => [business.id, business.name]),
+  const all = await spine.businesses.list();
+  const businesses = new Map(all.map((business) => [business.id, business.name]));
+  const internal = new Set(
+    all.filter((business) => business.internal).map((business) => business.id),
+  );
+  // The bell reads repositories directly, so it applies the exclusion
+  // rules itself (ADR-056, Law §7): no test artifact and no internal
+  // business ever rings or counts.
+  const recent = (await spine.enquiries.listRecent(20)).filter(
+    (enquiry) => !isTestEnquiry(enquiry) && !internal.has(enquiry.businessId),
   );
   return {
     newCount: recent.filter((enquiry) => enquiry.status === "new").length,
