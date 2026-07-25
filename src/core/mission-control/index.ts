@@ -9,6 +9,8 @@
  */
 
 export { buildBriefing } from "./briefing";
+export { composeSituationAddress } from "./address";
+export type { SituationAddress, SituationAddressInput } from "./address";
 export type { BuildBriefingOptions } from "./briefing";
 export { projectMissionControlData } from "./project";
 export { DEFAULT_THRESHOLDS } from "./config";
