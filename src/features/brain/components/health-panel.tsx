@@ -87,7 +87,7 @@ export async function HealthStrip() {
             <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
               {/* The dot is a signal, not a decoration (ADR-056): it
                   renders only when a department needs the eye. */}
-              {healthDotVisible(health.scoreable, health.band) && (
+              {health.scoreable && healthDotVisible(true, health.band) && (
                 <span className={`size-1.5 rounded-full ${BAND_DOT[health.band]}`} />
               )}
               {DEPARTMENT_LABEL[health.department]}

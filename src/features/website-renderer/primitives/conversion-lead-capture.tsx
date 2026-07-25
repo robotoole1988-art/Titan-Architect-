@@ -14,7 +14,6 @@
 
 import { useState, type FormEvent } from "react";
 import { Phone } from "lucide-react";
-import { isTestEnquiry } from "@/core/business";
 import type { PrimitiveSectionProps } from "../model/types";
 import { sendSiteMetric, siteRelativePath } from "../components/site-metrics-beacon";
 import { Reveal } from "../motion/motion";
@@ -116,12 +115,10 @@ export function ConversionLeadCapture({
       setStatus(response.ok ? "sent" : "failed");
       // Test submissions never pollute the aggregate conversion counters
       // (ADR-056, Law §7): the beacon is identity-free once recorded, so
-      // the only honest place to exclude is at the source.
-      const isTest = isTestEnquiry({
-        name: String(form.get("name") ?? ""),
-        contact: String(form.get("phone") ?? ""),
-      });
-      if (response.ok && !isTest) {
+      // the exclusion happens at the source — the server marks test
+      // artifacts in its response and the beacon stays unsent.
+      const body = (await response.json().catch(() => null)) as { test?: boolean } | null;
+      if (response.ok && !body?.test) {
         sendSiteMetric(serving.slug, siteRelativePath(serving.slug, window.location.pathname), "form_submit");
       }
     } catch {

@@ -31,7 +31,13 @@ export interface SubmitEnquiryInput {
 }
 
 export type SubmitEnquiryResult =
-  | { ok: true }
+  | {
+      ok: true;
+      /** ADR-056: the row is a test artifact — stored, but it must not
+       * ring channels or beacon metrics. The route echoes this so the
+       * client-side form_submit beacon stays unsent. */
+      testArtifact?: boolean;
+    }
   | { ok: false; reason: "rate_limited" | "invalid" };
 
 export async function submitEnquiry(
@@ -67,7 +73,12 @@ export async function submitEnquiry(
         );
       }
     }
-    return { ok: true };
+    return {
+      ok: true,
+      ...(outcome.enquiry && isTestEnquiry(outcome.enquiry)
+        ? { testArtifact: true }
+        : {}),
+    };
   } catch {
     // Never leak internals to the public internet.
     return { ok: false, reason: "invalid" };
