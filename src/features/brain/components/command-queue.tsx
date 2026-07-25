@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ProvenanceInfo } from "@/components/ui/provenance-info";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type {
@@ -88,9 +89,10 @@ function PendingCard({
             >
               {TIER_LABELS[command.tier]}
             </Badge>
-            <Badge variant="outline" className="text-[10px] uppercase tracking-wide text-muted-foreground">
+            {/* Origin is context, not a signal — muted text, not a badge. */}
+            <span className="text-[11px] text-muted-foreground/70">
               via {command.via}
-            </Badge>
+            </span>
           </div>
           {/* Exactly what will happen — written at request time. */}
           <ul className="mt-1.5 flex flex-col gap-1">
@@ -143,12 +145,18 @@ function HistoryCard({ entry }: { entry: CommandHistoryEntry }) {
   return (
     <li className="rounded-lg border border-border/50 bg-background/30 px-3 py-2">
       <div className="flex flex-wrap items-center gap-1.5">
-        <Badge
-          variant="outline"
-          className={`text-[10px] uppercase tracking-wide ${STATUS_STYLES[entry.status]}`}
-        >
-          {entry.status}
-        </Badge>
+        {/* Exceptional-only badges (ADR-056): failure and partiality are
+            signals; a clean execution is the default state — quiet check. */}
+        {entry.status === "executed" ? (
+          <CheckCircle2 className="size-3.5 text-muted-foreground/60" aria-label="executed" />
+        ) : (
+          <Badge
+            variant="outline"
+            className={`text-[10px] uppercase tracking-wide ${STATUS_STYLES[entry.status]}`}
+          >
+            {entry.status}
+          </Badge>
+        )}
         <span className="text-xs font-medium">{entry.title}</span>
         <button
           type="button"
@@ -208,8 +216,9 @@ export function CommandQueue({
       <h2 className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
         <ShieldCheck className="size-3.5 text-emerald-300" />
         Command Mode — pending approvals
-        <span className="ml-auto font-normal normal-case tracking-normal">
-          ADR-052 · nothing runs without you
+        {/* Machinery off the wall (Law §3) — staged behind ⓘ, verbatim. */}
+        <span className="ml-auto">
+          <ProvenanceInfo lines={["ADR-052 · nothing runs without you"]} />
         </span>
       </h2>
 
@@ -266,9 +275,9 @@ export function CommandQueue({
                 className="rounded-lg border border-border/50 bg-background/30 px-3 py-2"
               >
                 <div className="flex flex-wrap items-center gap-1.5">
-                  <Badge variant="outline" className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  <span className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
                     declined
-                  </Badge>
+                  </span>
                   <span className="text-xs font-medium">{entry.title}</span>
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">

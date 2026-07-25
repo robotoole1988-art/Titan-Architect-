@@ -92,12 +92,14 @@ describe("test artifacts never steer (ADR-056)", () => {
     );
     expect(forReal).toHaveLength(1);
     expect(forReal[0].name).toBe("Dana Homeowner");
-    const actionNames = briefing.topActions.map((action) => action.title ?? "").join(" ");
-    expect(actionNames).not.toContain("Verification");
+    const actionText = briefing.topActions
+      .map((action) => `${action.what} ${action.recommendedAction}`)
+      .join(" ");
+    expect(actionText).not.toContain("Verification");
 
     // Health inputs: the enquiries factor counts only the real row.
     const health = computeDepartmentHealth({ graph, observations: [], now: NOW });
-    const enquiries = health.find((department) => department.department === "Enquiries");
+    const enquiries = health.find((department) => department.department === "enquiries");
     const evidence = JSON.stringify(enquiries ?? {});
     expect(evidence).not.toContain("Verification");
   });
