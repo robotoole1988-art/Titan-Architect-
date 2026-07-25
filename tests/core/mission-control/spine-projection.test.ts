@@ -125,8 +125,10 @@ describe("Mission Control on the memory spine (ADR-046)", () => {
       new Set(direct.publications.map((p) => p.id)),
     );
 
-    // ...and the pure engine distils both into the identical briefing.
-    const before = buildBriefing(direct, { now: NOW });
+    // ...and the pure engine distils both into the identical briefing —
+    // compared over the REAL rows: the briefing is an operating surface,
+    // so the test artifact must steer neither path (ADR-056).
+    const before = buildBriefing({ ...direct, enquiries: realDirect }, { now: NOW });
     const after = buildBriefing(projected, { now: NOW });
     expect(after).toEqual(before);
     expect(after.isEmpty).toBe(false);
