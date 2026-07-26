@@ -120,6 +120,13 @@ founder-reported error. Shared server/client values (typing cadence) live in
   reduced motion collapses to instant, complete visibility. (This also
   properly implements the fade-up whose `@keyframes` had been lost from the
   v5 prototype file.)
+- The room wrapper's own fade (`cc-fade`) animates opacity ONLY. A
+  transform on `.cc-room` — even a keyframe that fills to `none` — makes
+  the wrapper the containing block for every fixed element in the room,
+  and the layout collapses into the top of the page permanently (Chromium
+  keeps the containing block after the fill; found on the first production
+  deploy, 2026-07-26). The law is pinned statically by
+  `tests/features/command-centre/room-containing-block.test.ts`.
 - While in the room: no polling beyond the 60s refresh, no layout thrash;
   the typed briefing is presentation only.
 
