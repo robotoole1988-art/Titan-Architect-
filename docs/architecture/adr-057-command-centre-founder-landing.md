@@ -87,7 +87,31 @@ Command Mode (ADR-052); its private `CommandCentre` component is unchanged.
 The Law §5 rule ("Command belongs to Mission Control") is superseded for the
 landing by founder direction — the room outranks the map.
 
-### 5. Motion and performance
+### 5. The RSC boundary guard (permanent DoD item, from the M2 verification failure)
+
+"Gates green" cannot catch a client-function-called-from-server violation
+because no CI context holds a founder session — the first build shipped one
+(`typingDurationMs` exported from a "use client" module, called during
+server render; the room 500'd on the founder's first screen). Two permanent
+guards now make this class fail signed in or not:
+
+- **Static:** `tests/features/command-centre/client-boundary.test.ts` — a
+  server-side module of the feature may import ONLY PascalCase (component)
+  bindings from any "use client" module; `model/` and `api/` may never
+  carry the directive.
+- **Dynamic:** `src/app/(smoke)/rsc-smoke` — a deliberately STATIC route
+  rendering `CommandCentrePage`, so `next build` (which CI runs, ADR-009)
+  executes the room through the real RSC pipeline and fails the build on
+  violation. Its layout carries no auth so it can prerender; runtime access
+  stays founder-gated by the middleware's deny-by-default (pinned by test).
+  Never add a public-path exemption for it.
+
+Both guards were proven by reintroducing the violation: the boundary test
+fails with the offending import named, and the build fails with the exact
+founder-reported error. Shared server/client values (typing cadence) live in
+`model/typing.ts`, importable from both sides.
+
+### 6. Motion and performance
 
 - Canvas Brain: 2D, DPR-capped, `fillRect` particles, ~4ms/frame budget;
   pauses when the tab is hidden. prefers-reduced-motion renders one static

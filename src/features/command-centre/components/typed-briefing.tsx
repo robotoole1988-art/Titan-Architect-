@@ -9,15 +9,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
-
-const CHAR_MS = 16;
-const LINE_GAP_MS = 380;
-
-/** Total typing time — the server uses this to stage later sections. */
-export function typingDurationMs(lines: readonly string[]): number {
-  const chars = lines.reduce((sum, line) => sum + line.length, 0);
-  return chars * CHAR_MS + lines.length * LINE_GAP_MS;
-}
+import { CHAR_MS, LINE_GAP_MS } from "../model/typing";
 
 export function TypedBriefing({ lines }: { lines: readonly string[] }) {
   const fullText = useMemo(() => lines.join("\n"), [lines]);

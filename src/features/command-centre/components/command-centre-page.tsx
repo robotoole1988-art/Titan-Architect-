@@ -20,8 +20,9 @@ import {
   numberShortcuts,
   railItems,
 } from "../model/navigation";
+import { typingDurationMs } from "../model/typing";
 import { BrainCanvas } from "./brain-canvas";
-import { TypedBriefing, typingDurationMs } from "./typed-briefing";
+import { TypedBriefing } from "./typed-briefing";
 import { NavRail } from "./nav-rail";
 import { Constellation } from "./constellation";
 import { PulseRefresh } from "./pulse-refresh";
