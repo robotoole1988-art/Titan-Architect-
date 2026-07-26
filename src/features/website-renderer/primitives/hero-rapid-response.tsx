@@ -25,7 +25,6 @@ import {
   SectionShell,
   SectionTitle,
   SignalCTA,
-  displayFont,
   monoFont,
 } from "./atoms";
 
@@ -285,17 +284,6 @@ export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAss
             <p className="mt-1.5 line-clamp-2 text-[11px] leading-relaxed" style={{ color: "var(--wr-ink-faint)" }}>
               {media.direction}
             </p>
-          </div>
-        )}
-
-        {/* oversized ghost word anchoring the composition — the place itself */}
-        {blueprint.identity.location && (
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-6 right-0 select-none text-right leading-none opacity-[0.045]"
-            style={{ ...displayFont, fontSize: "clamp(5rem, 16vw, 13rem)", fontWeight: 800 }}
-          >
-            {blueprint.identity.location}
           </div>
         )}
       </Container>

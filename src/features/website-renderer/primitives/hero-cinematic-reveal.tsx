@@ -28,7 +28,6 @@ import {
   SectionShell,
   SectionTitle,
   SignalCTA,
-  displayFont,
   monoFont,
 } from "./atoms";
 
@@ -353,16 +352,6 @@ export function HeroCinematicReveal({
           </div>
         )}
 
-        {/* the oversized ghost word — the place the work belongs to */}
-        {blueprint.identity.location && (
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-8 right-0 select-none text-right leading-none opacity-[0.05]"
-            style={{ ...displayFont, fontSize: "clamp(5rem, 15vw, 12rem)", fontWeight: 800 }}
-          >
-            {blueprint.identity.location}
-          </div>
-        )}
       </Container>
     </SectionShell>
   );
