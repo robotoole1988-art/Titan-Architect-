@@ -6,6 +6,7 @@
 
 import { describe, expect, it } from "vitest";
 import {
+  commandCentreHome,
   primaryNavigation,
   secondaryNavigation,
 } from "@/config/navigation";
@@ -99,5 +100,18 @@ describe("the navigation guarantee (M2 addendum)", () => {
       ...secondaryNavigation,
     ].map((item) => item.href);
     expect(allDestinations().map((item) => item.href)).toEqual(sidebar);
+  });
+});
+
+describe("the way home (ADR-057 §7)", () => {
+  it("the home entry points at the room and stays out of the Layer 2 registry", () => {
+    expect(commandCentreHome.href).toBe("/");
+    expect(allDestinations().map((item) => item.href)).not.toContain("/");
+  });
+
+  it("the palette finds home by name and by 'home'", () => {
+    const items = [commandCentreHome, ...allDestinations()];
+    expect(filterDestinations("command", items)[0].href).toBe("/");
+    expect(filterDestinations("home", items)[0].href).toBe("/");
   });
 });

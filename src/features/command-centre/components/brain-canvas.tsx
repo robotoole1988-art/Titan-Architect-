@@ -6,9 +6,9 @@
  *
  * Canvas 2D, requestAnimationFrame, DPR-aware (capped at 2). The Brain
  * breathes, slowly rotates, and morphs between four particle shapes;
- * inbound motes stream toward it labelled ONLY with subsystems that really
- * exist (Honesty Law — no "Google"/"Meta" streams until those integrations
- * do). Pauses when the tab is hidden; prefers-reduced-motion renders one
+ * inbound motes stream toward it as unlabelled sparks (labelled streams
+ * read as stray UI in production, 2026-07-26 — reinstate only with a
+ * designed treatment). Pauses when the tab is hidden; prefers-reduced-motion renders one
  * static frame and never starts the loop. Budget: well under 4ms/frame on a
  * mid-range laptop — dots are fillRect, not arc.
  */
@@ -16,15 +16,6 @@
 import { useEffect, useRef } from "react";
 
 const PARTICLES = 700;
-const STREAM_SOURCES = [
-  "Website",
-  "Enquiries",
-  "Builds",
-  "Reviews",
-  "Measurement",
-  "CRM",
-];
-
 type Vec3 = [number, number, number];
 
 function fib(i: number, n: number): Vec3 {
@@ -70,7 +61,7 @@ interface Particle {
 
 interface Mote {
   sx: number; sy: number; t: number; sp: number;
-  label: string | null; c: number;
+  c: number;
 }
 
 export function BrainCanvas({ alert = false }: { alert?: boolean }) {
@@ -114,7 +105,6 @@ export function BrainCanvas({ alert = false }: { alert?: boolean }) {
       motes.push({
         sx, sy, t: initialT,
         sp: 0.004 + rand() * 0.004,
-        label: rand() < 0.2 ? STREAM_SOURCES[Math.floor(rand() * STREAM_SOURCES.length)] : null,
         c: rand() - 0.5,
       });
     }
@@ -126,7 +116,7 @@ export function BrainCanvas({ alert = false }: { alert?: boolean }) {
       canvas!.style.width = `${window.innerWidth}px`;
       canvas!.style.height = `${window.innerHeight}px`;
       CX = W / 2;
-      CY = H * 0.27;
+      CY = H * 0.25;
       R = Math.min(W, H) * 0.105;
     }
     size();
@@ -166,12 +156,6 @@ export function BrainCanvas({ alert = false }: { alert?: boolean }) {
         cx!.globalAlpha = Math.min(1, p.t * 4) * 0.85;
         cx!.fillStyle = "#79e6ea";
         cx!.fillRect(x - DPR, y - DPR, 2.4 * DPR, 2.4 * DPR);
-        if (p.label && p.t < 0.4) {
-          cx!.globalAlpha = 0.5 * (1 - p.t * 2.2);
-          cx!.fillStyle = "#7d93b8";
-          cx!.font = `${10 * DPR}px ui-sans-serif, system-ui, sans-serif`;
-          cx!.fillText(p.label, x + 7 * DPR, y + 3 * DPR);
-        }
       }
 
       // the Brain

@@ -66,7 +66,7 @@ export async function CommandCentrePage({ founderName }: { founderName: string }
         <PulseStrip facts={facts} />
         <PulseRefresh />
 
-        <section className="fixed left-1/2 top-[42%] w-[min(700px,92vw)] -translate-x-1/2 -translate-y-1/3 text-center">
+        <section className="fixed left-1/2 top-[42%] w-[min(700px,92vw)] -translate-x-1/2 text-center">
           <p className="cc-reveal text-[11px] uppercase tracking-[0.4em] text-[#5d7396]" style={{ animationDelay: "400ms" }}>
             {briefing.greeting}
           </p>
