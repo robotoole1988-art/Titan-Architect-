@@ -113,7 +113,12 @@ export function ConversionLeadCapture({
         }),
       });
       setStatus(response.ok ? "sent" : "failed");
-      if (response.ok) {
+      // Test submissions never pollute the aggregate conversion counters
+      // (ADR-056, Law §7): the beacon is identity-free once recorded, so
+      // the exclusion happens at the source — the server marks test
+      // artifacts in its response and the beacon stays unsent.
+      const body = (await response.json().catch(() => null)) as { test?: boolean } | null;
+      if (response.ok && !body?.test) {
         sendSiteMetric(serving.slug, siteRelativePath(serving.slug, window.location.pathname), "form_submit");
       }
     } catch {

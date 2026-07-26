@@ -25,7 +25,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ notice?: string }>;
 }) {
-  if (await getFounderSession()) redirect("/dashboard");
+  if (await getFounderSession()) redirect("/");
   const { notice } = await searchParams;
   return (
     <Card className="w-full max-w-sm">

@@ -82,6 +82,8 @@ ADR that supersedes the old one and update the old one's status.
 | [052](./adr-052-command-mode.md) | Command Mode v1 — approval-gated execution with guardrail tiers as core architecture | Accepted |
 | [053](./adr-053-verified-reviews-customer-imagery.md) | Site factory completion — verified review ingestion + founder-gated customer imagery | Accepted |
 | [054](./adr-054-go-live-infrastructure.md) | Go-live infrastructure v1 — founder-only Supabase Auth, RLS lockdown, Vercel production path | Accepted |
+| [056](./adr-056-jarvis-mission-control.md) | Jarvis Mission Control — address contract, test-artifact hygiene, exceptional badges, ⓘ staging (055 does not exist) | Proposed |
+| [057](./adr-057-command-centre-founder-landing.md) | The Command Centre becomes the founder landing surface — two layers, honesty at day-one scale, navigation guarantee | Proposed |
 
 ### Writing a new ADR
 

@@ -8,7 +8,7 @@
  * and NEVER breaks the enquiry — the lead is already safe in the spine.
  */
 
-import { processEnquiry, resolveBusinessSpine } from "@/core/business";
+import { isTestEnquiry, processEnquiry, resolveBusinessSpine } from "@/core/business";
 import {
   buildEnquiryNotification,
   resolveNotificationChannel,
@@ -31,7 +31,13 @@ export interface SubmitEnquiryInput {
 }
 
 export type SubmitEnquiryResult =
-  | { ok: true }
+  | {
+      ok: true;
+      /** ADR-056: the row is a test artifact — stored, but it must not
+       * ring channels or beacon metrics. The route echoes this so the
+       * client-side form_submit beacon stays unsent. */
+      testArtifact?: boolean;
+    }
   | { ok: false; reason: "rate_limited" | "invalid" };
 
 export async function submitEnquiry(
@@ -51,7 +57,11 @@ export async function submitEnquiry(
       honeypot: String(input.website ?? ""),
     });
 
-    if (outcome.enquiry && !outcome.dropped) {
+    // Test artifacts never ring ANY notification channel (ADR-056, Law §7):
+    // the row still stores (CRM findability), but no email reaches the
+    // client owner or the founder — a verification run must never make a
+    // real client chase a test enquiry (review-workflow finding).
+    if (outcome.enquiry && !outcome.dropped && !isTestEnquiry(outcome.enquiry)) {
       const business = await spine.businesses.get(outcome.enquiry.businessId);
       if (business) {
         await sendSafely(
@@ -63,7 +73,12 @@ export async function submitEnquiry(
         );
       }
     }
-    return { ok: true };
+    return {
+      ok: true,
+      ...(outcome.enquiry && isTestEnquiry(outcome.enquiry)
+        ? { testArtifact: true }
+        : {}),
+    };
   } catch {
     // Never leak internals to the public internet.
     return { ok: false, reason: "invalid" };

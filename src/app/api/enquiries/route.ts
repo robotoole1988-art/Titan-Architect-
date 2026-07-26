@@ -30,5 +30,5 @@ export async function POST(request: NextRequest) {
       { status: result.reason === "rate_limited" ? 429 : 400 },
     );
   }
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ ok: true, test: result.testArtifact ?? false });
 }

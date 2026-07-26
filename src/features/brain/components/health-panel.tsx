@@ -6,6 +6,8 @@
  */
 
 import Link from "next/link";
+import { ProvenanceInfo } from "@/components/ui/provenance-info";
+import { healthDotVisible, trendVisible } from "../model/badges";
 import {
   Activity,
   ChevronDown,
@@ -46,6 +48,9 @@ function Trend({ health }: { health: DepartmentHealth }) {
     );
   }
   const { delta, direction } = health.trend;
+  // A trend indicator marks MOVEMENT (ADR-056 Decision 3): a flat "− 0"
+  // on every tile is decoration, not a signal.
+  if (!trendVisible(health.trend)) return null;
   const Icon = direction === "up" ? TrendingUp : direction === "down" ? TrendingDown : Minus;
   const tone =
     direction === "up" ? "text-emerald-300" : direction === "down" ? "text-rose-300" : "text-muted-foreground";
@@ -65,8 +70,11 @@ export async function HealthStrip() {
       <h2 className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
         <Activity className="size-3.5 text-sky-300" />
         Department health
-        <span className="ml-auto font-normal normal-case tracking-normal">
-          Health Engine · deterministic · formulas in the Brain
+        {/* Machinery off the wall (Law §3) — staged behind ⓘ, verbatim. */}
+        <span className="ml-auto">
+          <ProvenanceInfo
+            lines={["Health Engine · deterministic · formulas in the Brain"]}
+          />
         </span>
       </h2>
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
@@ -77,9 +85,11 @@ export async function HealthStrip() {
             className="flex flex-col gap-1 rounded-xl border border-border/60 bg-background/40 px-3 py-2.5 transition-colors hover:border-foreground/30"
           >
             <span className="flex items-center gap-1.5 text-[11px] uppercase tracking-wide text-muted-foreground">
-              <span
-                className={`size-1.5 rounded-full ${health.scoreable ? BAND_DOT[health.band] : "bg-muted-foreground/40"}`}
-              />
+              {/* The dot is a signal, not a decoration (ADR-056): it
+                  renders only when a department needs the eye. */}
+              {health.scoreable && healthDotVisible(true, health.band) && (
+                <span className={`size-1.5 rounded-full ${BAND_DOT[health.band]}`} />
+              )}
               {DEPARTMENT_LABEL[health.department]}
             </span>
             {health.scoreable ? (

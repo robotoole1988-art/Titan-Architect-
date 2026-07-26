@@ -17,12 +17,22 @@ import {
   ChevronDown,
   ExternalLink,
   ListPlus,
+  MoreHorizontal,
   Share2,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { ProvenanceInfo } from "@/components/ui/provenance-info";
+import { recommendationBadge } from "../model/badges";
 import {
   acceptRecommendation,
   dismissRecommendation,
@@ -109,25 +119,33 @@ function RecommendationCard({
           {rank}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium leading-snug">
+          {/* The imperative leads — two lines at most (Law §2). Narration
+              lives behind "why", never as a standing paragraph. */}
+          <p className="line-clamp-2 text-sm font-medium leading-snug">
             {recommendation.recommendedAction}
           </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {recommendation.narrated ?? recommendation.whyItMatters}
-          </p>
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-            <Badge
-              variant="outline"
-              className={`text-[10px] uppercase tracking-wide ${URGENCY_STYLES[recommendation.urgency]}`}
-            >
-              {recommendation.urgency.replace("_", " ")}
-            </Badge>
-            <Badge variant="outline" className="text-[10px] uppercase tracking-wide text-muted-foreground">
-              {recommendation.confidence} confidence
-            </Badge>
-            <Badge variant="outline" className="text-[10px] uppercase tracking-wide text-muted-foreground">
-              risk if ignored: {recommendation.riskLevel}
-            </Badge>
+            {/* Exceptional badges only (ADR-056 Decision 3): NOW, or high
+                risk when it isn't already now. Everything else is unlabelled
+                — a badge is a signal, not a decoration. */}
+            {recommendationBadge(recommendation.urgency, recommendation.riskLevel) === "now" && (
+              <Badge
+                variant="outline"
+                className={`text-[10px] uppercase tracking-wide ${URGENCY_STYLES.now}`}
+                data-badge="now"
+              >
+                now
+              </Badge>
+            )}
+            {recommendationBadge(recommendation.urgency, recommendation.riskLevel) === "high-risk" && (
+              <Badge
+                variant="outline"
+                className={`text-[10px] uppercase tracking-wide ${URGENCY_STYLES.today}`}
+                data-badge="high-risk"
+              >
+                high risk
+              </Badge>
+            )}
             <button
               type="button"
               onClick={() => setOpen((value) => !value)}
@@ -141,6 +159,9 @@ function RecommendationCard({
 
           {open && (
             <div className="mt-3 flex flex-col gap-2 rounded-lg border border-border/50 bg-muted/20 p-3 text-xs">
+              {recommendation.narrated && (
+                <p className="text-muted-foreground">{recommendation.narrated}</p>
+              )}
               <p>
                 <span className="font-medium text-foreground">What happened: </span>
                 <span className="text-muted-foreground">{recommendation.whatHappened}</span>
@@ -175,6 +196,10 @@ function RecommendationCard({
                 ))}
               </ul>
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
+                {recommendation.urgency.replace("_", " ")} · {recommendation.confidence}{" "}
+                confidence · risk if ignored: {recommendation.riskLevel}
+              </p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground/70">
                 rule {recommendation.rule} · owner {recommendation.suggestedOwner} · read-only — nothing executes without you
               </p>
             </div>
@@ -196,7 +221,8 @@ function RecommendationCard({
           )}
         </div>
 
-        <div className="flex shrink-0 flex-col gap-1.5">
+        {/* ONE primary action; the rest live in the overflow (Law §2). */}
+        <div className="flex shrink-0 items-start gap-1">
           <Button
             size="sm"
             variant="secondary"
@@ -207,40 +233,31 @@ function RecommendationCard({
             <Check className="size-3.5" />
             Accept
           </Button>
-          {businessId && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={queueNextAction}
-              disabled={pending}
-              title="Queue this as a next action on the business (lands as a pending approval)"
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={<Button size="sm" variant="ghost" aria-label="More actions" />}
             >
-              <ListPlus className="size-3.5" />
-              Queue task
-            </Button>
-          )}
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={delegate}
-            disabled={pending}
-            title="Mark as delegated (lands as a pending approval)"
-          >
-            <Share2 className="size-3.5" />
-            Delegate
-          </Button>
-          {!dismissing && (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => setDismissing(true)}
-              disabled={pending}
-              title="Dismiss"
-            >
-              <X className="size-3.5" />
-              Dismiss
-            </Button>
-          )}
+              <MoreHorizontal className="size-4" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-52">
+              <DropdownMenuGroup>
+                {businessId && (
+                  <DropdownMenuItem onClick={queueNextAction} disabled={pending}>
+                    <ListPlus className="size-4" />
+                    Queue task
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuItem onClick={delegate} disabled={pending}>
+                  <Share2 className="size-4" />
+                  Delegate
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDismissing(true)} disabled={pending}>
+                  <X className="size-4" />
+                  Dismiss…
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </li>
@@ -262,8 +279,11 @@ export function RecommendationList({
       <h2 className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
         <BrainCircuit className="size-3.5 text-sky-300" />
         Today&apos;s top actions
-        <span className="ml-auto font-normal normal-case tracking-normal">
-          Decision Engine · {backend} narration · approval-gated (ADR-052)
+        {/* Machinery off the wall (Law §3) — staged behind ⓘ, verbatim. */}
+        <span className="ml-auto">
+          <ProvenanceInfo
+            lines={[`Decision Engine · ${backend} narration · approval-gated (ADR-052)`]}
+          />
         </span>
       </h2>
       {visible.length === 0 ? (

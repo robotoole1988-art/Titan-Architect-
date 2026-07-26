@@ -39,6 +39,7 @@ export {
 } from "./build-model";
 export type { BuildItemKind, BuildItemStatus } from "./build-model";
 
+export { isTestEnquiry, type TestArtifactSignals } from "./test-artifacts";
 export { BusinessNotFoundError } from "./repository";
 export type {
   BusinessRepository,

@@ -103,5 +103,6 @@ export async function completeMagicLinkSignIn(params: {
     await supabase.auth.signOut();
     return { destination: "/login?notice=not-authorised" };
   }
-  return { destination: "/dashboard" };
+  // The founder lands in the Command Centre (ADR-057).
+  return { destination: "/" };
 }

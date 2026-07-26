@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TITAN — The Opening</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%;overflow:hidden;background:#020305;font-family:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",sans-serif;color:#eef1f5;-webkit-font-smoothing:antialiased}
+  #space{position:fixed;inset:0;display:block}
+  .vignette{position:fixed;inset:0;pointer-events:none;background:radial-gradient(120% 90% at 50% 45%, transparent 40%, rgba(0,0,0,.55) 100%)}
+
+  /* fade-in of the whole room */
+  .room{position:fixed;inset:0;opacity:0;animation:roomIn 2.6s ease forwards}
+  @keyframes roomIn{to{opacity:1}}
+
+  /* ---- the greeting ---- */
+  .greet{position:fixed;left:50%;top:59%;transform:translateX(-50%);width:min(620px,86vw);text-align:center;pointer-events:none}
+  .greet .who{font-size:11px;letter-spacing:.42em;color:#5d7396;text-transform:uppercase;opacity:0;animation:fadeUp 1.2s ease 2.2s forwards}
+  #speech{margin-top:16px;font-size:19px;font-weight:300;line-height:1.75;color:#dfe5ee;min-height:150px}
+  #speech b{font-weight:600;color:#fff}
+  #speech .gold{color:#d8b26a}
+  .caret{display:inline-block;width:1px;height:1.05em;background:#7fa8ff;vertical-align:-2px;margin-left:2px;animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .continue{margin-top:26px;opacity:0;pointer-events:auto}
+  .continue.show{animation:fadeUp 1s ease forwards}
+  .continue button{background:rgba(20,26,38,.7);border:1px solid #2b3852;color:#cfe0ff;border-radius:999px;padding:11px 30px;font-size:14px;letter-spacing:.06em;cursor:pointer;backdrop-filter:blur(8px);transition:.25s}
+  .continue button:hover{border-color:#6d9bff;box-shadow:0 0 24px rgba(109,155,255,.25)}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ---- holographic department rail (mouse to left edge) ---- */
+  .rail{position:fixed;left:0;top:0;bottom:0;width:190px;display:flex;flex-direction:column;justify-content:center;gap:4px;padding-left:26px;transform:translateX(-30px);opacity:0;transition:opacity .5s ease,transform .5s cubic-bezier(.2,.8,.2,1);pointer-events:none}
+  body.rail-on .rail{opacity:1;transform:none;pointer-events:auto}
+  .dept{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:10px;color:#9fb0c8;font-size:13.5px;letter-spacing:.03em;cursor:pointer;transition:.25s;border:1px solid transparent}
+  .dept:hover{color:#fff;background:rgba(120,160,255,.06);border-color:rgba(120,160,255,.18);text-shadow:0 0 14px rgba(140,180,255,.6)}
+  .dept span{filter:drop-shadow(0 0 6px rgba(120,170,255,.5))}
+  .railhint{position:fixed;left:14px;top:50%;transform:translateY(-50%);width:2px;height:70px;border-radius:2px;background:linear-gradient(180deg,transparent,#3a50a0,transparent);opacity:.5;transition:opacity .4s}
+  body.rail-on .railhint{opacity:0}
+
+  /* ---- cinematic timeline ---- */
+  .feed{position:fixed;left:0;right:0;bottom:0;height:52px;display:flex;align-items:center;gap:40px;padding:0 34px;background:linear-gradient(0deg,rgba(2,4,8,.9),transparent);font-size:12.5px;color:#8896ab;overflow:hidden;white-space:nowrap}
+  .feed .item{display:inline-flex;gap:10px;align-items:center;opacity:0;animation:feedIn .9s ease forwards}
+  .feed .t{color:#54637d;font-variant-numeric:tabular-nums}
+  .feed .dot{width:5px;height:5px;border-radius:50%;background:#57d4d8;box-shadow:0 0 8px #57d4d8}
+  .feed .dot.g{background:#d8b26a;box-shadow:0 0 8px #d8b26a}
+  @keyframes feedIn{from{opacity:0;transform:translateY(8px)}to{opacity:.92;transform:none}}
+
+  .brand{position:fixed;top:24px;left:50%;transform:translateX(-50%);font-size:10.5px;letter-spacing:.5em;color:#44506a;text-transform:uppercase;opacity:0;animation:fadeUp 1.4s ease 1.4s forwards}
+  .status{position:fixed;top:22px;right:28px;font-size:10.5px;letter-spacing:.18em;color:#4a5670;text-transform:uppercase;opacity:0;animation:fadeUp 1.4s ease 1.8s forwards}
+  .status i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#4fd08c;box-shadow:0 0 10px #4fd08c;margin-right:8px;font-style:normal;vertical-align:1px}
+  .note{position:fixed;bottom:60px;right:20px;font-size:10px;color:#39435a;letter-spacing:.05em}
+  @media (prefers-reduced-motion: reduce){ *{animation-duration:.01s!important;transition-duration:.01s!important} }
+</style>
+</head>
+<body>
+<canvas id="space"></canvas>
+<div class="vignette"></div>
+
+<div class="room">
+  <div class="brand">T I T A N</div>
+  <div class="status"><i></i>All systems · Sat 25 Jul</div>
+
+  <div class="railhint"></div>
+  <nav class="rail">
+    <div class="dept"><span>🧠</span> Brain</div>
+    <div class="dept"><span>🌍</span> Marketing</div>
+    <div class="dept"><span>💰</span> Sales</div>
+    <div class="dept"><span>🎬</span> Experience</div>
+    <div class="dept"><span>📞</span> Reception</div>
+    <div class="dept"><span>📈</span> Growth</div>
+    <div class="dept"><span>⚙️</span> Automation</div>
+    <div class="dept"><span>📊</span> Intelligence</div>
+    <div class="dept"><span>🛠</span> Operations</div>
+    <div class="dept"><span>👥</span> Customers</div>
+  </nav>
+
+  <div class="greet">
+    <div class="who">Good afternoon, Robert</div>
+    <div id="speech"></div>
+    <div class="continue" id="cont"><button>Shall we continue?</button></div>
+  </div>
+
+  <div class="feed" id="feed"></div>
+  <div class="note">prototype · the feeling — every shipped figure will be measured, never invented</div>
+</div>
+
+<script>
+/* ================= canvas: particles, streams, the Brain ================= */
+const cv=document.getElementById('space'),cx=cv.getContext('2d');
+let W,H,CXp,CYp,R;
+function size(){W=cv.width=innerWidth*devicePixelRatio;H=cv.height=innerHeight*devicePixelRatio;
+  cv.style.width=innerWidth+'px';cv.style.height=innerHeight+'px';
+  CXp=W/2;CYp=H*0.40;R=Math.min(W,H)*0.085}
+size();addEventListener('resize',size);
+const DPR=devicePixelRatio;
+
+/* ambient dust */
+const dust=[...Array(150)].map(()=>({x:Math.random()*1,y:Math.random()*1,
+  vx:(Math.random()-.5)*.00004,vy:(Math.random()-.5)*.00004,r:Math.random()*1.3+.3,a:Math.random()*.35+.08}));
+
+/* data streams flowing into the Brain */
+const SOURCES=["Calls","Google","Meta","Website","Email","Reviews","Competitors","Weather","Revenue","Customers","SEO","AI agents"];
+const streams=[];
+function spawnStream(){
+  const ang=Math.random()*Math.PI*2, d=Math.max(W,H)*0.62;
+  streams.push({sx:CXp+Math.cos(ang)*d, sy:CYp+Math.sin(ang)*d, t:0,
+    speed:.0016+Math.random()*.0022,
+    label:Math.random()<.16?SOURCES[Math.floor(Math.random()*SOURCES.length)]:null,
+    curve:(Math.random()-.5)*.9});
+}
+for(let i=0;i<26;i++){spawnStream();streams[i].t=Math.random()}
+
+/* outbound neural pulses (AI tasks leaving the Brain) */
+const pulses=[];
+function spawnPulse(){const ang=Math.random()*Math.PI*2;
+  pulses.push({ang,t:0,speed:.004+Math.random()*.003})}
+setInterval(()=>{if(!document.hidden&&pulses.length<4)spawnPulse()},2600);
+
+let breath=0;
+function frame(){
+  cx.clearRect(0,0,W,H);
+  breath+=0.008;
+  const b=1+Math.sin(breath)*0.045;           // the Brain breathes
+
+  /* dust */
+  for(const p of dust){
+    p.x+=p.vx;p.y+=p.vy;
+    if(p.x<0)p.x=1;if(p.x>1)p.x=0;if(p.y<0)p.y=1;if(p.y>1)p.y=0;
+    cx.globalAlpha=p.a*(0.7+0.3*Math.sin(breath*2+p.x*9));
+    cx.fillStyle="#9db8e8";
+    cx.beginPath();cx.arc(p.x*W,p.y*H,p.r*DPR,0,7);cx.fill();
+  }
+  cx.globalAlpha=1;
+
+  /* streams in */
+  for(let i=streams.length-1;i>=0;i--){
+    const s=streams[i]; s.t+=s.speed;
+    if(s.t>=1){streams.splice(i,1);spawnStream();continue}
+    const e=1-Math.pow(1-s.t,2);              // ease toward the Brain
+    const mx=(s.sx+CXp)/2 + (s.sy-CYp)*s.curve*.35;
+    const my=(s.sy+CYp)/2 - (s.sx-CXp)*s.curve*.35;
+    const x=(1-e)*(1-e)*s.sx+2*(1-e)*e*mx+e*e*CXp;
+    const y=(1-e)*(1-e)*s.sy+2*(1-e)*e*my+e*e*CYp;
+    const a=Math.min(1,s.t*3)*(1-e*.25);
+    cx.globalAlpha=a*.8;
+    cx.fillStyle="#6fd6da";
+    cx.beginPath();cx.arc(x,y,1.4*DPR,0,7);cx.fill();
+    /* faint trailing */
+    cx.globalAlpha=a*.22;
+    cx.beginPath();cx.arc(x,y,3.4*DPR,0,7);cx.fill();
+    if(s.label&&s.t<.5){
+      cx.globalAlpha=Math.min(.55,s.t*2)*(1-s.t*1.6);
+      cx.fillStyle="#7d93b8";cx.font=`${10.5*DPR}px -apple-system,Inter,sans-serif`;
+      cx.fillText(s.label,x+8*DPR,y+3*DPR);
+    }
+  }
+  cx.globalAlpha=1;
+
+  /* the Brain — layered glow, breathing */
+  const r=R*b;
+  let g=cx.createRadialGradient(CXp,CYp,0,CXp,CYp,r*3.2);
+  g.addColorStop(0,"rgba(120,170,255,.16)");g.addColorStop(.5,"rgba(90,140,240,.05)");g.addColorStop(1,"transparent");
+  cx.fillStyle=g;cx.beginPath();cx.arc(CXp,CYp,r*3.2,0,7);cx.fill();
+  g=cx.createRadialGradient(CXp-r*.25,CYp-r*.3,r*.1,CXp,CYp,r*1.15);
+  g.addColorStop(0,"rgba(210,230,255,.95)");g.addColorStop(.35,"rgba(130,175,255,.55)");
+  g.addColorStop(.75,"rgba(70,110,220,.22)");g.addColorStop(1,"rgba(40,70,160,.05)");
+  cx.fillStyle=g;cx.beginPath();cx.arc(CXp,CYp,r,0,7);cx.fill();
+  /* inner core shimmer */
+  cx.globalAlpha=.5+.3*Math.sin(breath*1.7);
+  g=cx.createRadialGradient(CXp,CYp,0,CXp,CYp,r*.42);
+  g.addColorStop(0,"rgba(255,255,255,.9)");g.addColorStop(1,"transparent");
+  cx.fillStyle=g;cx.beginPath();cx.arc(CXp,CYp,r*.42,0,7);cx.fill();
+  cx.globalAlpha=1;
+  /* orbit ring */
+  cx.strokeStyle="rgba(130,170,255,.14)";cx.lineWidth=1*DPR;
+  cx.beginPath();cx.ellipse(CXp,CYp,r*1.9,r*1.9*.32,breath*.3,0,7);cx.stroke();
+
+  /* pulses out */
+  for(let i=pulses.length-1;i>=0;i--){
+    const p=pulses[i];p.t+=p.speed;
+    if(p.t>=1){pulses.splice(i,1);continue}
+    const d=r+p.t*Math.max(W,H)*.45;
+    const x=CXp+Math.cos(p.ang)*d,y=CYp+Math.sin(p.ang)*d;
+    cx.globalAlpha=(1-p.t)*.9;
+    cx.fillStyle="#8fb4ff";
+    cx.beginPath();cx.arc(x,y,1.8*DPR,0,7);cx.fill();
+    cx.globalAlpha=(1-p.t)*.25;
+    cx.strokeStyle="#8fb4ff";cx.lineWidth=.7*DPR;
+    cx.beginPath();cx.moveTo(CXp+Math.cos(p.ang)*(d-14*DPR),CYp+Math.sin(p.ang)*(d-14*DPR));cx.lineTo(x,y);cx.stroke();
+  }
+  cx.globalAlpha=1;
+  requestAnimationFrame(frame);
+}
+frame();
+
+/* ================= the Brain speaks (real, measured facts) ================= */
+const LINES=[
+ ["The pilot is ready. ",""],
+ ["<b>Liberty Contractors</b> — seven pages built, pitch armed, message unsent. ",""],
+ ["Google is reviewing our Ads application — day four of five. ",""],
+ ["All enquiries answered. Nothing stalled. ",""],
+ ["<span class='gold'>One decision awaits you:</span> Summit's generated media. ",""]
+];
+const speech=document.getElementById('speech');
+let li=0,ci=0,buf="";
+function type(){
+  if(li>=LINES.length){document.getElementById('cont').classList.add('show');return}
+  const target=LINES[li][0];
+  /* type by character but keep HTML tags atomic */
+  if(ci<target.length){
+    if(target[ci]==='<'){const close=target.indexOf('>',ci);buf+=target.slice(ci,close+1);ci=close+1}
+    else{buf+=target[ci];ci++}
+    speech.innerHTML=buf+"<span class='caret'></span>";
+    setTimeout(type,18+Math.random()*24);
+  }else{li++;ci=0;buf+= li<LINES.length?"<br>":"";setTimeout(type,460)}
+}
+setTimeout(type,3400);
+
+/* ================= holographic rail ================= */
+addEventListener('mousemove',e=>{
+  if(e.clientX<170)document.body.classList.add('rail-on');
+  else if(e.clientX>300)document.body.classList.remove('rail-on');
+});
+
+/* ================= cinematic feed (labelled prototype events) ================= */
+const EVENTS=[
+ ["15:42","Renderer built Liberty Contractors — 7 pages, registry-validated",0],
+ ["15:44","Hygiene rule live — test artifacts excluded from every surface",0],
+ ["15:47","Ads build sheet ready — 4 campaigns, negatives seeded",0],
+ ["15:51","Measurement clean — no beacon pollution detected",0],
+ ["15:53","The Reveal armed for the kitchen-table pitch",1],
+ ["15:56","Brain memorised 3 new observations to the learning feed",0]
+];
+const feed=document.getElementById('feed');
+let fi=0;
+function pushEvent(){
+  if(fi>=EVENTS.length){fi=0;feed.innerHTML=""}
+  const [t,txt,gold]=EVENTS[fi++];
+  const el=document.createElement('div');el.className='item';
+  el.innerHTML=`<span class="dot${gold?' g':''}"></span><span class="t">${t}</span><span>${txt}</span>`;
+  feed.appendChild(el);
+  if(feed.children.length>3)feed.removeChild(feed.firstChild);
+}
+setTimeout(pushEvent,5200);setInterval(()=>{if(!document.hidden)pushEvent()},4200);
+</script>
+</body>
+</html>

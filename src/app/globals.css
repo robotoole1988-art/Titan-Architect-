@@ -7,7 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  /* Wired to the next/font variable the layouts load (was self-referential,
+     which silently fell back to the system stack). */
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -126,5 +128,41 @@
   }
   html {
     @apply font-sans;
+  }
+}
+/* ---------------------------------------------------------------------------
+ * Command Centre (ADR-057) — the staged reveal.
+ * Sections fade up after the Brain finishes speaking (delays are inline,
+ * server-computed). Reduced motion collapses the whole choreography to
+ * instant, complete visibility — the room is still, never missing.
+ * ------------------------------------------------------------------------ */
+
+@keyframes cc-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.cc-reveal {
+  opacity: 0;
+  animation: cc-fade-up 1s ease forwards;
+}
+
+.cc-room {
+  opacity: 0;
+  animation: cc-fade-up 2.2s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cc-reveal,
+  .cc-room {
+    opacity: 1;
+    animation: none;
+    transform: none;
   }
 }

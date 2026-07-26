@@ -8,9 +8,10 @@
  * so the module carries no environment coupling of its own.
  */
 
-import type {
-  ArtifactRecord,
-  BusinessSpineRepositories,
+import {
+  isTestEnquiry,
+  type ArtifactRecord,
+  type BusinessSpineRepositories,
 } from "@/core/business";
 import {
   resolveCplEstimate,
@@ -85,7 +86,14 @@ export async function loadMemorySnapshot(
 
   return {
     businesses,
-    enquiries: perBusiness.flatMap((detail) => detail.enquiries),
+    // Test artifacts never steer an operating surface (ADR-056, Law §7):
+    // this is the single choke point every Brain surface reads through —
+    // briefing, top actions, health, Ask the Brain, Command Mode. No
+    // opt-out; the CRM (which reads repositories directly) keeps test
+    // rows findable, mirroring ADR-049's internal-business semantics.
+    enquiries: perBusiness
+      .flatMap((detail) => detail.enquiries)
+      .filter((enquiry) => !isTestEnquiry(enquiry)),
     deals: perBusiness
       .map((detail) => detail.deal)
       .filter((deal): deal is ArtifactRecord => deal !== null),

@@ -20,8 +20,10 @@ import type {
   EnquiryAttention,
   PipelineSection,
 } from "@/core/mission-control";
-import { CommandCentre, HealthStrip, Recommendations } from "@/features/brain";
+import { ProvenanceInfo } from "@/components/ui/provenance-info";
+import { AskBrain, CommandCentre, HealthStrip, Recommendations } from "@/features/brain";
 import { resolveBriefing } from "../data/resolve-briefing";
+import { resolveSituationAddress } from "../data/resolve-address";
 
 /**
  * Mission Control (ADR-042) — the Brain's first surface. A deterministic daily
@@ -43,12 +45,15 @@ function Card({
   count,
   children,
   testId,
+  info,
 }: {
   title: string;
   icon: typeof Inbox;
   count?: number;
   children: React.ReactNode;
   testId: string;
+  /** Module provenance, staged behind ⓘ (Law §3). */
+  info?: React.ReactNode;
 }) {
   return (
     <section
@@ -58,11 +63,14 @@ function Card({
       <h2 className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
         <Icon className="size-3.5" />
         {title}
-        {count !== undefined && (
-          <span className="ml-auto rounded-full border border-border/60 bg-muted/20 px-2 py-0.5 text-[10px] tabular-nums text-foreground/70">
-            {count}
-          </span>
-        )}
+        <span className="ml-auto flex items-center gap-1.5">
+          {count !== undefined && (
+            <span className="rounded-full border border-border/60 bg-muted/20 px-2 py-0.5 text-[10px] tabular-nums text-foreground/70">
+              {count}
+            </span>
+          )}
+          {info}
+        </span>
       </h2>
       {children}
     </section>
@@ -108,8 +116,9 @@ function EnquiriesCard({ enquiries }: { enquiries: EnquiryAttention[] }) {
                     {formatMinutes(enquiry.minutesPastSla)} past SLA
                   </span>
                 ) : (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 text-[10px] text-emerald-300" data-sla="ok">
-                    <Clock className="size-3" />
+                  /* Within SLA is the default state — plain text, no chip
+                     (ADR-056: badges only when exceptional). */
+                  <span className="text-[11px] text-muted-foreground" data-sla="ok">
                     {formatMinutes(enquiry.ageMinutes)} old
                   </span>
                 )}
@@ -261,7 +270,22 @@ function MoveBadge({ account }: { account: AccountSummary }) {
 
 function AccountsCard({ accounts }: { accounts: AccountSummary[] }) {
   return (
-    <Card title="Live accounts" icon={LineChart} count={accounts.length} testId="accounts">
+    <Card
+      title="Live accounts"
+      icon={LineChart}
+      count={accounts.length}
+      testId="accounts"
+      info={
+        accounts.length > 0 ? (
+          <ProvenanceInfo
+            label="Measurement provenance"
+            lines={accounts.map(
+              (account) => `${account.businessName} — ${account.provenance}`,
+            )}
+          />
+        ) : undefined
+      }
+    >
       {accounts.length === 0 ? (
         <EmptyLine>No live accounts yet — sites appear here once a website goes live.</EmptyLine>
       ) : (
@@ -297,7 +321,6 @@ function AccountsCard({ accounts }: { accounts: AccountSummary[] }) {
                   <p className="text-[10px] text-muted-foreground">conversion</p>
                 </div>
               </div>
-              <p className="mt-2 text-[10px] text-muted-foreground">{account.provenance}</p>
             </li>
           ))}
         </ul>
@@ -327,6 +350,7 @@ function BriefingSections({ briefing }: { briefing: Briefing }) {
 
 export async function MissionControlPage() {
   const briefing = await resolveBriefing();
+  const address = await resolveSituationAddress(briefing);
   const generated = new Date(briefing.generatedAt);
   const dateLabel = generated.toLocaleDateString("en-GB", {
     weekday: "long",
@@ -340,16 +364,42 @@ export async function MissionControlPage() {
 
   return (
     <div className="flex flex-col gap-6" data-mission-control>
-      <header className="flex flex-col gap-1">
-        <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-sky-300/80">
-          <BrainCircuit className="size-3.5" />
-          TITAN Brain · Mission Control
+      <header className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.2em] text-sky-300/80">
+            <BrainCircuit className="size-3.5" />
+            TITAN Brain · Mission Control
+          </p>
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-3xl font-semibold tracking-tight">Daily briefing</h1>
+            {/* The honesty line is provenance — staged behind ⓘ (Law §3). */}
+            <ProvenanceInfo
+              label="This briefing"
+              lines={[
+                "Live from your CRM and first-party measurement. Every figure is measured; nothing here is invented.",
+                "Test enquiries are excluded from every enquiry-derived figure; identity-free view beacons from past verification visits age out of the measurement windows (ADR-056).",
+                ...(address.narrated
+                  ? ["Opening line narrated from the live briefing payload — ADR-048 seam; the deterministic line stands whenever narration declines."]
+                  : []),
+              ]}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {dateLabel} · {timeLabel}
+          </p>
+        </div>
+
+        {/* The Brain speaks first (Law §1): one composed situation line. */}
+        <p
+          className="max-w-3xl text-lg leading-relaxed text-foreground/90"
+          data-situation-address
+          data-quiet={address.quiet || undefined}
+        >
+          {address.narrated ?? address.line}
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight">Daily briefing</h1>
-        <p className="text-sm text-muted-foreground">
-          {dateLabel} · {timeLabel} — live from your CRM and first-party
-          measurement. Every figure is measured; nothing here is invented.
-        </p>
+
+        {/* …and the founder can speak back: the cockpit's front door. */}
+        <AskBrain />
       </header>
 
       {briefing.isEmpty ? (
