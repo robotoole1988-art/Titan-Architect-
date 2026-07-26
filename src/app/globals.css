@@ -148,6 +148,22 @@
   }
 }
 
+/* The room wrapper fades with OPACITY ONLY. Every fixed element of the
+ * Command Centre lives inside .cc-room; a transform on the wrapper — even
+ * a keyframe that fills to `none` — makes it the containing block for all
+ * of them, and the room collapses into the top of the page. Chromium keeps
+ * the containing block after the animation completes, so the collapse is
+ * permanent. Pinned by room-containing-block.test.ts.
+ */
+@keyframes cc-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .cc-reveal {
   opacity: 0;
   animation: cc-fade-up 1s ease forwards;
@@ -155,7 +171,7 @@
 
 .cc-room {
   opacity: 0;
-  animation: cc-fade-up 2.2s ease forwards;
+  animation: cc-fade 2.2s ease forwards;
 }
 
 @media (prefers-reduced-motion: reduce) {
