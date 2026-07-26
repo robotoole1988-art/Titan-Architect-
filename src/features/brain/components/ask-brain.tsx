@@ -34,11 +34,12 @@ export function AskBrain({ placeholder }: { placeholder?: string }) {
   const [pending, startTransition] = useTransition();
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // ⌘K / Ctrl+K focuses the Brain from anywhere in the cockpit shell —
-  // the front door has a doorbell (Law §1; absorbs the palette backlog item).
+  // ⌘K now belongs to the app-wide section switcher (ADR-057, amending
+  // ADR-056's doorbell): the palette is the jump surface; the Brain keeps
+  // ⌘J / Ctrl+J as its focus key so the front door still has a doorbell.
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k") {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "j") {
         event.preventDefault();
         inputRef.current?.focus();
       }
@@ -71,7 +72,7 @@ export function AskBrain({ placeholder }: { placeholder?: string }) {
             disabled={pending}
           />
           <kbd className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-border/60 bg-muted/30 px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-            ⌘K
+            ⌘J
           </kbd>
         </div>
         <Button type="submit" size="sm" variant="secondary" disabled={pending || !question.trim()}>

@@ -11,4 +11,7 @@ export { Recommendations } from "./components/recommendations";
 export { CommandCentre } from "./components/command-centre";
 export { loadCommandCentre } from "./api/commands";
 export { loadDepartmentHealth } from "./api/health";
+export { loadRecommendations } from "./api/decisions";
+export { approveCommandAction, rejectCommandAction } from "./api/command-actions";
+export { acceptRecommendation, dismissRecommendation } from "./api/decision-actions";
 export { HealthPanel, HealthStrip } from "./components/health-panel";

@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, Search } from "lucide-react";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Sheet,
   SheetContent,
@@ -11,19 +10,23 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { SidebarContent } from "./sidebar";
+import { BrainMark } from "./brain-mark";
+import { CommandPalette, CommandPaletteTrigger } from "./command-palette";
 import { NotificationsBell } from "./notifications-bell";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
 /**
- * Top command bar: mobile navigation trigger, global search (placeholder),
- * theme toggle and account menu. Sticky so it stays available while scrolling.
+ * Top command bar: the Brain mark (the way back to the Command Centre,
+ * ADR-057), mobile navigation trigger, the ⌘K palette trigger, theme toggle
+ * and account menu. Sticky so it stays available while scrolling.
  */
 export function CommandBar() {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur md:px-6">
+      <BrainMark />
       {/* Mobile navigation */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetTrigger
@@ -44,16 +47,10 @@ export function CommandBar() {
         </SheetContent>
       </Sheet>
 
-      {/* Global search (placeholder) */}
-      <div className="relative w-full max-w-md">
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search TITAN…"
-          className="pl-9"
-          disabled
-          aria-label="Search"
-        />
-      </div>
+      {/* The ⌘K switcher (M2 addendum §2) — one palette, mounted here and on
+          the Command Centre layout */}
+      <CommandPaletteTrigger />
+      <CommandPalette />
 
       {/* Right-side actions */}
       <div className="ml-auto flex items-center gap-1.5">
