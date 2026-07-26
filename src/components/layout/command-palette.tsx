@@ -11,9 +11,10 @@
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import {
+  commandCentreHome,
   primaryNavigation,
   secondaryNavigation,
   type NavItem,
@@ -38,11 +39,16 @@ function filter(query: string, items: NavItem[]): NavItem[] {
 
 export function CommandPalette() {
   const router = useRouter();
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
-  const items = useMemo(() => allDestinations(), []);
+  // The way home rides at the top of the list — except in the room itself.
+  const items = useMemo(
+    () => (pathname === "/" ? allDestinations() : [commandCentreHome, ...allDestinations()]),
+    [pathname],
+  );
   const matches = useMemo(() => filter(query, items), [query, items]);
 
   const close = useCallback(() => {

@@ -49,8 +49,13 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
-      {/* Brand */}
-      <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-5">
+      {/* Brand — the way home: the room (ADR-057 §7) */}
+      <Link
+        href="/"
+        aria-label="Command Centre"
+        onClick={onNavigate}
+        className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-5 transition-colors hover:bg-sidebar-accent/40"
+      >
         <div className="flex size-8 items-center justify-center rounded-lg bg-sidebar-primary font-bold text-sidebar-primary-foreground">
           T
         </div>
@@ -62,7 +67,7 @@ export function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
             v{siteConfig.version}
           </span>
         </div>
-      </div>
+      </Link>
 
       {/* Primary navigation */}
       <ScrollArea className="flex-1 px-3 py-4">

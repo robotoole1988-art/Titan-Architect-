@@ -130,6 +130,23 @@ founder-reported error. Shared server/client values (typing cadence) live in
 - While in the room: no polling beyond the 60s refresh, no layout thrash;
   the typed briefing is presentation only.
 
+### 7. Post-launch polish (addendum, 2026-07-26 evening)
+
+The first hours in production surfaced three refinements, shipped together:
+
+- The briefing block sits BELOW the Brain: the `-translate-y-1/3` lift put
+  the greeting inside the particle sphere on real viewports; the sphere
+  centre rises to 25% of the viewport to keep the clearance at every
+  aspect ratio.
+- Inbound motes are unlabelled sparks. The labelled streams ("Website",
+  "Builds") read as stray UI, not information — reinstate only with a
+  designed treatment.
+- The way home is bidirectional: the ⌘K palette carries a "Command
+  Centre" entry (matched by "home", hidden while already in the room) and
+  the sidebar brand links to `/`, alongside the existing Brain mark. The
+  home entry is NOT an extra registry destination — the registry remains
+  Layer 2 only; the navigation tests pin both facts.
+
 ## Consequences
 
 - The founder lands in a room that answers "what is the state of my

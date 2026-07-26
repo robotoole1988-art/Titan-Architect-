@@ -1,5 +1,6 @@
 import {
   Bot,
+  Home,
   Briefcase,
   Handshake,
   TrendingUp,
@@ -118,6 +119,19 @@ export const primaryNavigation: NavSection[] = [
     ],
   },
 ];
+
+/**
+ * The room itself (ADR-057 §7): NOT one of the registry's Layer 2
+ * destinations — the palette prepends this entry so the way home is one
+ * action from anywhere, in both directions. The navigation tests pin that
+ * it stays out of the registry.
+ */
+export const commandCentreHome: NavItem = {
+  title: "Command Centre",
+  href: "/",
+  icon: Home,
+  description: "Home — the room: the state of the business, addressed to you.",
+};
 
 /** Secondary navigation, pinned to the bottom of the sidebar. */
 export const secondaryNavigation: NavItem[] = [
