@@ -16,6 +16,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { createElement } from "react";
 import { CinematicImage } from "./cinematic-image";
 import { AmbientFilm } from "./ambient-film";
+import { ambientFilmEnabled } from "../model/film-flag";
 import { resolveSignatureMoment, signatureMomentsEnabled } from "../moments/registry";
 import type { PrimitiveSectionProps } from "../model/types";
 import {
@@ -175,7 +176,12 @@ export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAss
   const backdropRef = media?.generationRef ?? `media/${section.id}`;
   const backdropAsset = mediaAssets?.[backdropRef];
   const filmAsset = mediaAssets?.[`${backdropRef}.film`];
-  const film = filmAsset?.modality === "video" ? filmAsset : undefined;
+  // The film switch (media law): image-only heroes by default — the Ken
+  // Burns still is the cinema. Film is a deliberate opt-in.
+  const film =
+    ambientFilmEnabled() && filmAsset?.modality === "video"
+      ? filmAsset
+      : undefined;
 
   return (
     // Content is top-anchored (not vertically centred): late layout above or
@@ -185,7 +191,7 @@ export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAss
       {backdropAsset && (
         // The real photograph beneath the storm — the property at stake.
         <div aria-hidden className="absolute inset-0">
-          <CinematicImage asset={backdropAsset} alt="" kenBurns eager className="h-full w-full" />
+          <CinematicImage asset={backdropAsset} alt="" kenBurns eager sizes="100vw" className="h-full w-full" />
           {/* hero ambience clip (ADR-036) — client-only, LCP-safe. */}
           {film && <AmbientFilm film={film} />}
           {/* storm mood grade — cools the photograph into the theme */}

@@ -69,7 +69,12 @@ export async function streamMedia(request: Request): Promise<Response> {
   );
   // The missing piece that hangs Chrome — always advertise range support.
   headers.set("Accept-Ranges", "bytes");
-  headers.set("Cache-Control", "public, max-age=3600");
+  // Generated media is immutable in practice: a regeneration is a NEW asset
+  // approved through the media gate, not an overwrite of this URL. A month
+  // of immutable caching fixes the Lighthouse cache-lifetime flag (15.7MB
+  // of repeat-visit weight) and lets next/image inherit long-lived caching
+  // for its optimised renditions (Performance Law, media law).
+  headers.set("Cache-Control", "public, max-age=2678400, immutable");
   const contentLength = upstreamRes.headers.get("content-length");
   if (contentLength) headers.set("Content-Length", contentLength);
 
