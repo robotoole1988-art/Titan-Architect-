@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * SIGNATURE MOMENT: Gravel → Resin (ADR-032, driveways).
  *
@@ -15,18 +13,15 @@
  * settle reads as gravel BECOMING surface: tumble → gather into courses →
  * sink flush as the resin seals over them.
  *
- * Reduced motion renders the DESIGNED STILL: the finished resin, mid-sheen.
+ * v2 (the JS diet): the whole cinematic is a CSS scroll-driven animation —
+ * a named view timeline drives shared keyframes whose values come from
+ * per-pebble custom properties. ZERO JavaScript. Markup is authored at the
+ * FINISHED state (the designed still: the sealed resin, mid-sheen), so
+ * browsers without scroll-driven animation support — and reduced motion —
+ * simply see the calm ending.
  */
 
-import { useRef } from "react";
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useSpring,
-  useTransform,
-  type MotionValue,
-} from "framer-motion";
+import type { CSSProperties } from "react";
 
 /** The driveway band: everything the moment draws stays inside this region. */
 const BAND_TOP = 430;
@@ -64,105 +59,95 @@ const STONES = Array.from({ length: 34 }, (_, index) => {
   };
 });
 
-function Pebble({
-  stone,
-  progress,
-}: {
-  stone: (typeof STONES)[number];
-  progress: MotionValue<number>;
-}) {
-  // Tumble → gather → sink flush: each pebble rolls to its course, squares
-  // up, then shrinks INTO the resin as it seals over.
-  const x = useTransform(progress, [0.08, 0.55], [stone.x, stone.settleX]);
-  const y = useTransform(progress, [0.08, 0.55], [stone.y, stone.settleY]);
-  const rotate = useTransform(
-    progress,
-    [0.08, 0.55],
-    [stone.rotate, stone.settleRotate],
-  );
-  const scale = useTransform(
-    progress,
-    [0.08, 0.55, 0.72],
-    [stone.scale, stone.scale, stone.scale * 0.45],
-  );
-  const opacity = useTransform(progress, [0.55, 0.78], [1, 0]);
-  const tone = PEBBLE_TONES[stone.tone];
-  return (
-    <motion.g style={{ x, y, rotate, scale, opacity }}>
-      {/* grounding shadow — the pebble sits ON the surface */}
-      <path
-        d={PEBBLE_PATHS[stone.shape]}
-        transform="translate(1.2 1.8)"
-        fill="rgba(40, 28, 16, 0.3)"
-      />
-      <path
-        d={PEBBLE_PATHS[stone.shape]}
-        fill={tone.fill}
-        stroke={tone.edge}
-        strokeWidth="0.8"
-      />
-      {/* the sun catches the top edge — a hint, not a gloss */}
-      <ellipse cx="-3" cy="-4" rx="3.5" ry="2" fill="rgba(255, 240, 214, 0.28)" />
-    </motion.g>
-  );
+/**
+ * The choreography. Elements are authored at their END state; keyframes
+ * (progress fractions from the original scroll mapping) run only where
+ * scroll-driven animations are supported. Pebbles share ONE keyframe set —
+ * their tumble/settle values come from per-element custom properties.
+ */
+const GRAVEL_CSS = `
+.wr-gv { view-timeline: --wr-gv block; }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .wr-gv-resin, .wr-gv-edge, .wr-gv-stone, .wr-gv-sheen {
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --wr-gv;
+      animation-range: exit 0% exit 100%;
+    }
+    .wr-gv-resin { animation-name: wr-gv-resin; }
+    .wr-gv-edge { animation-name: wr-gv-edge; }
+    .wr-gv-stone { animation-name: wr-gv-stone; }
+    .wr-gv-sheen { animation-name: wr-gv-sheen; }
+  }
 }
+/* The resin pour: a smooth surface that flows in as the stones settle.
+   With a real photo beneath (--wr-gv-h < 1) the drawn surface hands off to
+   the photograph at the end — the morph resolves INTO the real driveway. */
+.wr-gv-resin {
+  opacity: var(--wr-gv-h, 1);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes wr-gv-resin {
+  0%, 42% { opacity: 0; scale: 0 1; }
+  70% { opacity: 1; }
+  80% { opacity: 1; scale: 1 1; }
+  100% { opacity: var(--wr-gv-h, 1); scale: 1 1; }
+}
+.wr-gv-edge { opacity: 0.85; }
+@keyframes wr-gv-edge {
+  0%, 72% { opacity: 0; }
+  90%, 100% { opacity: 0.85; }
+}
+/* Tumble → gather → sink flush: each pebble rolls to its course, squares
+   up, then shrinks INTO the resin as it seals over. */
+.wr-gv-stone {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@keyframes wr-gv-stone {
+  0%, 8% {
+    opacity: 1;
+    translate: var(--gv-x) var(--gv-y);
+    rotate: var(--gv-r);
+    scale: var(--gv-s);
+  }
+  55% {
+    opacity: 1;
+    translate: var(--gv-ex) var(--gv-ey);
+    rotate: var(--gv-er);
+    scale: var(--gv-s);
+  }
+  72% {
+    translate: var(--gv-ex) var(--gv-ey);
+    rotate: var(--gv-er);
+    scale: calc(var(--gv-s) * 0.45);
+  }
+  78%, 100% {
+    opacity: 0;
+    translate: var(--gv-ex) var(--gv-ey);
+    rotate: var(--gv-er);
+    scale: calc(var(--gv-s) * 0.45);
+  }
+}
+/* The light sweeps across the finish — the pride beat. */
+.wr-gv-sheen { opacity: 0.28; translate: 380px 0; }
+@keyframes wr-gv-sheen {
+  0%, 78% { opacity: 0; translate: -320px 0; }
+  86% { opacity: 0.5; }
+  100% { opacity: 0.25; translate: 1180px 0; }
+}
+`;
 
 export function GravelToResin({ hasBackdrop = false }: { hasBackdrop?: boolean } = {}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const reduced = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"],
-  });
-  const progress = useSpring(scrollYProgress, {
-    stiffness: 70,
-    damping: 22,
-    mass: 0.5,
-  });
-
-  // The resin pour: a smooth surface that flows in as the stones settle.
-  const resinScale = useTransform(progress, [0.42, 0.8], [0, 1]);
-  const resinOpacity = useTransform(progress, [0.42, 0.7], [0, 1]);
-  const edgeOpacity = useTransform(progress, [0.72, 0.9], [0, 0.85]);
-  const sheenX = useTransform(progress, [0.78, 1], [-320, 1180]);
-  // With a real photo beneath, the drawn surface hands off to the
-  // photograph at the end — the morph resolves INTO the real driveway.
-  const surfaceHandOff = useTransform(
-    progress,
-    [0.8, 0.98],
-    [1, hasBackdrop ? 0.12 : 1],
-  );
-  const surfaceOpacity = useTransform(
-    () => resinOpacity.get() * surfaceHandOff.get(),
-  );
-  const sheenOpacity = useTransform(progress, [0.78, 0.86, 1], [0, 0.5, 0.25]);
-
-  if (reduced) {
-    // The designed still: the finished resin catching the light.
-    return (
-      <div ref={ref} className="absolute inset-0">
-        <svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMax slice" className="h-full w-full">
-          <defs>
-            <linearGradient id="resin-depth" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="rgba(255, 236, 200, 0.35)" />
-              <stop offset="1" stopColor="rgba(70, 50, 32, 0.4)" />
-            </linearGradient>
-          </defs>
-          {!hasBackdrop && (
-            <>
-              <rect x="12" y="488" width="976" height="112" rx="16" fill="rgba(133, 100, 66, 0.95)" />
-              <rect x="12" y="488" width="976" height="112" rx="16" fill="url(#resin-depth)" />
-              <rect x="0" y="478" width="1000" height="12" rx="6" fill="var(--wr-accent)" opacity="0.55" />
-              <rect x="380" y="500" width="240" height="88" rx="14" fill="rgba(255, 244, 220, 0.28)" transform="skewX(-18)" />
-            </>
-          )}
-        </svg>
-      </div>
-    );
-  }
-
   return (
-    <div ref={ref} className="absolute inset-0">
+    <div
+      className="wr-gv absolute inset-0"
+      style={{ "--wr-gv-h": hasBackdrop ? 0.12 : 1 } as CSSProperties}
+    >
+      <style dangerouslySetInnerHTML={{ __html: GRAVEL_CSS }} />
       <svg viewBox="0 0 1000 620" preserveAspectRatio="xMidYMax slice" className="h-full w-full">
         <defs>
           <linearGradient id="resin-depth" x1="0" y1="0" x2="0" y2="1">
@@ -178,41 +163,66 @@ export function GravelToResin({ hasBackdrop = false }: { hasBackdrop?: boolean }
 
         <g clipPath="url(#driveway-band)">
           {/* THE MORPH: resin flows in beneath the settling stones */}
-          <motion.g
-            style={{
-              opacity: surfaceOpacity,
-              scaleX: resinScale,
-              transformBox: "fill-box",
-              transformOrigin: "50% 50%",
-            }}
-          >
+          <g className="wr-gv-resin">
             <rect x="12" y="488" width="976" height="112" rx="16" fill="rgba(133, 100, 66, 0.95)" />
             <rect x="12" y="488" width="976" height="112" rx="16" fill="url(#resin-depth)" />
-          </motion.g>
-          <motion.rect
+          </g>
+          <rect
+            className="wr-gv-edge"
             x="12"
             y="504"
             width="976"
             height="10"
             rx="5"
             fill="var(--wr-accent)"
-            style={{ opacity: edgeOpacity }}
           />
 
           {/* the gravel courses — every pebble finds its place, then sinks in */}
-          {STONES.map((stone) => (
-            <Pebble key={stone.settleX} stone={stone} progress={progress} />
-          ))}
+          {STONES.map((stone) => {
+            const tone = PEBBLE_TONES[stone.tone];
+            return (
+              <g
+                key={stone.settleX}
+                className="wr-gv-stone"
+                style={
+                  {
+                    "--gv-x": `${stone.x}px`,
+                    "--gv-y": `${stone.y}px`,
+                    "--gv-r": `${stone.rotate}deg`,
+                    "--gv-s": stone.scale,
+                    "--gv-ex": `${stone.settleX}px`,
+                    "--gv-ey": `${stone.settleY}px`,
+                    "--gv-er": `${stone.settleRotate}deg`,
+                  } as CSSProperties
+                }
+              >
+                {/* grounding shadow — the pebble sits ON the surface */}
+                <path
+                  d={PEBBLE_PATHS[stone.shape]}
+                  transform="translate(1.2 1.8)"
+                  fill="rgba(40, 28, 16, 0.3)"
+                />
+                <path
+                  d={PEBBLE_PATHS[stone.shape]}
+                  fill={tone.fill}
+                  stroke={tone.edge}
+                  strokeWidth="0.8"
+                />
+                {/* the sun catches the top edge — a hint, not a gloss */}
+                <ellipse cx="-3" cy="-4" rx="3.5" ry="2" fill="rgba(255, 240, 214, 0.28)" />
+              </g>
+            );
+          })}
 
           {/* the light sweeps across the finish — the pride beat */}
-          <motion.rect
+          <rect
+            className="wr-gv-sheen"
             y="470"
             width="300"
             height="132"
             rx="14"
             fill="rgba(255, 246, 224, 0.55)"
             transform="skewX(-18)"
-            style={{ x: sheenX, opacity: sheenOpacity }}
           />
         </g>
       </svg>

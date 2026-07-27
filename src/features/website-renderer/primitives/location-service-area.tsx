@@ -1,15 +1,13 @@
-"use client";
-
 /**
  * location.service-area — coverage as a calm radar, not a generic map embed.
  *
  * A slow scanning sweep over concentric range rings grounds the business in
  * its place; local search terms orbit as coverage chips. No map tiles, no
  * network requests — art direction from geometry (media discipline, ADR-022).
+ * The sweep is a pure CSS rotation (wr-radar-sweep); reduced motion hides it.
  * Variants: "map-focus" (radar leads) / "area-list" (chips lead).
  */
 
-import { motion, useReducedMotion } from "framer-motion";
 import { MapPin } from "lucide-react";
 import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal, Stagger, StaggerItem } from "../motion/motion";
@@ -39,7 +37,6 @@ function areaTerms(coverage: string | undefined): string[] {
 }
 
 function Radar({ place, base }: { place?: string; base?: string }) {
-  const reduced = useReducedMotion();
   // The base is a secondary point ONLY when the radar centres somewhere
   // else (an area page): "based in Oxford, covering Greater London".
   const showBase = Boolean(base && place && base !== place);
@@ -56,19 +53,15 @@ function Radar({ place, base }: { place?: string; base?: string }) {
           }}
         />
       ))}
-      {/* scanning sweep */}
-      {!reduced && (
-        <motion.div
-          className="absolute inset-0 rounded-full"
-          style={{
-            background:
-              "conic-gradient(from 0deg, var(--wr-accent-glow), transparent 70deg, transparent 360deg)",
-            maskImage: "radial-gradient(circle, black 99%, transparent 100%)",
-          }}
-          animate={{ rotate: 360 }}
-          transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
-        />
-      )}
+      {/* scanning sweep — CSS only; hidden under reduced motion */}
+      <div
+        className="wr-radar-sweep absolute inset-0 rounded-full"
+        style={{
+          background:
+            "conic-gradient(from 0deg, var(--wr-accent-glow), transparent 70deg, transparent 360deg)",
+          maskImage: "radial-gradient(circle, black 99%, transparent 100%)",
+        }}
+      />
       {/* faint cross-hairs */}
       <div className="absolute inset-x-0 top-1/2 h-px" style={{ background: "var(--wr-line)" }} />
       <div className="absolute inset-y-0 left-1/2 w-px" style={{ background: "var(--wr-line)" }} />

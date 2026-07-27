@@ -1,16 +1,13 @@
-"use client";
-
 /**
  * process.journey-map — the engagement made predictable.
  *
  * The customer journey (real step names, ADR-034) becomes numbered stages
- * along a rail that draws itself as you scroll — the visitor literally
- * watches the path from enquiry to completion. Variants: "numbered-steps" /
- * "timeline".
+ * along a rail that draws itself as you scroll — a pure CSS scroll-driven
+ * animation (wr-rail-draw, render-page ROOT_CSS). Browsers without
+ * scroll-driven animation support see the rail fully drawn. Variants:
+ * "numbered-steps" / "timeline".
  */
 
-import { useRef } from "react";
-import { motion, useReducedMotion, useScroll, useSpring } from "framer-motion";
 import { CinematicImage } from "./cinematic-image";
 import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal, Stagger, StaggerItem } from "../motion/motion";
@@ -54,13 +51,6 @@ export function ProcessJourneyMap({ section, slots, mediaAssets }: PrimitiveSect
 
   const stages = stagesOf(slots.steps);
   const guarantees = guaranteesOf(slots.guarantees);
-  const railRef = useRef<HTMLOListElement>(null);
-  const reduced = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: railRef,
-    offset: ["start 75%", "end 65%"],
-  });
-  const drawn = useSpring(scrollYProgress, { stiffness: 90, damping: 24 });
 
   return (
     <SectionShell section={section}>
@@ -72,15 +62,14 @@ export function ProcessJourneyMap({ section, slots, mediaAssets }: PrimitiveSect
           </SectionTitle>
         </Reveal>
 
-        <ol ref={railRef} className="relative mt-14 flex flex-col gap-12 pl-10 sm:pl-14">
-          {/* the rail, drawing itself with scroll */}
+        <ol className="relative mt-14 flex flex-col gap-12 pl-10 sm:pl-14">
+          {/* the rail, drawing itself with scroll (CSS timeline; static fallback) */}
           <div aria-hidden className="absolute bottom-2 left-[13px] top-2 w-px sm:left-[17px]" style={{ background: "var(--wr-line)" }} />
-          <motion.div
+          <div
             aria-hidden
-            className="absolute bottom-2 left-[13px] top-2 w-px origin-top sm:left-[17px]"
+            className="wr-rail-draw absolute bottom-2 left-[13px] top-2 w-px origin-top sm:left-[17px]"
             style={{
               background: "linear-gradient(180deg, var(--wr-accent), var(--wr-accent-strong))",
-              scaleY: reduced ? 1 : drawn,
             }}
           />
           {stages.map((stage, index) => (

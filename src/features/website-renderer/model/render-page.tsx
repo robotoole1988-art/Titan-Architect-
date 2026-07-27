@@ -8,9 +8,9 @@
  * loudly in development and degrade gracefully (skip + warn) in production.
  */
 
-import { MotionConfig } from "framer-motion";
 import type { CSSProperties, ReactElement } from "react";
 import { resolveTheme } from "../theme/theme";
+import { RevealObserver } from "../motion/motion";
 import { SiteFooter, SiteHeader } from "../primitives/site-chrome";
 import type { SectionBlueprint, WebsiteBlueprint } from "@/core/website-blueprint";
 import { parseSlots, sectionVariant, type SlotMap } from "./slots";
@@ -98,12 +98,118 @@ function redactBlueprint(blueprint: WebsiteBlueprint): WebsiteBlueprint {
   };
 }
 
-/** Base styles scoped to the rendered site (not the TITAN app). */
+/**
+ * Base styles scoped to the rendered site (not the TITAN app), including the
+ * whole motion system (ADR-022 v2): CSS transitions driven by the shared
+ * RevealObserver island, and scroll-driven animations behind @supports with
+ * visible static fallbacks. framer-motion is banned from the renderer
+ * (Published Sites Performance Law).
+ */
 const ROOT_CSS = `
 .wr-root { -webkit-font-smoothing: antialiased; }
 .wr-root ::selection { background: var(--wr-accent); color: var(--wr-accent-ink); }
 @media (prefers-reduced-motion: no-preference) {
   .wr-root { scroll-behavior: smooth; }
+
+  /* Rise-and-settle reveals. Hidden ONLY once the observer is live
+     ([data-wr-js]) — no JavaScript, no hiding, never stuck invisible. */
+  [data-wr-js] [data-wr-reveal]:not([data-wr-on]) {
+    opacity: 0;
+    translate: 0 var(--wr-reveal-y, 18px);
+  }
+  [data-wr-reveal] {
+    transition:
+      opacity var(--wr-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1),
+      translate var(--wr-reveal-duration, 0.7s) cubic-bezier(0.16, 1, 0.3, 1);
+    transition-delay: var(--wr-reveal-delay, 0s);
+  }
+
+  /* CTA lean — hover presence without a single byte of script. */
+  .wr-magnetic { transition: scale 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+  .wr-magnetic:hover { scale: 1.03; }
+  .wr-magnetic:active { scale: 0.98; }
+
+  /* Accordion rotor + collapse. */
+  .wr-rotor { transition: rotate 0.25s ease; }
+  .wr-rotor[data-open="true"] { rotate: 45deg; }
+  .wr-collapse { transition: grid-template-rows 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+  .wr-collapse > * { transition: visibility 0.3s; }
+
+  /* Tab-panel entrance (remounts on selection). */
+  .wr-panel-in { animation: wr-panel 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+
+  /* Before/after intro wipe — hands off to the visitor on first touch. */
+  .wr-wipe[data-animate="true"] {
+    transition:
+      clip-path 1.6s cubic-bezier(0.16, 1, 0.3, 1),
+      left 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* The radar sweep and the pulse beacon. */
+  .wr-radar-sweep { animation: wr-spin 16s linear infinite; }
+  .wr-beacon {
+    position: absolute; inset: 0; border-radius: inherit;
+    border: 2px solid var(--wr-accent);
+    animation: wr-pulse 2.2s ease-out infinite;
+  }
+}
+
+.wr-magnetic { display: inline-block; }
+.wr-collapse { display: grid; grid-template-rows: 0fr; }
+.wr-collapse[data-open="true"] { grid-template-rows: 1fr; }
+.wr-collapse > * { overflow: hidden; min-height: 0; visibility: hidden; }
+.wr-collapse[data-open="true"] > * { visibility: visible; }
+
+/* Scroll-driven choreography — Chromium-class browsers get the cinematics;
+   everyone else gets the designed static state (Performance Law fallback). */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .wr-parallax {
+      animation: wr-parallax linear both;
+      animation-timeline: view();
+    }
+    .wr-rail-draw {
+      animation: wr-rail linear both;
+      animation-timeline: view();
+      animation-range: entry 25% cover 45%;
+    }
+    .wr-sticky-bar {
+      animation: wr-bar-in linear both;
+      animation-timeline: scroll();
+      animation-range: 55vh 90vh;
+    }
+  }
+}
+
+/* Reduced motion: the beacon is a steady glow, everything else is still. */
+@media (prefers-reduced-motion: reduce) {
+  .wr-beacon {
+    position: absolute; inset: 0; border-radius: inherit;
+    box-shadow: 0 0 0 6px var(--wr-accent-glow);
+  }
+  .wr-radar-sweep { display: none; }
+}
+
+@keyframes wr-panel {
+  from { opacity: 0; scale: 1.03; }
+  to { opacity: 1; scale: none; }
+}
+@keyframes wr-spin { to { rotate: 1turn; } }
+@keyframes wr-pulse {
+  from { scale: 1; opacity: 0.55; }
+  to { scale: 1.35; opacity: 0; }
+}
+@keyframes wr-parallax {
+  from { translate: 0 var(--wr-parallax, 60px); }
+  to { translate: 0 calc(-1 * var(--wr-parallax, 60px)); }
+}
+@keyframes wr-rail {
+  from { scale: 1 0; }
+  to { scale: 1 1; }
+}
+@keyframes wr-bar-in {
+  from { opacity: 0; translate: 0 110%; }
+  to { opacity: 1; translate: none; }
 }
 `;
 
@@ -210,17 +316,16 @@ export function renderPage(
       data-theme={theme.ref}
     >
       <style dangerouslySetInnerHTML={{ __html: ROOT_CSS }} />
-      <MotionConfig reducedMotion="user">
-        <SiteHeader blueprint={primitiveBlueprint} nav={nav} />
-        <main>{sections}</main>
-        <SiteFooter
-          blueprint={primitiveBlueprint}
-          nav={nav}
-          legalNav={legalNav}
-          mode={mode}
-          contact={options.contact}
-        />
-      </MotionConfig>
+      <SiteHeader blueprint={primitiveBlueprint} nav={nav} />
+      <main>{sections}</main>
+      <SiteFooter
+        blueprint={primitiveBlueprint}
+        nav={nav}
+        legalNav={legalNav}
+        mode={mode}
+        contact={options.contact}
+      />
+      <RevealObserver />
     </div>
   );
 }

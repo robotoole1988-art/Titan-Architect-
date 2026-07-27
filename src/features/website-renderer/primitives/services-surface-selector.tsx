@@ -11,7 +11,6 @@
  */
 
 import { useId, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { CinematicImage } from "./cinematic-image";
 import type { ResolvedMediaAsset } from "../model/types";
@@ -86,7 +85,6 @@ export function SurfaceSelector({
   annotate?: boolean;
 }) {
   const [active, setActive] = useState(0);
-  const reduced = useReducedMotion();
   const baseId = useId();
   const surface = surfaces[active];
 
@@ -155,19 +153,16 @@ export function SurfaceSelector({
           className="relative min-h-[24rem] overflow-hidden rounded-[var(--wr-radius-lg)] border"
           style={{ borderColor: "var(--wr-line)" }}
         >
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div
-              key={active}
-              initial={reduced ? { opacity: 0 } : { opacity: 0, scale: 1.03 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reduced ? 0.15 : 0.6, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute inset-0"
-              style={{
-                background: textureFor(active),
-                backgroundSize: BG_SIZES[active % BG_SIZES.length],
-              }}
-            >
+          {/* Remounts on selection; wr-panel-in (render-page ROOT_CSS) plays
+              the entrance. Reduced motion: the panel simply appears. */}
+          <div
+            key={active}
+            className="wr-panel-in absolute inset-0"
+            style={{
+              background: textureFor(active),
+              backgroundSize: BG_SIZES[active % BG_SIZES.length],
+            }}
+          >
               {mediaAssets?.[`surfaces/${surfaceSlug(surface)}`] && (
                 // The REAL material — texture photography over the suggestion.
                 <CinematicImage
@@ -217,8 +212,7 @@ export function SurfaceSelector({
                   <ArrowRight className="size-4" aria-hidden />
                 </a>
               </div>
-            </motion.div>
-          </AnimatePresence>
+          </div>
         </div>
       </div>
     </Container>

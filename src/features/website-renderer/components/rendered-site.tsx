@@ -2,9 +2,9 @@
 
 /**
  * The rendered site as ONE client boundary. The preview page loads it via
- * next/dynamic so its JavaScript (Framer Motion + interactive primitives)
- * arrives AFTER the server-rendered HTML has painted — the storm hero is pure
- * CSS and needs none of it to look alive (ADR-022 performance posture).
+ * next/dynamic so its JavaScript (the interactive primitives) arrives AFTER
+ * the server-rendered HTML has painted — motion is CSS (ADR-022 v2, the JS
+ * diet) and needs none of it to look alive.
  */
 
 import type { WebsiteBlueprint } from "@/core/website-blueprint";

@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * gallery.immersive-grid — imagery-led, unhurried (ADR-029).
  *

@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * SIGNATURE MOMENT: Storm Cloud → New Roof (ADR-032, roofing).
  *
@@ -9,20 +7,16 @@
  * identical command structure); rain dissolves as the roof completes; the
  * property reveals beneath; one amber porch light comes on last.
  *
- * Reduced motion renders the DESIGNED STILL: the finished roof, calm sky.
+ * v2 (the JS diet): the whole cinematic is a CSS scroll-driven animation —
+ * a named view timeline on the moment layer drives per-element keyframes,
+ * including the `d: path()` morph. ZERO JavaScript. The element markup is
+ * authored at the FINISHED state (the designed still), so browsers without
+ * scroll-driven animation support — and prefers-reduced-motion — simply see
+ * the calm ending: the finished roof, porch light on.
  */
 
-import { useRef } from "react";
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useSpring,
-  useTransform,
-} from "framer-motion";
-
-/* Both paths: M + 6 cubic segments + Z — identical structure, so framer
-   interpolates them number-for-number.
+/* Both paths: M + 6 cubic segments + Z — identical structure, so the CSS
+   `d` interpolation morphs them number-for-number.
 
    Craft rule (ADR-034 pass): the storm lives in the SKY, right of the
    composition — it never sits over the headline column (left). As it
@@ -45,64 +39,84 @@ const RAIN = Array.from({ length: 22 }, (_, index) => ({
   length: 26 + ((index * 29) % 22),
 }));
 
-export function StormCloudNewRoof({ hasBackdrop = false }: { hasBackdrop?: boolean } = {}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const reduced = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start start", "end start"],
-  });
-  // A gentle spring so the morph feels weather-slow, never mechanical.
-  const progress = useSpring(scrollYProgress, {
-    stiffness: 60,
-    damping: 20,
-    mass: 0.6,
-  });
-
-  const mass = useTransform(progress, [0.05, 0.75], [CLOUD_MASS, ROOF_MASS]);
-  const wisp = useTransform(progress, [0.15, 0.8], [CLOUD_WISP, RIDGE_CAP]);
-  // A slow vertical drift while the mass is still weather — clouds move.
-  const massDrift = useTransform(progress, [0, 0.35, 0.75], [0, 10, 0]);
-  const rainOpacity = useTransform(progress, [0, 0.45], [0.5, 0]);
-  const houseOpacity = useTransform(progress, [0.55, 0.85], [0, 1]);
-  const houseRise = useTransform(progress, [0.55, 0.85], [26, 0]);
-  const stormTint = useTransform(progress, [0.15, 0.85], [0.72, 0]);
-  const porchLight = useTransform(progress, [0.86, 0.97], [0, 0.9]);
-  // A held flash at the storm's peak — Act I punctuation, gone by mid-morph.
-  // Capped so it never white-outs the headline (ADR-034 discipline).
-  const flash = useTransform(progress, [0.08, 0.14, 0.2, 0.3], [0, 0.38, 0.08, 0]);
-  const ridgeGlow = useTransform(progress, [0.78, 0.95], [0, 0.95]);
-
-  const house = (
-    <g>
-      {/* the protected home, revealed as the roof completes */}
-      <rect x="270" y="350" width="460" height="230" rx="4" fill="rgba(19, 30, 47, 0.92)" />
-      <rect x="322" y="402" width="86" height="70" rx="3" fill="rgba(127, 180, 232, 0.16)" stroke="rgba(127, 180, 232, 0.28)" strokeWidth="2" />
-      <rect x="592" y="402" width="86" height="70" rx="3" fill="rgba(127, 180, 232, 0.16)" stroke="rgba(127, 180, 232, 0.28)" strokeWidth="2" />
-      <rect x="462" y="440" width="76" height="140" rx="3" fill="rgba(30, 44, 66, 1)" stroke="rgba(148, 163, 184, 0.2)" strokeWidth="2" />
-    </g>
-  );
-
-  if (reduced) {
-    // The designed still: the finished roof under a calm sky.
-    return (
-      <div ref={ref} className="absolute inset-0">
-        <svg
-          viewBox="0 0 1000 620"
-          preserveAspectRatio="xMidYMax slice"
-          className="h-full w-full"
-        >
-          {!hasBackdrop && house}
-          {!hasBackdrop && <path d={ROOF_MASS} fill="rgba(15, 26, 42, 1)" />}
-          <path d={RIDGE_CAP} fill="var(--wr-accent)" opacity="0.7" />
-          <circle cx="500" cy="470" r="7" fill="var(--wr-accent)" opacity="0.9" />
-        </svg>
-      </div>
-    );
+/**
+ * The choreography. Every element is authored at its END state; keyframes
+ * (progress fractions from the original scroll mapping) run only where
+ * scroll-driven animations AND `d` interpolation are supported.
+ */
+const STORM_CSS = `
+.wr-sm { view-timeline: --wr-sm block; }
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) and (d: path("M 0,0 L 1,1 Z")) {
+    .wr-sm-tint, .wr-sm-flash, .wr-sm-house, .wr-sm-rain, .wr-sm-mass,
+    .wr-sm-wisp, .wr-sm-ridge, .wr-sm-porch {
+      animation-timing-function: linear;
+      animation-fill-mode: both;
+      animation-timeline: --wr-sm;
+      animation-range: exit 0% exit 100%;
+    }
+    .wr-sm-tint { animation-name: wr-sm-tint; }
+    .wr-sm-flash { animation-name: wr-sm-flash; }
+    .wr-sm-house { animation-name: wr-sm-house; }
+    .wr-sm-rain { animation-name: wr-sm-rain; }
+    .wr-sm-mass { animation-name: wr-sm-mass; }
+    .wr-sm-wisp { animation-name: wr-sm-wisp; }
+    .wr-sm-ridge { animation-name: wr-sm-ridge; }
+    .wr-sm-porch { animation-name: wr-sm-porch; }
   }
+}
+/* Act I atmosphere: a storm-heavy tint that lifts as the roof forms. */
+.wr-sm-tint { opacity: 0; }
+@keyframes wr-sm-tint {
+  0%, 15% { opacity: 0.72; }
+  85%, 100% { opacity: 0; }
+}
+/* A held flash at the storm's peak — Act I punctuation, gone by mid-morph.
+   Capped so it never white-outs the headline (ADR-034 discipline). */
+.wr-sm-flash { opacity: 0; }
+@keyframes wr-sm-flash {
+  0%, 8% { opacity: 0; }
+  14% { opacity: 0.38; }
+  20% { opacity: 0.08; }
+  30%, 100% { opacity: 0; }
+}
+/* The protected home, revealed as the roof completes. */
+@keyframes wr-sm-house {
+  0%, 55% { opacity: 0; translate: 0 26px; }
+  85%, 100% { opacity: 1; translate: 0 0; }
+}
+/* Rain — dissolves as the threat becomes the protection. */
+.wr-sm-rain { opacity: 0; }
+@keyframes wr-sm-rain {
+  0% { opacity: 0.5; }
+  45%, 100% { opacity: 0; }
+}
+/* THE MORPH: the storm mass becomes the roofline (with a slow drift while
+   it is still weather — clouds move). */
+@keyframes wr-sm-mass {
+  0%, 5% { d: path("${CLOUD_MASS}"); translate: 0 0; }
+  35% { translate: 0 10px; }
+  75%, 100% { d: path("${ROOF_MASS}"); translate: 0 0; }
+}
+@keyframes wr-sm-wisp {
+  0%, 15% { d: path("${CLOUD_WISP}"); }
+  80%, 100% { d: path("${RIDGE_CAP}"); }
+}
+/* Completion: the ridge catches the light; the porch light comes on. */
+@keyframes wr-sm-ridge {
+  0%, 78% { opacity: 0; }
+  95%, 100% { opacity: 0.95; }
+}
+@keyframes wr-sm-porch {
+  0%, 86% { opacity: 0; }
+  97%, 100% { opacity: 0.9; }
+}
+`;
 
+export function StormCloudNewRoof({ hasBackdrop = false }: { hasBackdrop?: boolean } = {}) {
   return (
-    <div ref={ref} className="absolute inset-0">
+    <div className="wr-sm absolute inset-0">
+      <style dangerouslySetInnerHTML={{ __html: STORM_CSS }} />
       <svg
         viewBox="0 0 1000 620"
         preserveAspectRatio="xMidYMax slice"
@@ -116,34 +130,25 @@ export function StormCloudNewRoof({ hasBackdrop = false }: { hasBackdrop?: boole
             <stop offset="1" stopColor="#0f1a2a" />
           </linearGradient>
         </defs>
-        {/* Act I atmosphere: a storm-heavy tint that lifts as the roof forms */}
-        <motion.rect
-          x="0"
-          y="0"
-          width="1000"
-          height="620"
-          fill="rgba(8, 12, 20, 1)"
-          style={{ opacity: stormTint }}
-        />
-        <motion.rect
-          x="0"
-          y="0"
-          width="1000"
-          height="620"
-          fill="rgba(214, 230, 250, 1)"
-          style={{ opacity: flash }}
-        />
+        <rect className="wr-sm-tint" x="0" y="0" width="1000" height="620" fill="rgba(8, 12, 20, 1)" />
+        <rect className="wr-sm-flash" x="0" y="0" width="1000" height="620" fill="rgba(214, 230, 250, 1)" />
 
         {!hasBackdrop && (
-      <motion.g style={{ opacity: houseOpacity, y: houseRise }}>{house}</motion.g>
-    )}
+          <g className="wr-sm-house">
+            {/* the protected home, revealed as the roof completes */}
+            <rect x="270" y="350" width="460" height="230" rx="4" fill="rgba(19, 30, 47, 0.92)" />
+            <rect x="322" y="402" width="86" height="70" rx="3" fill="rgba(127, 180, 232, 0.16)" stroke="rgba(127, 180, 232, 0.28)" strokeWidth="2" />
+            <rect x="592" y="402" width="86" height="70" rx="3" fill="rgba(127, 180, 232, 0.16)" stroke="rgba(127, 180, 232, 0.28)" strokeWidth="2" />
+            <rect x="462" y="440" width="76" height="140" rx="3" fill="rgba(30, 44, 66, 1)" stroke="rgba(148, 163, 184, 0.2)" strokeWidth="2" />
+          </g>
+        )}
 
         {/* rain — dissolves as the threat becomes the protection */}
-        <motion.g
+        <g
+          className="wr-sm-rain"
           stroke="rgba(148, 178, 214, 0.55)"
           strokeWidth="2"
           strokeLinecap="round"
-          style={{ opacity: rainOpacity }}
         >
           {RAIN.map((drop) => (
             <line
@@ -154,18 +159,18 @@ export function StormCloudNewRoof({ hasBackdrop = false }: { hasBackdrop?: boole
               y2={180 + drop.delay + drop.length}
             />
           ))}
-        </motion.g>
+        </g>
 
         {/* THE MORPH: the storm mass becomes the roofline. The vertical
             gradient gives the mass a lit top and a heavy belly — weather,
             not a smudge; the same light reads as sky on the finished roof. */}
-        <motion.path d={mass} fill="url(#storm-mass)" style={{ y: massDrift }} />
-        <motion.path d={wisp} fill="rgba(45, 66, 94, 0.85)" />
+        <path className="wr-sm-mass" d={ROOF_MASS} fill="url(#storm-mass)" />
+        <path className="wr-sm-wisp" d={RIDGE_CAP} fill="rgba(45, 66, 94, 0.85)" />
 
         {/* completion: the ridge catches the light; the porch light comes on */}
-        <motion.path d={RIDGE_CAP} fill="var(--wr-accent)" style={{ opacity: ridgeGlow }} />
-        <motion.circle cx="500" cy="470" r="7" fill="var(--wr-accent)" style={{ opacity: porchLight }} />
-        <motion.circle cx="500" cy="470" r="16" fill="var(--wr-accent-glow)" style={{ opacity: porchLight }} />
+        <path className="wr-sm-ridge" d={RIDGE_CAP} fill="var(--wr-accent)" />
+        <circle className="wr-sm-porch" cx="500" cy="470" r="7" fill="var(--wr-accent)" />
+        <circle className="wr-sm-porch" cx="500" cy="470" r="16" fill="var(--wr-accent-glow)" />
       </svg>
     </div>
   );

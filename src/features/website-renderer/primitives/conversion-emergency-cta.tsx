@@ -1,17 +1,16 @@
-"use client";
-
 /**
  * conversion.emergency-cta — the always-reachable call moment.
  *
  * Variant "sticky-call-bar": an in-flow conversion band PLUS a fixed bottom
- * bar that appears once the hero's own CTA has scrolled away — on mobile the
- * call action is never more than a thumb-reach away. "full-width-banner"
- * renders the band only.
+ * bar — on mobile the call action is never more than a thumb-reach away.
+ * The bar's slide-in is a pure CSS scroll-driven animation (wr-sticky-bar,
+ * render-page ROOT_CSS): it rises as the hero's own CTA scrolls away.
+ * Browsers without scroll-driven animation support keep the bar always
+ * visible — the conversion law's preferred fallback. Zero JavaScript.
+ * "full-width-banner" renders the band only.
  */
 
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Phone } from "lucide-react";
-import { useEffect, useState } from "react";
 import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal } from "../motion/motion";
 import {
@@ -35,48 +34,28 @@ function StickyCallBar({
   businessName?: string;
   label: string;
 }) {
-  const [visible, setVisible] = useState(false);
-  const reduced = useReducedMotion();
-
-  useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY > window.innerHeight * 0.85);
-    onScroll();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          className="fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]"
-          initial={reduced ? { opacity: 0 } : { y: 72, opacity: 0 }}
-          animate={reduced ? { opacity: 1 } : { y: 0, opacity: 1 }}
-          exit={reduced ? { opacity: 0 } : { y: 72, opacity: 0 }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+    <div className="wr-sticky-bar fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
+      <div
+        className="mx-auto mb-3 flex w-[min(94%,26rem)] items-center justify-between gap-3 rounded-full border py-2 pl-5 pr-2 backdrop-blur-xl"
+        style={{
+          borderColor: "var(--wr-line-strong)",
+          background: "color-mix(in oklab, var(--wr-bg-raised) 82%, transparent)",
+          boxShadow: "0 18px 50px -12px rgba(0,0,0,0.6)",
+        }}
+      >
+        <span
+          className="truncate text-sm font-semibold"
+          style={{ ...displayFont, color: "var(--wr-ink)" }}
         >
-          <div
-            className="mx-auto mb-3 flex w-[min(94%,26rem)] items-center justify-between gap-3 rounded-full border py-2 pl-5 pr-2 backdrop-blur-xl"
-            style={{
-              borderColor: "var(--wr-line-strong)",
-              background: "color-mix(in oklab, var(--wr-bg-raised) 82%, transparent)",
-              boxShadow: "0 18px 50px -12px rgba(0,0,0,0.6)",
-            }}
-          >
-            <span
-              className="truncate text-sm font-semibold"
-              style={{ ...displayFont, color: "var(--wr-ink)" }}
-            >
-              {businessName}
-            </span>
-            <SignalCTA href="#callback" size="sm">
-              <Phone className="size-4" aria-hidden />
-              {label}
-            </SignalCTA>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          {businessName}
+        </span>
+        <SignalCTA href="#callback" size="sm">
+          <Phone className="size-4" aria-hidden />
+          {label}
+        </SignalCTA>
+      </div>
+    </div>
   );
 }
 

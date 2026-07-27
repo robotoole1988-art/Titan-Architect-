@@ -12,7 +12,6 @@
  */
 
 import { useId, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { CinematicImage } from "./cinematic-image";
 import type { PrimitiveSectionProps } from "../model/types";
@@ -80,7 +79,6 @@ function AccordionItem({
   open: boolean;
   onToggle: () => void;
 }) {
-  const reduced = useReducedMotion();
   const panelId = useId();
   return (
     <div className="border-b" style={{ borderColor: "var(--wr-line)" }}>
@@ -99,42 +97,35 @@ function AccordionItem({
           >
             {slot.question}
           </span>
-          <motion.span
+          <span
             aria-hidden
-            className="flex size-8 shrink-0 items-center justify-center rounded-full border"
+            data-open={open}
+            className="wr-rotor flex size-8 shrink-0 items-center justify-center rounded-full border"
             style={{ borderColor: "var(--wr-line-strong)", color: "var(--wr-accent)" }}
-            animate={{ rotate: open ? 45 : 0 }}
-            transition={{ duration: reduced ? 0 : 0.25 }}
           >
             <Plus className="size-4" />
-          </motion.span>
+          </span>
         </button>
       </h3>
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.div
-            id={panelId}
-            initial={reduced ? { opacity: 0 } : { height: 0, opacity: 0 }}
-            animate={reduced ? { opacity: 1 } : { height: "auto", opacity: 1 }}
-            exit={reduced ? { opacity: 0 } : { height: 0, opacity: 0 }}
-            transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            className="overflow-hidden"
-          >
-            <div className="pb-6">
-              {slot.answer ? (
-                <p
-                  className="max-w-[var(--wr-measure)] leading-relaxed"
-                  style={{ color: "var(--wr-ink-muted)" }}
-                >
-                  {slot.answer}
-                </p>
-              ) : (
-                slot.annotation && <AnnotationTag>{slot.annotation}</AnnotationTag>
-              )}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* CSS grid-rows collapse (wr-collapse, render-page ROOT_CSS): the
+          panel stays mounted; closed content is visibility-hidden so it
+          leaves the accessibility tree. */}
+      <div id={panelId} data-open={open} className="wr-collapse">
+        <div>
+          <div className="pb-6">
+            {slot.answer ? (
+              <p
+                className="max-w-[var(--wr-measure)] leading-relaxed"
+                style={{ color: "var(--wr-ink-muted)" }}
+              >
+                {slot.answer}
+              </p>
+            ) : (
+              slot.annotation && <AnnotationTag>{slot.annotation}</AnnotationTag>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
