@@ -29,7 +29,7 @@ Desktop is not tracked separately; a site that passes mobile floors passes deskt
 
 ## 2. Byte budgets (CI-enforced, ratchet down only)
 
-- HTML ≤35KB gz · CSS ≤35KB gz · **JS ≤130KB gz total**
+- **Markup + styles ≤70KB gz combined** — one budget, whichever file the bytes arrive in (ADR-058: `inlineCss` puts the CSS *inside* the document, so the old split of HTML ≤35KB / CSS ≤35KB measured one artefact against one of its two numbers). Same total as before, counted once. · **JS ≤130KB gz total**
 - Fonts ≤100KB (max 2 woff2, preloaded, `font-display: swap`)
 - Above-fold images ≤250KB · initial transfer ≤700KB excluding deferred film
 - Budgets may only ever be lowered. Raising a budget requires an ADR.
@@ -57,6 +57,7 @@ Desktop is not tracked separately; a site that passes mobile floors passes deskt
 ## 6. Enforcement (what makes it permanent)
 
 1. **Lighthouse CI on every renderer PR**, run against the preview deployment of both live archetype sites: mobile emulation, median of 3, all floors + byte budgets asserted. Red = no merge. *Shipped: `.github/workflows/lighthouse.yml` → `scripts/lighthouse-gate.mjs` (ADR-055). Make it a required check in branch protection once the fleet clears the floors.*
+   - Preview deployments are behind Vercel Deployment Protection and are served `X-Robots-Tag: noindex`. The gate sends the automation bypass so it measures the site rather than the login wall, and treats **SEO as advisory on previews** — a noindex preview cannot reach the SEO floor no matter how correct the build. SEO is enforced in full on the nightly production run. Byte budgets are build output and mean the same on both.
 2. **Publish gate**: a site build that misses a floor does not go live. The failure reads like a media-gate rejection: what failed, by how much, what to fix. *Judgement shipped (`assessAgainstLaw`); the wiring into the publish path is still open.*
 3. **Nightly fleet sampler**: N random live sites audited; any site <95 raises an alert in the Command Centre. *Nightly production run shipped; the fleet sampling + Command Centre alert are still open.*
 4. Budgets and floors live in one config file; the CI, the publish gate, and the sampler all read the same numbers. *Shipped: `src/core/performance-law/law.json`, pinned to this document by `tests/core/performance-law.test.ts`.*

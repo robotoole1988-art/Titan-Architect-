@@ -54,12 +54,27 @@ const mono = Spline_Sans_Mono({
 // is the care/trust archetype's heading face (ADR-043) — quiet, established
 // credibility for dentists, healthcare, and professional services. The care
 // theme points --wr-font-display at --wr-font-serif; the grotesque themes never
-// see it. Preloaded so the care hero paints once in its final face (no CLS).
+// see it.
+//
+// NOT preloaded (media law §4: max two preloaded woff2). This module is
+// imported by every published site, so a preload link here is emitted on every
+// page — and it was: measured on the live emergency-roofing site, Fraunces was
+// one of four font files and ~36KB of a 118KB total, against a 100KB budget,
+// downloaded for a face that theme can never render. A CSS variable alone
+// pulls nothing; only an element whose computed font-family resolves to
+// Fraunces fetches it, which happens on care sites and nowhere else.
+//
+// The cost lands on the care archetype: its first cold view may paint in the
+// metric-adjusted fallback rather than Fraunces (display:"optional" declines a
+// late face rather than swapping, so there is still no CLS). If a care site
+// ever needs that first paint guaranteed, the fix is a per-archetype font
+// module so the preload follows the theme instead of taxing every trade.
 const serif = Fraunces({
   subsets: ["latin"],
   variable: "--wr-font-serif",
   weight: "variable",
   display: "optional",
+  preload: false,
 });
 
 /** Class applying all four font variables to a subtree. */

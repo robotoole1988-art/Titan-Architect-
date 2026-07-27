@@ -15,10 +15,16 @@
     "cumulative-layout-shift": { "ceiling": 0.1, "aim": 0, "unit": "" }
   },
   "budgets": {
-    "document": { "ceiling": 35, "unit": "KB transferred" },
-    "stylesheet": { "ceiling": 35, "unit": "KB transferred" },
     "script": { "ceiling": 130, "unit": "KB transferred" },
     "font": { "ceiling": 100, "unit": "KB transferred" },
     "total": { "ceiling": 700, "unit": "KB transferred" }
+  },
+  "compositeBudgets": {
+    "markup+styles": {
+      "of": ["document", "stylesheet"],
+      "ceiling": 70,
+      "unit": "KB transferred",
+      "why": "ADR-058. The law wrote HTML <=35KB and CSS <=35KB as separate lines, which silently assumed the CSS arrives as its own file. inlineCss puts it inside the document, so the split measured one artefact against one of its two numbers. 70KB is the same total the law always allowed, counted once, whichever file the bytes arrive in."
+    }
   }
 }
