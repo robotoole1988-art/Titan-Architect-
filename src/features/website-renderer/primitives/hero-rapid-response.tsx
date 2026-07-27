@@ -191,7 +191,7 @@ export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAss
       {backdropAsset && (
         // The real photograph beneath the storm — the property at stake.
         <div aria-hidden className="absolute inset-0">
-          <CinematicImage asset={backdropAsset} alt="" kenBurns eager sizes="100vw" className="h-full w-full" />
+          <CinematicImage asset={backdropAsset} alt="" fit="sized" kenBurns eager sizes="100vw" className="h-full w-full" />
           {/* hero ambience clip (ADR-036) — client-only, LCP-safe. */}
           {film && <AmbientFilm film={film} />}
           {/* storm mood grade — cools the photograph into the theme */}

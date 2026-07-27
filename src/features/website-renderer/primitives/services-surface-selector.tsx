@@ -168,7 +168,7 @@ export function SurfaceSelector({
                 <CinematicImage
                   asset={mediaAssets[`surfaces/${surfaceSlug(surface)}`]}
                   alt={`${surface} surface texture`}
-                  className="absolute inset-0"
+                  fit="inset"
                 />
               )}
               <div

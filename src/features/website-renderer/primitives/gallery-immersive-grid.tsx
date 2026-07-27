@@ -63,7 +63,7 @@ function GalleryFrame({
         }}
       />
       {asset && (
-        <CinematicImage asset={asset} alt={`Gallery photograph ${index + 1}`} className="absolute inset-0" />
+        <CinematicImage asset={asset} alt={`Gallery photograph ${index + 1}`} fit="inset" />
       )}
       {!asset && annotate && (
       <figcaption className="absolute inset-x-5 bottom-4 flex flex-col gap-1.5">

@@ -6,12 +6,16 @@ import {
   resolvePublishedSite,
 } from "@/features/website-renderer";
 
-// Publications are immutable snapshots (ADR-027) — cache and revalidate;
-// a republish is picked up within a minute.
+// Publications are immutable snapshots (ADR-027), so this page is STATIC
+// output: rendered once, served from the edge, no per-request work.
 // force-static: uncached spine reads otherwise mark the route dynamic and
 // silently defeat revalidate (found in production, ADR-054).
+// The snapshot is invalidated by the three founder actions that can change
+// it — media approval, publish, unpublish (revalidatePublishedSite,
+// ADR-055 §5). The hour here is a backstop against a missed hook, NOT the
+// mechanism: it used to be 60s, which was a poll standing in for a signal.
 export const dynamic = "force-static";
-export const revalidate = 60;
+export const revalidate = 3600;
 
 /** Thin route: the live site's HOMEPAGE by slug (ADR-027/028). */
 

@@ -47,7 +47,9 @@ export function StoryGentleWelcome({
         <CinematicImage
           asset={asset}
           alt={headline}
-          className="w-full overflow-hidden rounded-[var(--wr-radius-lg)] border"
+          fit="ratio"
+          ratio={mediaForward ? "4 / 3" : "3 / 2"}
+          className="w-full rounded-[var(--wr-radius-lg)] border"
           sizes="(max-width: 900px) 100vw, 46vw"
         />
       ) : (

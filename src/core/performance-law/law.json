@@ -1,0 +1,24 @@
+{
+  "$comment": "THE numbers of the Published Sites Performance Law (docs/experience/PUBLISHED-SITES-PERFORMANCE-LAW.md). This file is the single source: the CI gate (scripts/lighthouse-gate.mjs), the publish gate and the nightly fleet sampler all read it, so a floor can never drift between them. Budgets may only ever be LOWERED — raising one requires an ADR.",
+  "version": "1.0.0",
+  "runs": 3,
+  "archetypePaths": ["/sites/summit-roofing-rescue", "/sites/kerbside-kings"],
+  "categories": {
+    "performance": { "floor": 95, "aim": 100 },
+    "accessibility": { "floor": 95, "aim": 100 },
+    "best-practices": { "floor": 100, "aim": 100 },
+    "seo": { "floor": 100, "aim": 100 }
+  },
+  "metrics": {
+    "largest-contentful-paint": { "ceiling": 2500, "aim": 1800, "unit": "ms" },
+    "total-blocking-time": { "ceiling": 200, "aim": 100, "unit": "ms" },
+    "cumulative-layout-shift": { "ceiling": 0.1, "aim": 0, "unit": "" }
+  },
+  "budgets": {
+    "document": { "ceiling": 35, "unit": "KB transferred" },
+    "stylesheet": { "ceiling": 35, "unit": "KB transferred" },
+    "script": { "ceiling": 130, "unit": "KB transferred" },
+    "font": { "ceiling": 100, "unit": "KB transferred" },
+    "total": { "ceiling": 700, "unit": "KB transferred" }
+  }
+}
