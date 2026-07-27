@@ -25,7 +25,7 @@ const PASSING: LawMeasurement = {
     "total-blocking-time": 40,
     "cumulative-layout-shift": 0,
   },
-  budgets: { document: 30, stylesheet: 20, script: 90, font: 60, total: 480 },
+  budgets: { document: 50, stylesheet: 0, script: 90, font: 60, total: 480 },
 };
 
 describe("the law's numbers match the document", () => {
@@ -43,11 +43,16 @@ describe("the law's numbers match the document", () => {
   });
 
   it("byte budgets (§2) — JS is the one that killed us at 64", () => {
-    expect(PERFORMANCE_LAW.budgets.document.ceiling).toBe(35);
-    expect(PERFORMANCE_LAW.budgets.stylesheet.ceiling).toBe(35);
     expect(PERFORMANCE_LAW.budgets.script.ceiling).toBe(130);
     expect(PERFORMANCE_LAW.budgets.font.ceiling).toBe(100);
     expect(PERFORMANCE_LAW.budgets.total.ceiling).toBe(700);
+  });
+
+  it("markup and styles share ONE budget — inlined CSS is still CSS (ADR-058)", () => {
+    const composite = PERFORMANCE_LAW.compositeBudgets["markup+styles"];
+    // 35 (HTML) + 35 (CSS) — the same total §2 always allowed, counted once.
+    expect(composite.ceiling).toBe(70);
+    expect(composite.of).toEqual(["document", "stylesheet"]);
   });
 
   it("is judged on the median of three runs, on both live archetypes", () => {
@@ -101,16 +106,42 @@ describe("assessAgainstLaw", () => {
     ]);
   });
 
+  it("counts inlined CSS against the shared markup budget, not a phantom 0", () => {
+    // The real shape after inlineCss: all the styles live in the document.
+    const clean = assessAgainstLaw({
+      ...PASSING,
+      budgets: { ...PASSING.budgets, document: 57.9, stylesheet: 0 },
+    });
+    expect(clean).toEqual([]);
+
+    const over = assessAgainstLaw({
+      ...PASSING,
+      budgets: { ...PASSING.budgets, document: 71, stylesheet: 0 },
+    });
+    expect(over).toHaveLength(1);
+    expect(over[0].key).toBe("markup+styles");
+    expect(over[0].message).toContain("1KB over the 70KB budget");
+  });
+
+  it("adds the pair up — a separate stylesheet counts exactly the same", () => {
+    const [breach] = assessAgainstLaw({
+      ...PASSING,
+      budgets: { ...PASSING.budgets, document: 40, stylesheet: 40 },
+    });
+    expect(breach.key).toBe("markup+styles");
+    expect(breach.actual).toBe(80);
+  });
+
   it("reports EVERY breach at once — a rejection lists all the work", () => {
     const breaches = assessAgainstLaw({
       categories: { performance: 60, accessibility: 80, "best-practices": 90, seo: 70 },
       metrics: { "largest-contentful-paint": 6000, "total-blocking-time": 2680 },
-      budgets: { script: 789, total: 20400 },
+      budgets: { document: 100, stylesheet: 20, script: 789, total: 20400 },
     });
-    expect(breaches.length).toBe(8);
+    expect(breaches.length).toBe(9);
     expect(breaches.filter((breach) => breach.kind === "category")).toHaveLength(4);
     expect(breaches.filter((breach) => breach.kind === "metric")).toHaveLength(2);
-    expect(breaches.filter((breach) => breach.kind === "budget")).toHaveLength(2);
+    expect(breaches.filter((breach) => breach.kind === "budget")).toHaveLength(3);
   });
 });
 

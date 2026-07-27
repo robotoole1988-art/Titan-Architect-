@@ -29,7 +29,7 @@ Desktop is not tracked separately; a site that passes mobile floors passes deskt
 
 ## 2. Byte budgets (CI-enforced, ratchet down only)
 
-- HTML ≤35KB gz · CSS ≤35KB gz · **JS ≤130KB gz total**
+- **Markup + styles ≤70KB gz combined** — one budget, whichever file the bytes arrive in (ADR-058: `inlineCss` puts the CSS *inside* the document, so the old split of HTML ≤35KB / CSS ≤35KB measured one artefact against one of its two numbers). Same total as before, counted once. · **JS ≤130KB gz total**
 - Fonts ≤100KB (max 2 woff2, preloaded, `font-display: swap`)
 - Above-fold images ≤250KB · initial transfer ≤700KB excluding deferred film
 - Budgets may only ever be lowered. Raising a budget requires an ADR.

@@ -205,6 +205,19 @@ function assess(measurement) {
     }
   }
 
+  // Composite budgets judge bytes by what they ARE, not which file carried
+  // them (ADR-058): inlined CSS is still CSS.
+  for (const [key, rule] of Object.entries(LAW.compositeBudgets ?? {})) {
+    const parts = rule.of.map((part) => measurement.budgets[part]);
+    if (parts.every((part) => part === undefined)) continue;
+    const actual = parts.reduce((sum, part) => sum + (part ?? 0), 0);
+    if (actual > rule.ceiling) {
+      breaches.push(
+        `${key} transferred ${round(actual)}KB (${rule.of.join(" + ")}) — ${round(actual - rule.ceiling)}KB over the ${rule.ceiling}KB budget`,
+      );
+    }
+  }
+
   return breaches;
 }
 
@@ -235,6 +248,15 @@ function report(url, measurement, breaches) {
     if (actual === undefined) continue;
     const mark = actual <= rule.ceiling ? "PASS" : "FAIL";
     console.log(`  ${mark.padEnd(5)} ${`${key} bytes`.padEnd(16)} ${round(actual)}KB  (budget ${rule.ceiling}KB)`);
+  }
+  for (const [key, rule] of Object.entries(LAW.compositeBudgets ?? {})) {
+    const parts = rule.of.map((part) => measurement.budgets[part]);
+    if (parts.every((part) => part === undefined)) continue;
+    const actual = parts.reduce((sum, part) => sum + (part ?? 0), 0);
+    const mark = actual <= rule.ceiling ? "PASS" : "FAIL";
+    console.log(
+      `  ${mark.padEnd(5)} ${`${key} bytes`.padEnd(16)} ${round(actual)}KB  (budget ${rule.ceiling}KB · ${rule.of.join(" + ")})`,
+    );
   }
   if (breaches.length > 0) {
     console.log(`\n  REJECTED — this page may not ship as it stands:`);

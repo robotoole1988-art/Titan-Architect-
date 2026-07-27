@@ -106,6 +106,25 @@ export function assessAgainstLaw(measurement: LawMeasurement): LawBreach[] {
     }
   }
 
+  // Composite budgets judge bytes by what they ARE, not which file carried
+  // them (ADR-058): inlined CSS is still CSS.
+  for (const [key, rule] of Object.entries(PERFORMANCE_LAW.compositeBudgets)) {
+    const parts: Array<number | undefined> = rule.of.map(
+      (part) => measurement.budgets?.[part],
+    );
+    if (parts.every((part) => part === undefined)) continue;
+    const actual = parts.reduce<number>((sum, part) => sum + (part ?? 0), 0);
+    if (actual > rule.ceiling) {
+      breaches.push({
+        kind: "budget",
+        key,
+        actual: round(actual),
+        limit: rule.ceiling,
+        message: `${key} transferred ${round(actual)}KB (${rule.of.join(" + ")}) — ${round(actual - rule.ceiling)}KB over the ${rule.ceiling}KB budget`,
+      });
+    }
+  }
+
   return breaches;
 }
 
