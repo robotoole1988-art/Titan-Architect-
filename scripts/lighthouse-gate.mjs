@@ -29,6 +29,24 @@ const LAW = JSON.parse(
 
 const LIGHTHOUSE = "lighthouse@12";
 
+/**
+ * Vercel injects its preview toolbar (comments, feedback) from vercel.live
+ * into every PREVIEW deployment. It is not part of the product and the
+ * customer never downloads it, but Lighthouse counts every byte of it: the
+ * first run of this gate reported 1,304KB of script against a 130KB budget,
+ * and most of that was toolbar. Auditing a preview means blocking it, or the
+ * gate measures Vercel's code and calls it ours.
+ */
+const NOT_THE_PRODUCT = ["*vercel.live*", "*vercel-scripts.com*", "*vercel.com/api*"];
+
+/**
+ * A 200 is not proof we are looking at a TITAN site — a preview login wall,
+ * an SSO redirect and an error page all answer 200 and all score beautifully
+ * against floors they were never meant to meet. Every published page carries
+ * primitive markers, so that is what we insist on seeing.
+ */
+const SITE_FINGERPRINT = "data-primitive=";
+
 function parseArgs(argv) {
   const [baseUrl, ...rest] = argv;
   if (!baseUrl) {
@@ -60,6 +78,7 @@ function measure(url) {
       "--screenEmulation.mobile",
       "--throttling-method=simulate",
       `--only-categories=${Object.keys(LAW.categories).join(",")}`,
+      `--blocked-url-patterns=${NOT_THE_PRODUCT.join(",")}`,
       "--chrome-flags=--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu",
     ],
     { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
@@ -177,17 +196,29 @@ function report(url, measurement, breaches) {
 async function main() {
   const { baseUrl, runs, paths } = parseArgs(process.argv.slice(2));
   console.log(
-    `Performance Law v${LAW.version} · median of ${runs} · mobile emulation\nbase: ${baseUrl}`,
+    `Performance Law v${LAW.version} · median of ${runs} · mobile emulation\nbase: ${baseUrl}\n` +
+      `blocked (not the product): ${NOT_THE_PRODUCT.join(" ")}`,
   );
 
   let failed = false;
   for (const path of paths) {
     const url = `${baseUrl}${path}`;
 
-    // A 404 scores beautifully. Prove the page exists before believing it.
+    // A 404 scores beautifully. Prove the page exists — and that it is OURS —
+    // before believing any number that comes back.
     const response = await fetch(url, { redirect: "follow" });
     if (!response.ok) {
       console.error(`\nREJECTED ${url} — responded ${response.status}; there is nothing to audit.`);
+      failed = true;
+      continue;
+    }
+    const body = await response.text();
+    if (!body.includes(SITE_FINGERPRINT)) {
+      console.error(
+        `\nREJECTED ${url} — 200, but this is not a published TITAN page (no ${SITE_FINGERPRINT}).` +
+          `\n  A preview behind deployment protection, or a site whose publication did not resolve,` +
+          `\n  answers 200 with someone else's HTML. Scoring it would be a lie in either direction.`,
+      );
       failed = true;
       continue;
     }
