@@ -1,65 +1,36 @@
-"use client";
-
 /**
- * The shared motion system (ADR-022). Every rendered primitive animates
- * through these components — never ad-hoc — so motion stays coherent,
- * purposeful, and accessible. Framer Motion under the hood; the page root
- * wraps everything in <MotionConfig reducedMotion="user"> and custom effects
- * check useReducedMotion, so prefers-reduced-motion is honoured throughout.
+ * The shared motion system (ADR-022, v2 — the JS diet).
  *
- * Motion exists to create emotion and guide attention — never decoration.
+ * Every rendered primitive animates through these components — never ad-hoc —
+ * so motion stays coherent, purposeful, and accessible. v2 removes Framer
+ * Motion entirely (Published Sites Performance Law: framer-motion is banned
+ * from the renderer; motion is CSS):
+ *
+ * - `Reveal` / `Stagger` / `StaggerItem` render `data-wr-reveal` targets.
+ *   ONE shared IntersectionObserver (see `RevealObserver`) marks them
+ *   `data-wr-on` as they approach the viewport; CSS transitions in the page
+ *   root (`WR_MOTION_CSS`, render-page) do the rise-and-settle. Without
+ *   JavaScript nothing is ever hidden — the hiding rule only applies under
+ *   `[data-wr-js]`, which the observer itself sets. Content can never be
+ *   stuck invisible (audit fault F3, honoured by construction).
+ * - `Parallax`, `PulseBeacon`, and the primitives' scroll choreography are
+ *   pure CSS — scroll-driven animations behind `@supports
+ *   (animation-timeline: view())` with a visible static fallback.
+ * - `prefers-reduced-motion` collapses everything to instant, complete
+ *   visibility via media queries — no JS branching required.
+ *
+ * These components are universal (server- and client-renderable): no hooks,
+ * no state, no bundle weight. Motion exists to create emotion and guide
+ * attention — never decoration.
  */
 
-import {
-  motion,
-  useReducedMotion,
-  useScroll,
-  useTransform,
-} from "framer-motion";
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type PointerEvent,
-  type ReactNode,
-  type RefObject,
-} from "react";
+import type { CSSProperties, ReactNode } from "react";
 
-const EASE_OUT = [0.16, 1, 0.3, 1] as const;
-
-/**
- * Reveal guard (audit fault F3): a cheap interval that force-reveals an
- * element ONLY once it is actually in the viewport and the intersection
- * observer has not fired — the same rise animation runs, just on a backup
- * trigger. Never pins elements ahead of time (late sections keep their
- * full reveal), disposes itself the moment the element is revealed.
- */
-function useRevealGuard(
-  ref: RefObject<HTMLDivElement | null>,
-  revealed: boolean,
-  reveal: () => void,
-): void {
-  useEffect(() => {
-    if (revealed) return;
-    const id = window.setInterval(() => {
-      const el = ref.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      if (rect.top < window.innerHeight && rect.bottom > 0) reveal();
-    }, 900);
-    return () => window.clearInterval(id);
-  }, [ref, revealed, reveal]);
-}
+export { RevealObserver } from "./reveal-observer";
 
 /**
  * Rise-and-settle scroll reveal. The workhorse: calm, decisive, once.
- *
- * Audit fault F3 tuning: the viewport margin LOOKS AHEAD (positive bottom
- * margin) so sections start revealing ~a fifth of a screen before they
- * enter, travel is short, and a CSS guard in the page root (`data-reveal`,
- * see render-page ROOT_CSS) forces full visibility if the intersection
- * observer ever lags — content can never be stuck invisible.
+ * Server-rendered visible; the shared observer + CSS add the entrance.
  */
 export function Reveal({
   children,
@@ -77,28 +48,28 @@ export function Reveal({
   className?: string;
   style?: CSSProperties;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [revealed, setRevealed] = useState(false);
-  useRevealGuard(ref, revealed, () => setRevealed(true));
   return (
-    <motion.div
-      ref={ref}
+    <div
+      data-wr-reveal
       className={className}
-      style={style}
-      data-reveal
-      initial={{ opacity: 0, y }}
-      animate={revealed ? { opacity: 1, y: 0 } : undefined}
-      whileInView={{ opacity: 1, y: 0 }}
-      onViewportEnter={() => setRevealed(true)}
-      viewport={{ once: true, margin: "0px 0px 20% 0px" }}
-      transition={{ duration, delay, ease: EASE_OUT }}
+      style={
+        {
+          ...style,
+          "--wr-reveal-delay": `${delay}s`,
+          "--wr-reveal-y": `${y}px`,
+          "--wr-reveal-duration": `${duration}s`,
+        } as CSSProperties
+      }
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
-/** Orchestrated entrance for a group of children. */
+/**
+ * Orchestrated entrance for a group of children. The observer assigns each
+ * `data-wr-reveal` child an incremental transition delay of `gap` seconds.
+ */
 export function Stagger({
   children,
   className,
@@ -108,22 +79,10 @@ export function Stagger({
   className?: string;
   gap?: number;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [revealed, setRevealed] = useState(false);
-  useRevealGuard(ref, revealed, () => setRevealed(true));
   return (
-    <motion.div
-      ref={ref}
-      className={className}
-      initial="hidden"
-      animate={revealed ? "visible" : undefined}
-      whileInView="visible"
-      onViewportEnter={() => setRevealed(true)}
-      viewport={{ once: true, margin: "0px 0px 15% 0px" }}
-      variants={{ visible: { transition: { staggerChildren: gap } }, hidden: {} }}
-    >
+    <div data-wr-stagger={gap} className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -138,21 +97,20 @@ export function StaggerItem({
   style?: CSSProperties;
 }) {
   return (
-    <motion.div
+    <div
+      data-wr-reveal
       className={className}
-      style={style}
-      data-reveal
-      variants={{
-        hidden: { opacity: 0, y: 16 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT } },
-      }}
+      style={{ ...style, "--wr-reveal-y": "16px", "--wr-reveal-duration": "0.6s" } as CSSProperties}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
-/** Gentle scroll parallax; static under reduced motion. */
+/**
+ * Gentle scroll parallax — a CSS scroll-driven animation where supported;
+ * static (and reduced-motion) everywhere else. Zero JavaScript.
+ */
 export function Parallax({
   children,
   distance = 60,
@@ -162,90 +120,43 @@ export function Parallax({
   distance?: number;
   className?: string;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const reduced = useReducedMotion();
-  const { scrollYProgress } = useScroll({
-    target: ref,
-    offset: ["start end", "end start"],
-  });
-  const y = useTransform(scrollYProgress, [0, 1], [distance, -distance]);
   return (
-    <motion.div ref={ref} className={className} style={reduced ? undefined : { y }}>
+    <div
+      className={className ? `wr-parallax ${className}` : "wr-parallax"}
+      style={{ "--wr-parallax": `${distance}px` } as CSSProperties}
+    >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
 /**
- * A CTA that leans toward the pointer — a small act of eagerness reserved for
- * the page's most important action. Static under reduced motion and touch.
+ * The page's most important action, given presence through CSS alone: a
+ * scale lean on hover, a settle on press. (v2 retires the pointer-tracking
+ * lean — decoration the Performance Law doesn't pay for.)
  */
 export function MagneticCTA({
   children,
   className,
-  strength = 0.3,
 }: {
   children: ReactNode;
   className?: string;
+  /** Kept for API compatibility; the CSS lean has one strength. */
   strength?: number;
 }) {
-  const reduced = useReducedMotion();
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-
-  function onPointerMove(event: PointerEvent<HTMLDivElement>) {
-    if (reduced || event.pointerType !== "mouse") return;
-    const rect = event.currentTarget.getBoundingClientRect();
-    setOffset({
-      x: (event.clientX - rect.left - rect.width / 2) * strength,
-      y: (event.clientY - rect.top - rect.height / 2) * strength,
-    });
-  }
-
   return (
-    <motion.div
-      className={className}
-      style={{ display: "inline-block" }}
-      animate={reduced ? undefined : { x: offset.x, y: offset.y }}
-      transition={{ type: "spring", stiffness: 220, damping: 18, mass: 0.5 }}
-      onPointerMove={onPointerMove}
-      onPointerLeave={() => setOffset({ x: 0, y: 0 })}
-      whileHover={reduced ? undefined : { scale: 1.03 }}
-      whileTap={{ scale: 0.98 }}
-    >
+    <div className={className ? `wr-magnetic ${className}` : "wr-magnetic"}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
-/** A slow, reassuring pulse ring (the "we're here" beacon). */
+/** A slow, reassuring pulse ring (the "we're here" beacon). Pure CSS. */
 export function PulseBeacon({ className }: { className?: string }) {
-  const reduced = useReducedMotion();
-  if (reduced) {
-    return (
-      <span
-        aria-hidden
-        className={className}
-        style={{
-          position: "absolute",
-          inset: 0,
-          borderRadius: "inherit",
-          boxShadow: "0 0 0 6px var(--wr-accent-glow)",
-        }}
-      />
-    );
-  }
   return (
-    <motion.span
+    <span
       aria-hidden
-      className={className}
-      style={{
-        position: "absolute",
-        inset: 0,
-        borderRadius: "inherit",
-        border: "2px solid var(--wr-accent)",
-      }}
-      animate={{ scale: [1, 1.35], opacity: [0.55, 0] }}
-      transition={{ duration: 2.2, repeat: Infinity, ease: "easeOut" }}
+      className={className ? `wr-beacon ${className}` : "wr-beacon"}
     />
   );
 }

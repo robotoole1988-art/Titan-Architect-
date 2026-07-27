@@ -11,8 +11,7 @@
  * "chaptered".
  */
 
-import { useRef, useState } from "react";
-import { motion, useInView, useReducedMotion } from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import { MoveHorizontal } from "lucide-react";
 import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal, Stagger, StaggerItem } from "../motion/motion";
@@ -53,14 +52,31 @@ export function Comparison({
   const annotate = mode === "preview";
   const [value, setValue] = useState(18);
   const containerRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(containerRef, { once: true, margin: "-25%" });
-  const reduced = useReducedMotion();
-  const settled = reduced ? 50 : 55;
 
   // Until first seen, hold the intro position; once in view, animate the wipe
-  // open, then the input value takes over on interaction.
+  // open (a CSS clip-path transition — wr-wipe, render-page ROOT_CSS), then
+  // the input value takes over on interaction.
+  const [inView, setInView] = useState(false);
   const [interacted, setInteracted] = useState(false);
-  const position = interacted ? value : inView ? settled : 18;
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || !("IntersectionObserver" in window)) {
+      setInView(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "-25% 0px -25% 0px" },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+  const position = interacted ? value : inView ? 55 : 18;
 
   return (
     <div ref={containerRef} className="relative">
@@ -89,15 +105,13 @@ export function Comparison({
         </div>
 
         {/* BEFORE — clipped by the divider */}
-        <motion.div
-          className="absolute inset-0"
-          style={{ background: BEFORE_SCENE }}
-          animate={{ clipPath: `inset(0 ${100 - position}% 0 0)` }}
-          transition={
-            interacted
-              ? { duration: 0 }
-              : { duration: reduced ? 0 : 1.6, ease: [0.16, 1, 0.3, 1] }
-          }
+        <div
+          className="wr-wipe absolute inset-0"
+          data-animate={!interacted}
+          style={{
+            background: BEFORE_SCENE,
+            clipPath: `inset(0 ${100 - position}% 0 0)`,
+          }}
         >
           <div
             aria-hidden
@@ -115,19 +129,14 @@ export function Comparison({
               <AnnotationTag>before · media slot</AnnotationTag>
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* divider + handle */}
-        <motion.div
+        <div
           aria-hidden
-          className="absolute inset-y-0 w-px"
-          style={{ background: "var(--wr-accent)", left: 0 }}
-          animate={{ left: `${position}%` }}
-          transition={
-            interacted
-              ? { duration: 0 }
-              : { duration: reduced ? 0 : 1.6, ease: [0.16, 1, 0.3, 1] }
-          }
+          className="wr-wipe absolute inset-y-0 w-px"
+          data-animate={!interacted}
+          style={{ background: "var(--wr-accent)", left: `${position}%` }}
         >
           <span
             className="absolute left-1/2 top-1/2 flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border backdrop-blur-md"
@@ -140,7 +149,7 @@ export function Comparison({
           >
             <MoveHorizontal className="size-5" />
           </span>
-        </motion.div>
+        </div>
 
         {/* the real control: pointer-draggable, keyboard-operable */}
         <input

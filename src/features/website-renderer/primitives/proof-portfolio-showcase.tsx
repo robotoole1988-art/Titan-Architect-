@@ -1,5 +1,3 @@
-"use client";
-
 /**
  * proof.portfolio-showcase — finished work as the argument (ADR-029).
  *
