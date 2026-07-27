@@ -254,6 +254,7 @@ export function HeroCinematicReveal({
           <CinematicImage
             asset={backdropAsset}
             alt=""
+            fit="sized"
             kenBurns
             eager
             sizes="100vw"

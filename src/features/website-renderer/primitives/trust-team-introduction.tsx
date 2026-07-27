@@ -86,7 +86,9 @@ export function TrustTeamIntroduction({
                   <CinematicImage
                     asset={portrait.asset}
                     alt={`${headline} — team member`}
-                    className="w-full overflow-hidden rounded-[var(--wr-radius-lg)] border"
+                    fit="ratio"
+                    ratio={spotlight && index === 0 ? "4 / 5" : "1 / 1"}
+                    className="w-full rounded-[var(--wr-radius-lg)] border"
                     sizes="(max-width: 640px) 100vw, 30vw"
                   />
                 ) : (

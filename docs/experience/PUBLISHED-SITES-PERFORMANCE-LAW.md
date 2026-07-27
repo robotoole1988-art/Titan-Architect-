@@ -50,15 +50,16 @@ Desktop is not tracked separately; a site that passes mobile floors passes deskt
 
 ## 5. Serving law
 
-- Published sites are snapshots — they are served **statically** (fixes bfcache, TTFB, and removes `no-store` headers from pages that never change between publishes).
-- Dynamic asset resolution (media gate approvals appearing without republish) is preserved via client-side hydration of the media manifest, not by making the whole page dynamic.
+- Published sites are snapshots — they are served **statically** (fixes bfcache, TTFB, and removes `no-store` headers from pages that never change between publishes). *Shipped: ADR-054 (`force-static`) + ADR-055. Measured warm TTFB on the live sites: 13ms.*
+- Dynamic asset resolution (media gate approvals appearing without republish) is preserved by **invalidating on the signal, not polling for it**: `revalidatePublishedSite()` runs on media approval, publish and unpublish. Time-based `revalidate` is a 1-hour backstop, not the mechanism. (The alternative — client-side hydration of the media manifest — was rejected: it spends JavaScript to solve a problem a server-side invalidation solves for free, and the JS law comes first.)
+- **Every media box declares how it gets its height** (`CinematicImage` `fit`, ADR-055). A `next/image fill` wrapper that lays out at zero height never intersects the viewport, so the image is never requested and the visitor sees the placeholder for ever. This shipped once; it is now a required prop and a CI test.
 
 ## 6. Enforcement (what makes it permanent)
 
-1. **Lighthouse CI on every renderer PR**, run against the preview deployment of both live archetype sites: mobile emulation, median of 3, all floors + byte budgets asserted. Red = no merge.
-2. **Publish gate**: a site build that misses a floor does not go live. The failure reads like a media-gate rejection: what failed, by how much, what to fix.
-3. **Nightly fleet sampler**: N random live sites audited; any site <95 raises an alert in the Command Centre.
-4. Budgets and floors live in one config file; the CI, the publish gate, and the sampler all read the same numbers.
+1. **Lighthouse CI on every renderer PR**, run against the preview deployment of both live archetype sites: mobile emulation, median of 3, all floors + byte budgets asserted. Red = no merge. *Shipped: `.github/workflows/lighthouse.yml` → `scripts/lighthouse-gate.mjs` (ADR-055). Make it a required check in branch protection once the fleet clears the floors.*
+2. **Publish gate**: a site build that misses a floor does not go live. The failure reads like a media-gate rejection: what failed, by how much, what to fix. *Judgement shipped (`assessAgainstLaw`); the wiring into the publish path is still open.*
+3. **Nightly fleet sampler**: N random live sites audited; any site <95 raises an alert in the Command Centre. *Nightly production run shipped; the fleet sampling + Command Centre alert are still open.*
+4. Budgets and floors live in one config file; the CI, the publish gate, and the sampler all read the same numbers. *Shipped: `src/core/performance-law/law.json`, pinned to this document by `tests/core/performance-law.test.ts`.*
 
 ## 7. Why this is a business law, not a vanity metric
 

@@ -69,7 +69,8 @@ function ProjectFrame({
         <CinematicImage
           asset={asset}
           alt={`Completed project ${index + 1}`}
-          className="absolute inset-0 transition-transform duration-700 group-hover:scale-[1.04] motion-reduce:transition-none"
+          fit="inset"
+          className="transition-transform duration-700 group-hover:scale-[1.04] motion-reduce:transition-none"
         />
       )}
       {/* light sweep on hover — the frame catches the sun */}

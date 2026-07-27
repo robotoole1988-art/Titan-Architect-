@@ -40,6 +40,18 @@ import {
   type LifecycleStage,
 } from "@/core/business";
 import { buildDeal, getPricedService, type DealInputs } from "@/core/pricing";
+import { revalidatePublishedSite } from "@/features/website-renderer";
+
+/**
+ * The serving law (ADR-055): published pages are static snapshots, so the
+ * three founder actions that can change a live page — approving media,
+ * publishing, unpublishing — invalidate it explicitly. Nothing polls.
+ */
+async function revalidateLiveSite(businessId: string): Promise<void> {
+  const spine = await resolveBusinessSpine();
+  const publication = await spine.publications.current(businessId);
+  if (publication) revalidatePublishedSite(publication.slug);
+}
 
 function revalidateCrm(businessId?: string): void {
   revalidatePath("/crm");
@@ -237,6 +249,7 @@ export async function setBuildItemStatus(
     if (business && business.stage !== "live" && business.stage !== "account") {
       await transitionBusinessStage(spine, businessId, "live");
     }
+    await revalidateLiveSite(businessId);
   }
   revalidateCrm(businessId);
 }
@@ -244,7 +257,11 @@ export async function setBuildItemStatus(
 /** Take the live site offline (explicit founder action, ADR-027). */
 export async function unpublishBusinessSite(businessId: string): Promise<void> {
   const spine = await resolveBusinessSpine();
+  const publication = await spine.publications.current(businessId);
   await unpublishWebsite(spine, businessId);
+  // Taking a site offline must evict the cached snapshot immediately: the
+  // slug has to start 404ing, not keep serving from the edge.
+  revalidatePublishedSite(publication?.slug);
   revalidateCrm(businessId);
 }
 
@@ -540,4 +557,7 @@ export async function setMediaStatus(
   const spine = await resolveBusinessSpine();
   const record = await spine.media.setStatus(mediaId, status);
   revalidateCrm(record.businessId);
+  // An approved photograph reaches the live site WITHOUT a republish — the
+  // page is re-rendered on the approval, not polled for it (ADR-055 §5).
+  await revalidateLiveSite(record.businessId);
 }

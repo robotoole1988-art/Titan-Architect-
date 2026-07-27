@@ -87,7 +87,7 @@ export function Comparison({
         {/* AFTER — the restored state, underneath */}
         <div className="absolute inset-0" style={{ background: AFTER_SCENE }}>
           {afterAsset && (
-            <CinematicImage asset={afterAsset} alt="After the work — the finished result" className="absolute inset-0" />
+            <CinematicImage asset={afterAsset} alt="After the work — the finished result" fit="inset" />
           )}
           <div
             aria-hidden
@@ -122,7 +122,7 @@ export function Comparison({
             }}
           />
           {beforeAsset && (
-            <CinematicImage asset={beforeAsset} alt="Before the work" className="absolute inset-0" />
+            <CinematicImage asset={beforeAsset} alt="Before the work" fit="inset" />
           )}
           {!beforeAsset && annotate && (
             <div className="absolute bottom-4 left-5">

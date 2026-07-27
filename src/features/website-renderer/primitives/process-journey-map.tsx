@@ -117,6 +117,7 @@ export function ProcessJourneyMap({ section, slots, mediaAssets }: PrimitiveSect
             <CinematicImage
               asset={supportAsset}
               alt="The craft in progress"
+              fit="sized"
               className="h-56 w-full sm:h-72"
             />
           </div>

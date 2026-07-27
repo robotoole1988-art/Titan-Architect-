@@ -15,6 +15,7 @@ export {
 } from "./components/published-site";
 export type { ResolvedPublication } from "./components/published-site";
 export { submitEnquiry } from "./api/submit-enquiry";
+export { revalidatePublishedSite } from "./api/revalidate-site";
 export { recordSiteMetric } from "./api/record-site-metric";
 export type { RecordSiteMetricResult } from "./api/record-site-metric";
 export type { SubmitEnquiryInput, SubmitEnquiryResult } from "./api/submit-enquiry";

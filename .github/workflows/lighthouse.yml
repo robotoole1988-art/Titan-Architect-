@@ -1,0 +1,68 @@
+name: Performance Law
+
+# The Published Sites Performance Law, enforced by a machine (ADR-055).
+#
+# Lighthouse cannot audit source code — it needs a running site. So this
+# gate waits for Vercel to finish the PREVIEW deployment for a commit and
+# then audits the two live archetype sites on it, mobile emulation, median
+# of three, floors and byte budgets from src/core/performance-law/law.json.
+#
+# The check run lands on the deployment's SHA, so it appears on the pull
+# request and can be made a required status check in branch protection.
+# Do that once the fleet is clearing the floors — a gate that is red on the
+# day it lands blocks every merge and teaches everyone to ignore it.
+on:
+  deployment_status:
+  schedule:
+    # Nightly fleet check against production (law §6.3), 03:20 UTC.
+    - cron: "20 3 * * *"
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: "Base URL to audit"
+        required: false
+        default: "https://titan-architect.vercel.app"
+
+concurrency:
+  group: perf-law-${{ github.event.deployment_status.environment_url || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  audit:
+    name: Performance Law · mobile Lighthouse
+    # deployment_status fires for every state; only a finished deployment
+    # has anything to audit.
+    if: >-
+      github.event_name != 'deployment_status' ||
+      github.event.deployment_status.state == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      # Event data reaches the shell through the environment, never through
+      # ${{ }} interpolation into a command line: an interpolated URL is a
+      # script-injection seam, and a deployment URL is not our input.
+      - name: Resolve the base URL
+        id: target
+        env:
+          DEPLOYMENT_URL: ${{ github.event.deployment_status.environment_url }}
+          INPUT_URL: ${{ github.event.inputs.base_url }}
+        run: |
+          URL="${DEPLOYMENT_URL:-${INPUT_URL:-https://titan-architect.vercel.app}}"
+          case "$URL" in
+            https://*) ;;
+            *) echo "refusing to audit a non-https target: $URL" >&2; exit 1 ;;
+          esac
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+
+      - name: Audit the archetype sites against the law
+        env:
+          BASE_URL: ${{ steps.target.outputs.url }}
+        run: node scripts/lighthouse-gate.mjs "$BASE_URL"
