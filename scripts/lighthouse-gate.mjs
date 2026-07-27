@@ -63,6 +63,20 @@ const SITE_FINGERPRINT = "data-primitive=";
 const BYPASS_HEADER = "x-vercel-protection-bypass";
 const BYPASS = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
 
+/**
+ * Using a bypass means we are auditing a PREVIEW, and previews are served
+ * `X-Robots-Tag: noindex` by Vercel. Lighthouse's SEO category weighs "page
+ * is blocked from indexing" heavily, so a preview scored 61 where the same
+ * pages score 92 in production. A floor that cannot be met by a correct build
+ * is not a floor, it is noise — and noise is how a gate gets ignored.
+ *
+ * So SEO is reported but not enforced on previews. It is enforced in full on
+ * the nightly production run, where the answer means something.
+ */
+const PREVIEW = Boolean(BYPASS);
+const NOT_ENFORCEABLE_ON_PREVIEW = new Set(["seo"]);
+const isAdvisory = (key) => PREVIEW && NOT_ENFORCEABLE_ON_PREVIEW.has(key);
+
 const bypassHeaders = BYPASS ? { [BYPASS_HEADER]: BYPASS } : undefined;
 const extraHeadersPath = bypassHeaders
   ? join(mkdtempSync(join(tmpdir(), "perf-law-")), "extra-headers.json")
@@ -159,6 +173,7 @@ function assess(measurement) {
   const breaches = [];
 
   for (const [key, rule] of Object.entries(LAW.categories)) {
+    if (isAdvisory(key)) continue;
     const actual = measurement.categories[key];
     if (actual === undefined) {
       breaches.push(`${key}: not measured — the law needs evidence, not silence (floor ${rule.floor})`);
@@ -197,8 +212,17 @@ function report(url, measurement, breaches) {
   console.log(`\n${"─".repeat(72)}\n${url}\n${"─".repeat(72)}`);
   for (const [key, rule] of Object.entries(LAW.categories)) {
     const actual = measurement.categories[key];
-    const mark = actual === undefined ? "?" : actual >= rule.floor ? "PASS" : "FAIL";
-    console.log(`  ${mark.padEnd(5)} ${key.padEnd(16)} ${actual === undefined ? "—" : round(actual)}  (floor ${rule.floor})`);
+    const mark = isAdvisory(key)
+      ? "note"
+      : actual === undefined
+        ? "?"
+        : actual >= rule.floor
+          ? "PASS"
+          : "FAIL";
+    const suffix = isAdvisory(key)
+      ? `  (floor ${rule.floor} — advisory: previews are noindex, enforced nightly on production)`
+      : `  (floor ${rule.floor})`;
+    console.log(`  ${mark.padEnd(5)} ${key.padEnd(16)} ${actual === undefined ? "—" : round(actual)}${suffix}`);
   }
   for (const [key, rule] of Object.entries(LAW.metrics)) {
     const actual = measurement.metrics[key];
