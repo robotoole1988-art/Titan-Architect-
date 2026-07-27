@@ -18,7 +18,8 @@
  */
 
 import { spawnSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -46,6 +47,29 @@ const NOT_THE_PRODUCT = ["*vercel.live*", "*vercel-scripts.com*", "*vercel.com/a
  * primitive markers, so that is what we insist on seeing.
  */
 const SITE_FINGERPRINT = "data-primitive=";
+
+/**
+ * Preview deployments sit behind Vercel Deployment Protection, so an
+ * unauthenticated CI runner is served the login wall — which answers 200
+ * with Vercel's own HTML. That is not a hypothetical: the first two runs of
+ * this gate scored that wall, once reporting 1,304KB of "our" script.
+ *
+ * The bypass secret is passed on EVERY request (Protection checks each one,
+ * not just the first), and it is written to a 0600 file rather than an argv
+ * flag so the value never appears in a process listing or a crash dump.
+ * Production needs none of this — it is public — so an absent secret is
+ * normal, not an error.
+ */
+const BYPASS_HEADER = "x-vercel-protection-bypass";
+const BYPASS = process.env.VERCEL_AUTOMATION_BYPASS_SECRET;
+
+const bypassHeaders = BYPASS ? { [BYPASS_HEADER]: BYPASS } : undefined;
+const extraHeadersPath = bypassHeaders
+  ? join(mkdtempSync(join(tmpdir(), "perf-law-")), "extra-headers.json")
+  : null;
+if (extraHeadersPath) {
+  writeFileSync(extraHeadersPath, JSON.stringify(bypassHeaders), { mode: 0o600 });
+}
 
 function parseArgs(argv) {
   const [baseUrl, ...rest] = argv;
@@ -79,6 +103,7 @@ function measure(url) {
       "--throttling-method=simulate",
       `--only-categories=${Object.keys(LAW.categories).join(",")}`,
       `--blocked-url-patterns=${NOT_THE_PRODUCT.join(",")}`,
+      ...(extraHeadersPath ? [`--extra-headers=${extraHeadersPath}`] : []),
       "--chrome-flags=--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu",
     ],
     { encoding: "utf8", maxBuffer: 64 * 1024 * 1024 },
@@ -197,7 +222,9 @@ async function main() {
   const { baseUrl, runs, paths } = parseArgs(process.argv.slice(2));
   console.log(
     `Performance Law v${LAW.version} · median of ${runs} · mobile emulation\nbase: ${baseUrl}\n` +
-      `blocked (not the product): ${NOT_THE_PRODUCT.join(" ")}`,
+      `blocked (not the product): ${NOT_THE_PRODUCT.join(" ")}\n` +
+      // Whether a bypass is in play, never what it is.
+      `protection bypass: ${BYPASS ? "in use" : "none (expected for production)"}`,
   );
 
   let failed = false;
@@ -206,7 +233,10 @@ async function main() {
 
     // A 404 scores beautifully. Prove the page exists — and that it is OURS —
     // before believing any number that comes back.
-    const response = await fetch(url, { redirect: "follow" });
+    const response = await fetch(url, {
+      redirect: "follow",
+      ...(bypassHeaders ? { headers: bypassHeaders } : {}),
+    });
     if (!response.ok) {
       console.error(`\nREJECTED ${url} — responded ${response.status}; there is nothing to audit.`);
       failed = true;

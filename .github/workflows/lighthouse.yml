@@ -65,4 +65,8 @@ jobs:
       - name: Audit the archetype sites against the law
         env:
           BASE_URL: ${{ steps.target.outputs.url }}
+          # Preview deployments are behind Vercel Deployment Protection; without
+          # this the runner audits the login wall and reports Vercel's bytes as
+          # ours. Production is public and ignores it.
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
         run: node scripts/lighthouse-gate.mjs "$BASE_URL"
