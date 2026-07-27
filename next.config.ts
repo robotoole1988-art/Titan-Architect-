@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
     // serves it same-origin, per-viewport sized, AVIF-first.
     formats: ["image/avif", "image/webp"],
     qualities: [45, 60, 75],
+    // Optimised renditions cache for a month (media law): generated assets
+    // are immutable in practice — a regeneration is a new asset via the
+    // media gate, never an overwrite. Without this, optimised images fall
+    // back to short upstream TTLs and repeat visits re-download the site.
+    minimumCacheTTL: 2678400,
     remotePatterns: [
       {
         protocol: "https",
