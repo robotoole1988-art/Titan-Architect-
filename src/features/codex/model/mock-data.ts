@@ -89,4 +89,44 @@ export const MOCK_CODEX_ENTRIES: CodexEntry[] = [
     content:
       "Superseded note retained for history: the component stack composes with Base UI's render prop rather than Radix's asChild. See ADR-007 for the authoritative record.",
   },
+  {
+    id: "codex-directive-performance-law",
+    title: "DIRECTIVE — Published Sites Performance Law",
+    category: "Directives",
+    status: "Approved",
+    version: "1.0.0",
+    updatedAt: "2026-07-27T08:00:00.000Z",
+    content:
+      "Every site TITAN publishes scores ≥95 mobile Lighthouse performance (target 100), median of three throttled runs, before it may go live — and stays there for life. Enforced, not intended: byte budgets (JS ≤130KB gz, initial transfer ≤700KB), the JS law (client components on leaves only, framer-motion banned from the renderer, motion is CSS), the media law (Ken Burns AVIF hero by default, film ≤2.5MB AV1 as the premium exception, poster is always the LCP), static serving of published snapshots, Lighthouse CI on every renderer PR, a publish gate that rejects failing builds, and a nightly fleet sampler. Full text: docs/experience/PUBLISHED-SITES-PERFORMANCE-LAW.md.",
+  },
+  {
+    id: "codex-research-vol1-site-excellence",
+    title: "Research Vol 1 — Site Excellence",
+    category: "Brain",
+    status: "Approved",
+    version: "1.0.0",
+    updatedAt: "2026-07-26T21:00:00.000Z",
+    content:
+      "Top-1% front-end engineering and trade-site conversion research. Headlines: the video law (≤2.5MB AV1 loops, poster-first LCP, Ken Burns default); universal front-end laws (JS ≤130KB gz, CSS motion, AVIF-first images, immutable cache headers); universal conversion laws (single dominant CTA, sticky call bar, 3–5 field forms, real reviews with name+town+date, guide-from pricing with finance framing, speed-to-lead automation); compliance MUSTs for dental (GDC/CQC/ASA) and solar (MCS/RECC); enforcement via Lighthouse CI and publish gates. Full text: docs/research/2026-07-26-site-excellence-dossier.md.",
+  },
+  {
+    id: "codex-research-vol2-trade-playbooks",
+    title: "Research Vol 2 — Trade Playbooks (all trades)",
+    category: "Brain",
+    status: "Approved",
+    version: "1.0.0",
+    updatedAt: "2026-07-26T21:18:00.000Z",
+    content:
+      "Per-trade playbooks for every trade in the intake dropdown (~35): design voice, proof elements that convert, per-trade legal and certification MUSTs, and the platform layer that applies across all of them. The blueprint builder should reference these laws by section so every generated strategy obeys them. Full text: docs/research/2026-07-26-trade-playbooks-vol2.md.",
+  },
+  {
+    id: "codex-research-vol3-design-acquisition",
+    title: "Research Vol 3 — Design Craft & Customer Acquisition",
+    category: "Brain",
+    status: "Approved",
+    version: "1.0.0",
+    updatedAt: "2026-07-26T22:03:00.000Z",
+    content:
+      "Design craft: prototypicality law (refine the familiar, ≤1 signature element per page), OKLCH one-hex-in/accessible-theme-out token pipeline, Utopia fluid type, the imagery triad with three-tier photo treatment, wordmark identity generation, WCAG 2.2 AA baked in. Acquisition: Google LSAs (emergency trades first, ~£10–30/lead), Search ads discipline (one campaign per service line, CPL ≤10–15% of job value, PMax default-no), SEO/GEO (AI visibility = rankings + reviews + branded mentions; no separate GEO product), reviews law (DMCC Act: gating illegal in the UK; velocity beats bursts), Meta hierarchy (visual-transformation trades primary, emergency skip, 6+ creatives monthly, sub-60s speed-to-lead). Full text: docs/research/2026-07-26-design-and-acquisition-dossier-vol3.md.",
+  },
 ];

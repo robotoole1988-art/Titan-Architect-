@@ -1,0 +1,65 @@
+# The Published Sites Performance Law
+
+**Status:** Approved · **Version:** 1.0.0 · **Date:** 2026-07-27
+**Applies to:** every site published by TITAN, every trade, every network — no exceptions.
+**Derived from:** Research Dossier Vol 1 (Site Excellence), §§1–3 & 6; empirical Lighthouse audits of the two live archetype sites (2026-07-26: mobile perf 64, TBT 2,680ms, 20.4MB payload, 789KB decoded JS, 15.7MB cache-lifetime waste).
+**Companion laws:** COCKPIT-DESIGN-LAW.md (the app), this document (the product the app ships).
+
+---
+
+## 0. The law in one sentence
+
+**A TITAN site scores ≥95 on mobile Lighthouse performance — median of three runs, throttled emulation — before it is allowed to publish, and stays there for life.**
+
+Target 100. Floor 95. The floor is enforced by machines, not intentions: a build that misses it is rejected the same way a garbled AI image is rejected at the media gate.
+
+## 1. Metric floors (mobile emulation, median of 3)
+
+| Metric | Floor | Aim |
+|---|---|---|
+| Performance | ≥95 | 100 |
+| LCP | ≤2.5s | ≤1.8s |
+| TBT | ≤200ms | ≤100ms |
+| CLS | ≤0.1 | 0 |
+| Accessibility | ≥95 | 100 |
+| Best Practices | 100 | 100 |
+| SEO | 100 | 100 |
+
+Desktop is not tracked separately; a site that passes mobile floors passes desktop by construction. We do **not** build separate mobile sites (ADR record: responsive one-site is the ruling).
+
+## 2. Byte budgets (CI-enforced, ratchet down only)
+
+- HTML ≤35KB gz · CSS ≤35KB gz · **JS ≤130KB gz total**
+- Fonts ≤100KB (max 2 woff2, preloaded, `font-display: swap`)
+- Above-fold images ≤250KB · initial transfer ≤700KB excluding deferred film
+- Budgets may only ever be lowered. Raising a budget requires an ADR.
+
+## 3. The JS law
+
+- `"use client"` on leaf components only (forms, nav toggle). Every page renders complete with JavaScript off.
+- **framer-motion is banned from the renderer.** Motion is CSS: `@starting-style` entries, scroll-driven animations behind `@supports (animation-timeline: view())` with a visible static fallback, `@view-transition` for page transitions. Escape hatch: motion mini `animate()` (2.3KB) only, with justification in the PR.
+- Zero render-blocking third parties. No YouTube iframes (facade pattern only). Analytics is sendBeacon/deferred.
+
+## 4. The media law
+
+- **Default hero = Ken Burns cinema**: CSS pan/zoom over a high-quality AVIF still (8–20s, reduced-motion safe). ~100–200KB. Film is the premium exception, never the default.
+- Where film is used (max one per page): ≤10s loop, muted, 720p, AV1 + H.264 fallback with explicit `codecs=`, **≤2.5MB hard ceiling per rendition** (target 1–1.5MB). The media pipeline rejects an oversized encode back to the gate like any failed asset.
+- Poster = first-frame AVIF ≤150KB, preloaded `fetchpriority=high`. **The poster is always the LCP.** Video src attaches post-LCP via IntersectionObserver; `prefers-reduced-motion` or Save-Data serves poster only.
+- Images: AVIF-first, renditions pre-generated at upload (384/640/960/1280/1920), content-hashed URLs with `Cache-Control: public, max-age=31536000, immutable`. Exactly one eager `fetchpriority=high` image per page. Accurate `sizes` per slot. Intrinsic dimensions everywhere; placeholder ≤300B.
+- Hero containers have fixed height. CLS from media is 0 by construction.
+
+## 5. Serving law
+
+- Published sites are snapshots — they are served **statically** (fixes bfcache, TTFB, and removes `no-store` headers from pages that never change between publishes).
+- Dynamic asset resolution (media gate approvals appearing without republish) is preserved via client-side hydration of the media manifest, not by making the whole page dynamic.
+
+## 6. Enforcement (what makes it permanent)
+
+1. **Lighthouse CI on every renderer PR**, run against the preview deployment of both live archetype sites: mobile emulation, median of 3, all floors + byte budgets asserted. Red = no merge.
+2. **Publish gate**: a site build that misses a floor does not go live. The failure reads like a media-gate rejection: what failed, by how much, what to fix.
+3. **Nightly fleet sampler**: N random live sites audited; any site <95 raises an alert in the Command Centre.
+4. Budgets and floors live in one config file; the CI, the publish gate, and the sampler all read the same numbers.
+
+## 7. Why this is a business law, not a vanity metric
+
+Every trade site TITAN ships competes against sites built by agencies that ignore all of this. Sub-2s mobile loads are directly correlated with call and form conversion; the research corpus (Vol 1 §3) puts single-CTA fast pages at multiples of the baseline. "Every TITAN site scores 95+" is also a **sales sentence** — measurable, verifiable by the customer on their own phone, and very few competitors can say it.
