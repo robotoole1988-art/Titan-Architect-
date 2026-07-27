@@ -46,7 +46,14 @@ function loadFromStorage(): void {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     if (raw) {
-      entries = JSON.parse(raw) as CodexEntry[];
+      const persisted = JSON.parse(raw) as CodexEntry[];
+      // Merge in seed entries added since this browser first loaded.
+      // Persisted entries win by id (user edits are never overwritten);
+      // genuinely new seeds append so they still reach existing browsers.
+      const knownIds = new Set(persisted.map((entry) => entry.id));
+      const newSeeds = SEED.filter((entry) => !knownIds.has(entry.id));
+      entries = newSeeds.length > 0 ? [...persisted, ...newSeeds] : persisted;
+      if (newSeeds.length > 0) persist();
     } else {
       persist(); // seed storage on first ever load
     }
