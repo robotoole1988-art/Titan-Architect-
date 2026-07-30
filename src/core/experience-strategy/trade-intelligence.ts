@@ -111,8 +111,60 @@ export function classifyArchetype(tradeLower: string): TradeArchetype {
   return "general";
 }
 
-/** Trade-specific accreditations (UK), where the trade is recognised. */
-function accreditationsFor(tradeLower: string): string[] {
+/**
+ * TITAN NEVER PUBLISHES AN ACCREDITATION IT HAS NOT VERIFIED (ADR-059).
+ *
+ * This function returns an empty list, always. It used to guess UK
+ * accreditations by keyword-matching the TRADE NAME and publish them as
+ * shield badges on the live site. It never consulted the business record,
+ * because no field exists to hold the true answer.
+ *
+ * Measured across all 35 trades in the taxonomy before this change: 35 of 35
+ * published at least one accreditation the business may not hold, and 22
+ * published the literal string "TrustMark". Several were not merely
+ * unverified but wrong: EV charger installers got "MCS certified" (MCS does
+ * not certify EV chargers — the scheme is OZEV); damp proofing got "NFRC
+ * member, CompetentRoofer" because the substring "roof" hides inside
+ * "p-ROOF-ing"; a free-text window cleaner got "FENSA / CERTASS registered",
+ * a double-glazing building-regulations scheme.
+ *
+ * DMCC Act 2024 Schedule 20 para 3 bans displaying a trust mark without
+ * authorisation, and para 4 bans falsely claiming approval by a body. These
+ * are BANNED PRACTICES — automatically unfair, with no need to show any
+ * consumer was misled. In force since 6 April 2025. The same strings also fed
+ * Google Ads headline candidates, so an unverified "MCS certified" could
+ * reach a live ad.
+ *
+ * Our own research already said it (trade playbooks vol 2, line 7):
+ * "No verified number = no badge."
+ *
+ * The real fix is a verified accreditation on the BUSINESS record — scheme,
+ * registration number, evidence note, check date, and the customer's own
+ * sign-off. Until that exists, the credential band shows the softer trust
+ * signals and the section stands honestly on those alone.
+ *
+ * THE GENERAL LAW: TITAN never generates a verifiable fact. Code composes and
+ * language models phrase, but neither may invent a registration number, a
+ * review, a price the business charges, or a photograph of work they did.
+ * Reviews already obey this (a database constraint makes the attestation
+ * all-or-nothing and the wall collapses without one). Accreditations do now.
+ */
+function accreditationsFor(): string[] {
+  return [];
+}
+
+/**
+ * Retained as RESEARCH ONLY — never published, never returned. This is the
+ * starting point for the future verified-accreditation field: it records
+ * which scheme a given trade would be asked to evidence a number for.
+ *
+ * Do not restore this as output. Several entries are known to be wrong (see
+ * above), and even the correct ones are claims about a specific business that
+ * only that business can substantiate.
+ */
+export const ACCREDITATION_SCHEMES_BY_TRADE: ReadonlyArray<
+  readonly [ReadonlyArray<string>, ReadonlyArray<string>]
+> = (() => {
   const map: Array<[ReadonlyArray<string>, ReadonlyArray<string>]> = [
     [["plumb", "heating", "boiler", "gas"], ["Gas Safe registered", "CIPHE / WaterSafe"]],
     // Energy-tech installers (ADR-044): the real UK bodies.
@@ -126,13 +178,8 @@ function accreditationsFor(tradeLower: string): string[] {
     [["physio", "chiro", "podiat", "therap"], ["HCPC / professional-body registered"]],
     [["landscap", "garden", "driveway", "paving"], ["APL / Marshalls-accredited installer"]],
   ];
-  for (const [keywords, accreditations] of map) {
-    if (keywords.some((keyword) => tradeLower.includes(keyword))) {
-      return [...accreditations];
-    }
-  }
-  return ["TrustMark", "Which? Trusted Trader"];
-}
+  return map;
+})();
 
 /**
  * Build the resolved strategic profile for a business. This is the heart of the
@@ -145,7 +192,7 @@ export function buildTradeProfile(
   location: string,
 ): TradeProfile {
   const archetype = classifyArchetype(tradeLower);
-  const accreditations = accreditationsFor(tradeLower);
+  const accreditations = accreditationsFor();
 
   switch (archetype) {
     case "emergency":
