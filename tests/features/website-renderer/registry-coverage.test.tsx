@@ -147,8 +147,16 @@ describe("registry coverage", () => {
     expect(html).toContain('data-primitive="proof.credential-band"');
     expect(html).toContain('data-primitive="process.journey-map"');
     expect(html).toContain('data-primitive="proof.portfolio-showcase"');
-    // Real accreditations from the taxonomy (MCS for solar).
-    expect(html).toContain("MCS certified");
+    // This used to assert `toContain("MCS certified")` — "real accreditations
+    // from the taxonomy". They were never real: they were guessed from the
+    // trade NAME and published as badges the business may not hold (ADR-059,
+    // and MCS does not even certify the EV half of this trade). The credential
+    // band now stands on trust signals alone until a verified registration
+    // number exists on the business record. Enforced in
+    // tests/core/accreditation-law.test.ts.
+    expect(html).not.toContain("MCS certified");
+    // The band is still substantive — it did not collapse to nothing.
+    expect(html).toContain("certifications &amp; registrations");
   });
 
   it("the placeholder mechanism still holds for any future unmapped primitive", () => {

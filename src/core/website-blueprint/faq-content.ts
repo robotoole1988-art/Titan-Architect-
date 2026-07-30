@@ -13,6 +13,15 @@
  * answers — a bank is only added when its content has actually been
  * researched. The pipe character is the slot separator and must never appear
  * in copy (enforced by tests).
+ *
+ * ANSWERS DESCRIBE THE INDUSTRY, NEVER THE BUSINESS (ADR-059). The same rule
+ * that keeps prices as "typical UK ranges, not a quote" applies to
+ * credentials, insurance and guarantees: TITAN does not know whether THIS
+ * electrician holds NICEIC registration, so it must not say so. Two answers
+ * used to ("All work is carried out by… a contractor registered with NICEIC
+ * or NAPIT"; "All clinicians are GDC-registered") and were rewritten to state
+ * the rule and tell the reader how to check — which is better content anyway,
+ * and is enforced by tests/core/accreditation-law.test.ts.
  */
 
 export interface TradeFaq {
@@ -128,9 +137,9 @@ const BANKS: ReadonlyArray<FaqBank> = [
           "Yes, and you're far from alone. Gentle pacing, everything explained before it happens, and sedation options for anxious patients and longer treatments.",
       },
       {
-        question: "Are your dentists qualified?",
+        question: "How do I check a dentist is qualified?",
         answer:
-          "All clinicians are GDC-registered — you can check any dentist's registration yourself at gdc-uk.org — and it's fair to ask about postgraduate training for specialist work like implants.",
+          "Every dentist practising in the UK must be registered with the General Dental Council, and you can check any dentist's registration yourself at gdc-uk.org. It is also fair to ask about postgraduate training for specialist work like implants.",
       },
       {
         question: "Can I spread the cost?",
@@ -161,9 +170,9 @@ const BANKS: ReadonlyArray<FaqBank> = [
           "An Electrical Installation Condition Report — a formal safety inspection of your wiring. Typically £100–£250 for an average home, taking 2–4 hours on site. Landlords are legally required to hold a current one at regular intervals.",
       },
       {
-        question: "Are you certified?",
+        question: "What certification should an electrician have?",
         answer:
-          "All work is carried out by or under a Part P-compliant contractor registered with NICEIC or NAPIT, to BS 7671 (18th Edition). Notifiable work always comes with certification.",
+          "Notifiable electrical work in England and Wales must either be done by an electrician registered with a government-approved competent-person scheme, or notified to building control. Ask any electrician which scheme they belong to and for their registration number before work starts, check it on that scheme's own register, and expect a certificate when the work is finished. The work itself should meet BS 7671 (18th Edition).",
       },
       {
         question: "How much does a rewire cost?",
@@ -178,7 +187,7 @@ const BANKS: ReadonlyArray<FaqBank> = [
       {
         question: "What does a solar or EV charger installation involve?",
         answer:
-          "Survey, design, then an MCS and Part P-compliant installation. Most EV charge points typically land £200–£2,000 depending on the cable run and supply; solar systems are quoted per design.",
+          "Survey, design, then installation and certification. Most EV charge points typically land £200–£2,000 depending on the cable run and supply; solar systems are quoted per design. Ask any installer which certification schemes they hold before you sign — for solar it affects both your export tariff and your consumer protections.",
       },
     ],
   },
