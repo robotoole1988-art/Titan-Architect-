@@ -29,6 +29,12 @@ import type {
   MediaBlueprint,
 } from "./aspects";
 import type { BlueprintConfidence } from "./common";
+import {
+  ACCENT_REFS,
+  FORM_REFS,
+  identitySeed,
+  pickFor,
+} from "./identity-seed";
 import type { ComponentBlueprint } from "./components";
 import type {
   WebsiteBlueprintDependencies,
@@ -995,6 +1001,9 @@ export function buildWebsiteBlueprint(
   const { strategy } = request;
   const { meta } = strategy;
   const archetype = classifyArchetype(meta.trade.toLowerCase());
+  // ADR-063: the second axis of variation. Stable per business, so a site
+  // never reshuffles itself between regenerations.
+  const identity = identitySeed(meta.businessName, meta.location);
   const homePage = buildHomePage(strategy, archetype);
   const coverageAreas = (request.coverageAreas ?? []).filter(
     (area) => area.trim().length > 0,
@@ -1110,9 +1119,12 @@ export function buildWebsiteBlueprint(
     designSystem: {
       id: "design-system",
       confidence: strategyConfidence(
-        "Theme reference chosen deterministically from the trade archetype; renderers resolve it to a token set.",
+        "Theme from the trade archetype; accent and form varied per business so two customers in one trade never get the same site (ADR-063).",
       ),
       themeRef: `titan-${archetype}`,
+      // The archetype fixes the register; the business picks within it.
+      colourRef: pickFor(identity, "accent", ACCENT_REFS),
+      typographyRef: pickFor(identity, "form", FORM_REFS),
     },
     futureExpansion: {
       id: "future-expansion",
