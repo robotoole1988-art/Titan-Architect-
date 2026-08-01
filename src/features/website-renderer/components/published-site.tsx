@@ -2,6 +2,10 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { resolveBusinessSpine, type Publication } from "@/core/business";
 import {
+  CUSTOMER_UPLOAD_PROVIDER,
+  isEvidentiarySlot,
+} from "@/core/media/sourcing";
+import {
   buildPageJsonLd,
   type PageBlueprint,
   type WebsiteBlueprint,
@@ -82,14 +86,22 @@ export async function resolvePublishedSite(
   // (the list arrives newest first).
   const chosen = new Map<string, (typeof approved)[number]>();
   for (const record of approved) {
+    const isCustomerPhoto =
+      record.provenance.provider === CUSTOMER_UPLOAD_PROVIDER;
+    // ADR-060, the last of the three choke points: an EVIDENTIARY slot — a
+    // portfolio frame, a before/after half — serves the business's own
+    // photograph or nothing at all. Generation no longer fills these, but
+    // assets commissioned before the law existed are still sitting approved
+    // in the database. They stop here rather than needing a migration.
+    if (!isCustomerPhoto && isEvidentiarySlot(record.slotRef)) continue;
     const current = chosen.get(record.slotRef);
     if (!current) {
       chosen.set(record.slotRef, record);
       continue;
     }
-    const currentIsCustomer = current.provenance.provider === "customer-upload";
-    const recordIsCustomer = record.provenance.provider === "customer-upload";
-    if (recordIsCustomer && !currentIsCustomer) chosen.set(record.slotRef, record);
+    const currentIsCustomer =
+      current.provenance.provider === CUSTOMER_UPLOAD_PROVIDER;
+    if (isCustomerPhoto && !currentIsCustomer) chosen.set(record.slotRef, record);
   }
   const media: Record<string, ResolvedMediaAsset> = {};
   for (const [slotRef, record] of chosen) {

@@ -26,7 +26,6 @@ export {
   buildFilmPrompt,
   buildMediaPrompt,
   buildMorphFilmPrompt,
-  buildPairPrompts,
   seedFrom,
 } from "./prompt";
 export { commissionFilm, commissionMorphFilm } from "./commission";
@@ -40,6 +39,12 @@ export {
 } from "./provider";
 export { deriveMediaPlan } from "./plan";
 export type { MediaPlanItem } from "./plan";
+export {
+  isEvidentiarySlot,
+  projectFrameCount,
+  sourcingForSlot,
+} from "./sourcing";
+export type { MediaSourcing } from "./sourcing";
 export {
   createLocalDiskStorage,
   createSupabaseStorage,

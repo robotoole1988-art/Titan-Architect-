@@ -3,22 +3,42 @@
  * slots a blueprint wants filled — heroes, coherent before/after PAIRS,
  * portfolio frames, per-surface textures, area-page heroes, FAQ/process
  * support. "Every empty frame accounted for" is a function, not a hope.
+ *
+ * Every slot is still PLANNED. What changed with ADR-060 is who may fill
+ * one: an evidentiary slot (`sourcing: "customer-photo"`) carries no prompt,
+ * so it is a shot brief for the founder to collect rather than something a
+ * provider can be asked for. See `./sourcing.ts` for why the rule lives on
+ * the slot reference.
  */
 
 import type { PageBlueprint, WebsiteBlueprint } from "@/core/website-blueprint";
 import type { MediaModality } from "./model";
-import { buildFilmPrompt, buildMediaPrompt, buildPairPrompts, seedFrom } from "./prompt";
+import { buildFilmPrompt, buildMediaPrompt, seedFrom } from "./prompt";
+import {
+  atmosphereSlot,
+  type MediaSourcing,
+  projectFrameCount,
+  showcaseSlot,
+  sourcingForSlot,
+} from "./sourcing";
 
 export interface MediaPlanItem {
   slotRef: string;
   brief: string;
-  /** The final generation prompt (authenticity clauses applied). */
-  prompt: string;
+  /**
+   * The final generation prompt (authenticity clauses applied).
+   *
+   * UNDEFINED on `sourcing: "customer-photo"` slots — there is no prompt
+   * because there is nothing to generate. The optionality is the point: any
+   * code path that wants to commission this slot has to narrow the type
+   * first, and the narrowing is where it discovers it must not.
+   */
+  prompt?: string;
+  /** Who may fill this slot (ADR-060). Derived from the slot reference. */
+  sourcing: MediaSourcing;
   modality: MediaModality;
   width: number;
   height: number;
-  /** Present on before/after pairs — both halves share it. */
-  pairSeed?: number;
   /** Video only (ADR-036): clip length in seconds. */
   durationSeconds?: number;
 }
@@ -50,10 +70,23 @@ export function deriveMediaPlan(blueprint: WebsiteBlueprint): MediaPlanItem[] {
   };
   const items: MediaPlanItem[] = [];
   const seen = new Set<string>();
-  const push = (item: MediaPlanItem) => {
+
+  /**
+   * The single choke point. `sourcing` is DERIVED from the slot reference
+   * rather than passed in, and an evidentiary slot has its prompt stripped
+   * here even if a caller supplied one — so a new evidentiary slot family
+   * is one regex edit away from being safe, not an audit of call sites.
+   */
+  const push = (item: Omit<MediaPlanItem, "sourcing">) => {
     if (seen.has(item.slotRef)) return;
     seen.add(item.slotRef);
-    items.push(item);
+    const sourcing = sourcingForSlot(item.slotRef);
+    const { prompt, ...rest } = item;
+    items.push(
+      sourcing === "customer-photo"
+        ? { ...rest, sourcing }
+        : { ...rest, sourcing, ...(prompt ? { prompt } : {}) },
+    );
   };
 
   const pages: ReadonlyArray<PageBlueprint> = blueprint.pages.pages;
@@ -93,28 +126,42 @@ export function deriveMediaPlan(blueprint: WebsiteBlueprint): MediaPlanItem[] {
         }
       }
 
+      // EVIDENCE (ADR-060). A before/after comparison is a claim about a
+      // specific job on a specific property. It used to be commissioned as a
+      // seed-matched generated pair; it is now the customer's own two
+      // photographs, and until both exist the section renders its
+      // illustrative `.atmosphere` instead of a fabricated comparison.
       if (section.identifier === "story.transformation-arc") {
-        const pair = buildPairPrompts(
-          `${brief} A driveway/exterior transformation told in two frames`,
-          context,
-        );
         push({
           slotRef: `${baseRef}.before`,
-          brief,
-          prompt: pair.before,
+          brief:
+            "Customer's OWN photograph — the job BEFORE work started. Shot from a fixed viewpoint the after photo can repeat exactly: same position, same height, same framing. Both halves are needed before this section appears.",
           modality: "image",
           width: 1344,
           height: 768,
-          pairSeed: pair.seed,
         });
         push({
           slotRef: `${baseRef}.after`,
-          brief,
-          prompt: pair.after,
+          brief:
+            "Customer's OWN photograph — the SAME job finished, from the identical viewpoint as the before shot. Dry, tidied, similar light and time of day if possible.",
           modality: "image",
           width: 1344,
           height: 768,
-          pairSeed: pair.seed,
+        });
+        // ILLUSTRATIVE (ADR-060): what the section shows until that pair
+        // exists. A single atmospheric image of the trade's finished work in
+        // general — no before, no after, no claim that this property was
+        // theirs. The comparison replaces it the moment both halves arrive.
+        push({
+          slotRef: atmosphereSlot(baseRef),
+          brief: `Atmospheric backdrop for the ${context.trade} story section`,
+          prompt: buildMediaPrompt(
+            `A wide, calm editorial photograph of ${context.trade} work at its best — the finished standard as an atmosphere rather than a specific job: materials, light across a surface, considered detail. Generous negative space in the upper third for a headline.`,
+            context,
+          ),
+          modality: "image",
+          width: 1600,
+          height: 900,
         });
       }
 
@@ -122,28 +169,23 @@ export function deriveMediaPlan(blueprint: WebsiteBlueprint): MediaPlanItem[] {
         section.identifier === "proof.portfolio-showcase" &&
         section.extensions?.variant === "before-after-reveal"
       ) {
-        // The variant's headline comparison gets its OWN coherent pair.
-        const pair = buildPairPrompts(
-          `${brief} A second complete transformation, different property from the story arc's`,
-          context,
-        );
+        // The variant's headline comparison — a SECOND real job, so it must
+        // not repeat the story arc's property.
         push({
           slotRef: `${baseRef}.pair-before`,
-          brief,
-          prompt: pair.before,
+          brief:
+            "Customer's OWN photograph — a SECOND job (different property from the transformation section), BEFORE work started. Fixed viewpoint the after photo repeats.",
           modality: "image",
           width: 1344,
           height: 768,
-          pairSeed: pair.seed,
         });
         push({
           slotRef: `${baseRef}.pair-after`,
-          brief,
-          prompt: pair.after,
+          brief:
+            "Customer's OWN photograph — that second job FINISHED, identical viewpoint to its before shot.",
           modality: "image",
           width: 1344,
           height: 768,
-          pairSeed: pair.seed,
         });
       }
 
@@ -151,13 +193,33 @@ export function deriveMediaPlan(blueprint: WebsiteBlueprint): MediaPlanItem[] {
         section.identifier === "proof.portfolio-showcase" ||
         section.identifier === "gallery.immersive-grid"
       ) {
-        const frames = section.identifier === "gallery.immersive-grid" ? 4 : 3;
+        // The renderer's own count — see projectFrameCount. Planning fewer
+        // than the layout draws is how frames end up unfillable.
+        const frames = projectFrameCount(
+          section.identifier,
+          typeof section.extensions?.variant === "string"
+            ? section.extensions.variant
+            : undefined,
+        );
         for (let index = 1; index <= frames; index += 1) {
           push({
             slotRef: `${baseRef}.frame-${index}`,
-            brief,
+            brief: `Customer's OWN photograph of a finished job — ${index} of ${frames}. A different property each frame, in daylight, shot square-on with the whole job in view. Supplying these switches the section from illustrative to "our recent work".`,
+            modality: "image",
+            width: 1152,
+            height: 864,
+          });
+          // ILLUSTRATIVE (ADR-060): the same frame, dressed. These carry no
+          // provenance claim — the section renders them under a "what we
+          // install" heading with material alt text — so they may be
+          // generated, and they are what makes a brand-new site look
+          // finished. A customer photograph in the matching frame-N slot
+          // takes the position instead.
+          push({
+            slotRef: showcaseSlot(baseRef, index),
+            brief: `Illustrative ${context.trade} finish ${index} of ${frames} — the standard, not a specific job`,
             prompt: buildMediaPrompt(
-              `${brief} Finished project photograph ${index} of ${frames} — a different completed job each frame, varied properties and finishes.`,
+              `Editorial close-to-mid photograph illustrating ${context.trade} workmanship, variation ${index} of ${frames} — the MATERIAL and the FINISH as the subject: texture, edge detail, joints, the quality of the surface. Composed like a premium product photograph in situ, not a portrait of a house, and clearly distinct from the other ${frames - 1} variations.`,
               context,
             ),
             modality: "image",
@@ -206,13 +268,7 @@ export function deriveMediaPlan(blueprint: WebsiteBlueprint): MediaPlanItem[] {
       }
     }
   }
-  // Deterministic order + a stable per-item seed derived from the slot.
-  return items.map((item) => ({
-    ...item,
-    ...(item.pairSeed === undefined
-      ? { pairSeed: undefined }
-      : { pairSeed: item.pairSeed }),
-  }));
+  return items;
 }
 
 export { seedFrom };

@@ -139,12 +139,17 @@ export async function MediaPage({ businessId }: { businessId: string }) {
       .map((record) => record.slotRef),
   );
   const missing = plan.filter((item) => !covered.has(item.slotRef));
+  // ADR-060: evidentiary slots — portfolio frames, before/after pairs — are
+  // never generated. They are a SHOT LIST: what to ask the customer for.
+  // Counting them as "missing, click to generate" is what the old button did.
+  const generatable = missing.filter((item) => item.sourcing === "generated");
+  const shotList = missing.filter((item) => item.sourcing === "customer-photo");
   const totalCost = records.reduce(
     (sum, record) => sum + record.provenance.costUsd,
     0,
   );
   const providerReady = resolveMediaProvider() !== null;
-  const estimatedCost = missing.reduce(
+  const estimatedCost = generatable.reduce(
     (sum, item) => sum + estimateGenerationCostUsd(item.modality),
     0,
   );
@@ -165,11 +170,12 @@ export async function MediaPage({ businessId }: { businessId: string }) {
           <h1 className="text-3xl font-semibold tracking-tight">{business.name}</h1>
           <p className="text-sm text-muted-foreground">
             {records.length} assets · {records.filter((r) => r.status === "approved").length} approved ·{" "}
-            {missing.length} slots still empty · ${totalCost.toFixed(2)} spent
+            {generatable.length} to generate · {shotList.length} awaiting customer photos · $
+            {totalCost.toFixed(2)} spent
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {missing.length > 0 &&
+          {generatable.length > 0 &&
             (providerReady ? (
               <form
                 action={async () => {
@@ -179,7 +185,7 @@ export async function MediaPage({ businessId }: { businessId: string }) {
               >
                 <Button type="submit" className="gap-2" data-generate-media>
                   <Sparkles className="size-4" />
-                  Generate {missing.length} missing (~${estimatedCost.toFixed(2)})
+                  Generate {generatable.length} missing (~${estimatedCost.toFixed(2)})
                 </Button>
               </form>
             ) : (
@@ -334,6 +340,45 @@ export async function MediaPage({ businessId }: { businessId: string }) {
         </p>
       )}
 
+      {/* The SHOT LIST (ADR-060): slots TITAN refuses to generate. These are
+          the sections that stay collapsed on the live site until the customer
+          sends their own photographs — so this list is a sales conversation,
+          not a backlog. */}
+      {shotList.length > 0 && (
+        <section
+          className="flex flex-col gap-3 rounded-2xl border border-sky-400/30 bg-sky-400/[0.04] p-4"
+          data-customer-shot-list
+        >
+          <div className="flex flex-col gap-1">
+            <span className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.16em] text-sky-300/80">
+              <Images className="size-3.5" /> Ask the customer for {shotList.length}{" "}
+              {shotList.length === 1 ? "photograph" : "photographs"} &mdash; it upgrades the site
+            </span>
+            <p className="text-[11px] leading-relaxed text-muted-foreground">
+              TITAN will not generate these. A portfolio frame or a before/after
+              claims &ldquo;this is our work&rdquo;, and only the business can
+              substantiate that. Those sections are live now with illustrative
+              imagery of the trade&apos;s finish &mdash; upload real photos and
+              they upgrade to &ldquo;our recent work&rdquo;, which is the
+              version that actually sells.
+            </p>
+          </div>
+          <ul className="flex flex-col gap-2">
+            {shotList.map((item) => (
+              <li
+                key={item.slotRef}
+                className="flex flex-col gap-0.5 rounded-lg border border-border/50 bg-background/40 px-3 py-2"
+              >
+                <span className="font-mono text-[11px] text-muted-foreground">
+                  {item.slotRef}
+                </span>
+                <span className="text-xs leading-relaxed">{item.brief}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
       {/* Customer imagery (ADR-053): the business's OWN photos, same gate. */}
       {plan.length > 0 && (
         <form
@@ -365,13 +410,32 @@ export async function MediaPage({ businessId }: { businessId: string }) {
                 required
                 className="rounded-lg border border-border/60 bg-background px-2.5 py-1.5 text-sm outline-none"
               >
-                {plan
-                  .filter((item) => item.modality === "image")
-                  .map((item) => (
-                    <option key={item.slotRef} value={item.slotRef}>
-                      {item.slotRef}
-                    </option>
-                  ))}
+                <optgroup label="Needs a customer photo (ADR-060)">
+                  {plan
+                    .filter(
+                      (item) =>
+                        item.modality === "image" &&
+                        item.sourcing === "customer-photo",
+                    )
+                    .map((item) => (
+                      <option key={item.slotRef} value={item.slotRef}>
+                        {item.slotRef}
+                      </option>
+                    ))}
+                </optgroup>
+                <optgroup label="Generated — a real photo overrides it">
+                  {plan
+                    .filter(
+                      (item) =>
+                        item.modality === "image" &&
+                        item.sourcing === "generated",
+                    )
+                    .map((item) => (
+                      <option key={item.slotRef} value={item.slotRef}>
+                        {item.slotRef}
+                      </option>
+                    ))}
+                </optgroup>
               </select>
             </label>
           </div>
@@ -398,8 +462,9 @@ export async function MediaPage({ businessId }: { businessId: string }) {
           <Images className="size-8 text-muted-foreground" />
           <p className="text-sm text-muted-foreground">
             No media yet. {plan.length} slots are planned from the blueprint&apos;s
-            briefs — every asset lands HERE for review before it can appear on
-            the live site.
+            briefs — {generatable.length} TITAN can generate, {shotList.length}{" "}
+            need the customer&apos;s own photographs. Every asset lands HERE for
+            review before it can appear on the live site.
           </p>
         </div>
       ) : (
