@@ -15,5 +15,7 @@ export {
   getTradeDefinition,
   matchTradeId,
   tradeServices,
+  tradePhrase,
+  humaniseTradePhrase,
 } from "./taxonomy";
 export type { TradeDefinition, TradeId } from "./taxonomy";

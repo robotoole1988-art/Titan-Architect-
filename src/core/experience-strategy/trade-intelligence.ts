@@ -10,6 +10,8 @@
  * quality of thinking lives; the generator merely composes it into the output.
  */
 
+import { tradePhrase } from "@/core/trade-taxonomy";
+
 /** How a trade's customers decide — the axis that changes the strategy most. */
 export type TradeArchetype =
   | "emergency"
@@ -193,6 +195,11 @@ export function buildTradeProfile(
 ): TradeProfile {
   const archetype = classifyArchetype(tradeLower);
   const accreditations = accreditationsFor();
+  // ADR-061: everything below is COPY a customer reads, so it takes the
+  // spoken trade phrase — "solar PV", "MOT & servicing", "private dentistry"
+  // — never the lowercased operational label. `tradeLower` stays for the
+  // archetype match above, where lowercasing is the correct behaviour.
+  const spoken = tradePhrase(trade);
 
   switch (archetype) {
     case "emergency":
@@ -200,8 +207,8 @@ export function buildTradeProfile(
         archetype,
         buyingMode:
           "Reactive and urgent — chosen in a moment of stress, usually on a phone.",
-        positioning: `The ${tradeLower} ${location} can actually reach — real people, real response, no call-centre runaround.`,
-        thesis: `Win the anxious, mobile-first moment: be the fastest, most human, most reassuring ${tradeLower} on the page.`,
+        positioning: `The ${spoken} ${location} can actually reach — real people, real response, no call-centre runaround.`,
+        thesis: `Win the anxious, mobile-first moment: be the fastest, most human, most reassuring ${spoken} on the page.`,
         dominantEmotions: ["anxiety → relief", "reassurance", "regained control"],
         primaryObjection:
           "Will they actually turn up quickly — and not spring a surprise bill?",
@@ -213,7 +220,7 @@ export function buildTradeProfile(
         ],
         isUrgent: true,
         hero: {
-          headline: `${location}'s most responsive ${tradeLower}`,
+          headline: `${location}'s most responsive ${spoken}`,
           subheadline: `${business} — we actually answer: fast response, upfront pricing, and the job done right the first time.`,
           visualConcept: `Calm-in-a-crisis: a real ${business} engineer answering and arriving fast in a recognisable ${location} setting, shot to reassure, not alarm.`,
         },
@@ -271,7 +278,7 @@ export function buildTradeProfile(
         ],
         seoModifiers: ["emergency", "near me", "24 hour", "same day", "cost"],
         contentPillars: [
-          `emergency ${tradeLower} guides ("what to do when…")`,
+          `emergency ${spoken} guides ("what to do when…")`,
           "transparent pricing",
           `${location} & surrounding-area pages`,
           "genuine reviews & case studies",
@@ -283,7 +290,7 @@ export function buildTradeProfile(
         archetype,
         buyingMode:
           "Considered and high-value — researched and compared over days or weeks.",
-        positioning: `A ${tradeLower} that treats your home like a showpiece, not a job — design-led, meticulous, finished properly.`,
+        positioning: `A ${spoken} that treats your home like a showpiece, not a job — design-led, meticulous, finished properly.`,
         thesis: `Win the considered buyer: show the finished dream, prove the craft, then de-risk the decision.`,
         dominantEmotions: ["aspiration", "pride", "excitement", "fear of a botched job"],
         primaryObjection:
@@ -296,13 +303,13 @@ export function buildTradeProfile(
         ],
         isUrgent: false,
         hero: {
-          headline: `${location}'s finest ${tradeLower}, done properly`,
-          subheadline: `${business} — design-led ${tradeLower} in ${location}, with a finish you'll be proud to show off.`,
-          visualConcept: `A cinematic reveal of a stunning finished ${tradeLower} project, shot at true golden hour — warm, low sun raking the finished surface, long soft shadows — with a before/after that lands the transformation.`,
+          headline: `${location}'s finest ${spoken}, done properly`,
+          subheadline: `${business} — design-led ${spoken} in ${location}, with a finish you'll be proud to show off.`,
+          visualConcept: `A cinematic reveal of a stunning finished ${spoken} project, shot at true golden hour — warm, low sun raking the finished surface, long soft shadows — with a before/after that lands the transformation.`,
         },
         primaryCta: "Book a free design consultation",
         secondaryCta: "See recent projects",
-        storyArc: `Dream (imagine the finished space) → Doubt (fear of choosing the wrong ${tradeLower}) → Guide (${business}'s proven process & portfolio) → Transformation (the finished result, guaranteed).`,
+        storyArc: `Dream (imagine the finished space) → Doubt (fear of choosing the wrong ${spoken}) → Guide (${business}'s proven process & portfolio) → Transformation (the finished result, guaranteed).`,
         customerJourney: [
           "A design consultation at your home",
           "A detailed written quote — itemised, no surprises",
@@ -324,7 +331,7 @@ export function buildTradeProfile(
         ],
         typographyDirection:
           "An elegant display face for headings paired with a clean, readable body — editorial, not shouty.",
-        photographyStyle: `Magazine-quality photography of finished ${tradeLower} projects, plus before/after and craftsmanship close-ups.`,
+        photographyStyle: `Magazine-quality photography of finished ${spoken} projects, plus before/after and craftsmanship close-ups.`,
         videoStyle:
           "A slow, cinematic project reveal — from empty space to finished transformation.",
         shotList: [
@@ -355,7 +362,7 @@ export function buildTradeProfile(
         seoModifiers: ["cost", "ideas", "near me", "quotes", "companies"],
         contentPillars: [
           "project galleries & case studies",
-          `"cost of ${tradeLower}" guides`,
+          `"cost of ${spoken}" guides`,
           "design inspiration",
           `${location} & area pages`,
         ],
@@ -366,7 +373,7 @@ export function buildTradeProfile(
         archetype,
         buyingMode:
           "Aspirational and relationship-led — bought on taste, pedigree, and confidence.",
-        positioning: `Bespoke ${tradeLower} for people who refuse to compromise.`,
+        positioning: `Bespoke ${spoken} for people who refuse to compromise.`,
         thesis: `Sell taste and certainty: restraint, editorial polish, and proof of exceptional outcomes.`,
         dominantEmotions: ["aspiration", "status", "confidence", "delight"],
         primaryObjection:
@@ -379,8 +386,8 @@ export function buildTradeProfile(
         ],
         isUrgent: false,
         hero: {
-          headline: `Bespoke ${tradeLower}, without compromise`,
-          subheadline: `${business} — ${tradeLower} in ${location} for those who want something truly their own.`,
+          headline: `Bespoke ${spoken}, without compromise`,
+          subheadline: `${business} — ${spoken} in ${location} for those who want something truly their own.`,
           visualConcept: `Editorial, art-directed imagery of signature work — expansive, restrained, unmistakably premium.`,
         },
         primaryCta: "Enquire",
@@ -407,7 +414,7 @@ export function buildTradeProfile(
         ],
         typographyDirection:
           "A refined high-contrast serif for display with an impeccable sans body — a design-press feel.",
-        photographyStyle: `Art-directed, editorial photography of ${business}'s signature ${tradeLower} work.`,
+        photographyStyle: `Art-directed, editorial photography of ${business}'s signature ${spoken} work.`,
         videoStyle: "Slow, elegant, film-like — atmosphere over information.",
         shotList: [
           "a signature project, art-directed",
@@ -461,7 +468,7 @@ export function buildTradeProfile(
         ],
         isUrgent: false,
         hero: {
-          headline: `Gentle, expert ${tradeLower} in ${location}`,
+          headline: `Gentle, expert ${spoken} in ${location}`,
           subheadline: `${business} — unhurried, welcoming care from a team you can genuinely trust.`,
           visualConcept: `Warm, human, softly-lit imagery of real people being cared for — calm and reassuring, never clinical.`,
         },
@@ -543,7 +550,7 @@ export function buildTradeProfile(
         ],
         isUrgent: false,
         hero: {
-          headline: `Certified, future-proof ${tradeLower} in ${location}`,
+          headline: `Certified, future-proof ${spoken} in ${location}`,
           subheadline: `${business} — precise, tidy installs, fully certified and built to last.`,
           visualConcept: `Real UK tradespeople at work on a clean, modern install — a solar array, an EV charger, a consumer unit — precise, tidy, high-quality workmanship in natural light.`,
         },
@@ -612,7 +619,7 @@ export function buildTradeProfile(
         archetype,
         buyingMode:
           "Repeat and relationship-based — bought on reliability and ease.",
-        positioning: `The ${tradeLower} you'll never have to think about again — reliable, consistent, and quietly excellent.`,
+        positioning: `The ${spoken} you'll never have to think about again — reliable, consistent, and quietly excellent.`,
         thesis: `Sell effortless reliability: set-and-forget peace of mind, backed by proof of consistency.`,
         dominantEmotions: ["relief", "ease", "trust", "pride in a well-kept home"],
         primaryObjection:
@@ -625,8 +632,8 @@ export function buildTradeProfile(
         ],
         isUrgent: false,
         hero: {
-          headline: `Effortless ${tradeLower} in ${location}`,
-          subheadline: `${business} — reliable, consistent ${tradeLower} you can set and forget.`,
+          headline: `Effortless ${spoken} in ${location}`,
+          subheadline: `${business} — reliable, consistent ${spoken} you can set and forget.`,
           visualConcept: `Bright, fresh imagery of pristine results and a friendly, vetted team — dependable and easy.`,
         },
         primaryCta: "Get a free quote",
@@ -708,7 +715,7 @@ export function buildTradeProfile(
         isUrgent: false,
         hero: {
           headline: `${trade} for the day you'll never forget`,
-          subheadline: `${business} — warm, unobtrusive ${tradeLower} in ${location} that captures the feeling, not just the moment.`,
+          subheadline: `${business} — warm, unobtrusive ${spoken} in ${location} that captures the feeling, not just the moment.`,
           visualConcept: `An emotive, cinematic montage of real moments — warm, timeless, and genuinely moving.`,
         },
         primaryCta: "Check your date",
@@ -735,7 +742,7 @@ export function buildTradeProfile(
         ],
         typographyDirection:
           "An elegant display face with a warm, readable body — heartfelt, not corporate.",
-        photographyStyle: `Emotive, natural photography of real ${tradeLower} moments — candid, warm, and beautifully lit.`,
+        photographyStyle: `Emotive, natural photography of real ${spoken} moments — candid, warm, and beautifully lit.`,
         videoStyle: "A moving, cinematic highlight film — feeling over format.",
         shotList: [
           "an emotional candid moment",
@@ -776,7 +783,7 @@ export function buildTradeProfile(
       return {
         archetype: "general",
         buyingMode: "Considered local service — chosen on trust and proof.",
-        positioning: `The ${tradeLower} that does what it says — and proves it.`,
+        positioning: `The ${spoken} that does what it says — and proves it.`,
         thesis: `Earn trust fast: lead with proof, clarity, and a confident, human tone.`,
         dominantEmotions: ["confidence", "reassurance", "local pride"],
         primaryObjection: "Can I trust them to do a good job at a fair price?",
@@ -788,8 +795,8 @@ export function buildTradeProfile(
         ],
         isUrgent: false,
         hero: {
-          headline: `${location}'s ${tradeLower}, done right`,
-          subheadline: `${business} — honest, reliable ${tradeLower} with a finish you can trust.`,
+          headline: `${location}'s ${spoken}, done right`,
+          subheadline: `${business} — honest, reliable ${spoken} with a finish you can trust.`,
           visualConcept: `Confident, authentic imagery of ${business}'s real work and team in ${location}.`,
         },
         primaryCta: "Get a free quote",
@@ -802,7 +809,7 @@ export function buildTradeProfile(
           "Tidied up, checked and guaranteed",
         ],
         keyMessages: [
-          `Local ${tradeLower} you can trust`,
+          `Local ${spoken} you can trust`,
           "Clear, upfront pricing",
           "Proven by real reviews",
           "Guaranteed workmanship",
@@ -816,7 +823,7 @@ export function buildTradeProfile(
         ],
         typographyDirection:
           "A strong, legible sans for headings with a highly readable body face.",
-        photographyStyle: `Authentic, well-lit photography of genuine ${tradeLower} work and the ${business} team in ${location}.`,
+        photographyStyle: `Authentic, well-lit photography of genuine ${spoken} work and the ${business} team in ${location}.`,
         videoStyle: "Short, confident clips of real work and results.",
         shotList: [
           `${business} team on-site in ${location}`,
@@ -845,7 +852,7 @@ export function buildTradeProfile(
         ],
         seoModifiers: ["near me", "cost", "reviews"],
         contentPillars: [
-          `${tradeLower} services`,
+          `${spoken} services`,
           `${location} & area pages`,
           "frequently asked questions",
           "reviews & case studies",

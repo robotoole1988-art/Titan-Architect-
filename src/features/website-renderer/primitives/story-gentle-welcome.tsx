@@ -22,6 +22,7 @@ import {
   displayFont,
   primitiveName,
 } from "./atoms";
+import { sectionEyebrow } from "../model/section-eyebrow";
 import { CinematicImage } from "./cinematic-image";
 
 export function StoryGentleWelcome({
@@ -65,7 +66,7 @@ export function StoryGentleWelcome({
 
   const Copy = (
     <div className="flex flex-col">
-      <Eyebrow id={`${section.id}-title`}>{primitiveName(section)}</Eyebrow>
+      <Eyebrow id={`${section.id}-title`}>{sectionEyebrow(section, mode)}</Eyebrow>
       <Reveal>
         <SectionTitle id={`${section.id}-heading`} size="var(--wr-text-2xl)">
           {headline}

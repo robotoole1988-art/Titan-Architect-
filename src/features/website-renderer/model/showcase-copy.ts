@@ -93,3 +93,33 @@ export function illustrativeVoice(
 export function atmosphericArcTitle(themeRef: string | undefined): string {
   return (themeRef && ILLUSTRATIVE_BY_THEME[themeRef]) || ILLUSTRATIVE_FALLBACK;
 }
+
+/**
+ * The public eyebrow for any section that would otherwise print its REGISTRY
+ * NAME to the customer (ADR-061).
+ *
+ * Measured on a live driveways page: "Lead Capture", "Process Journey Map",
+ * "Reassurance FAQ", "Portfolio Showcase" and "Transformation Arc" were all
+ * rendering as visible labels. "Lead Capture" appeared on 100% of pages —
+ * internal product vocabulary, above the form the customer is meant to fill
+ * in.
+ *
+ * Preview keeps the primitive name: it is useful scaffolding for the founder
+ * and ADR-034 already draws that line.
+ */
+const PUBLIC_EYEBROWS: Record<string, string> = {
+  "conversion.lead-capture": "Get in touch",
+  "conversion.emergency-cta": "Need help now",
+  "process.journey-map": "How it works",
+  "faq.reassurance-accordion": "Common questions",
+  "services.interactive-explorer": "What we do",
+  "location.service-area": "Where we work",
+  "trust.review-wall": "What customers say",
+  "trust.team-introduction": "The team",
+  "proof.credential-band": "Why us",
+  "story.gentle-welcome": "Welcome",
+};
+
+export function publicEyebrow(identifier: string): string | undefined {
+  return PUBLIC_EYEBROWS[identifier];
+}

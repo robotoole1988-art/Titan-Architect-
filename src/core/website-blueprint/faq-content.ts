@@ -42,7 +42,12 @@ const BANKS: ReadonlyArray<FaqBank> = [
   {
     id: "roofing-emergency",
     researchedAt: "2026-07",
-    matches: /roof/i,
+    // \b, not a bare substring: "Damp Proofing" contains "roof" inside
+    // "p-ROOF-ing" and was being served six emergency-roofing FAQs —
+    // "How fast can you get here?", "Will my insurance cover storm damage?"
+    // — on a damp-proofing site. The same trap ADR-059 found in the
+    // accreditation map, 400 lines from a comment warning about it.
+    matches: /\broof/i,
     // Storm-voice: urgent, plain, reassuring — damage stopped first.
     qas: [
       {
@@ -80,7 +85,7 @@ const BANKS: ReadonlyArray<FaqBank> = [
   {
     id: "driveways-paving",
     researchedAt: "2026-07",
-    matches: /drivew|paving/i,
+    matches: /\bdrivew|\bpaving/i,
     // Golden-hour voice: considered, craft-first, honest about trade-offs.
     qas: [
       {
@@ -118,7 +123,8 @@ const BANKS: ReadonlyArray<FaqBank> = [
   {
     id: "dentistry",
     researchedAt: "2026-07",
-    matches: /dent/i,
+    // \b again: "dent" hides inside "accident", "independent", "resident".
+    matches: /\bdent/i,
     // Quiet-confidence voice: gentle, transparent, patient-first.
     qas: [
       {
@@ -156,7 +162,7 @@ const BANKS: ReadonlyArray<FaqBank> = [
   {
     id: "electrical-solar",
     researchedAt: "2026-07",
-    matches: /electric|solar|ev charg/i,
+    matches: /\belectric|\bsolar|\bev charg/i,
     // Live-wire voice: precise, certification-forward, no hand-waving.
     qas: [
       {

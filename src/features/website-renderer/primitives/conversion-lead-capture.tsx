@@ -25,8 +25,8 @@ import {
   SectionTitle,
   SignalCTA,
   monoFont,
-  primitiveName,
 } from "./atoms";
+import { sectionEyebrow } from "../model/section-eyebrow";
 
 /** Pull the quoted objection from the objective direction, if present. */
 function extractQuote(text: string | undefined): string | undefined {
@@ -134,7 +134,7 @@ export function ConversionLeadCapture({
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div>
             <Reveal>
-              <Eyebrow>{primitiveName(section)}</Eyebrow>
+              <Eyebrow>{sectionEyebrow(section, mode)}</Eyebrow>
               <SectionTitle id={`${section.id}-title`}>
                 {objection ? `“${objection}”` : ctaLabel}
               </SectionTitle>

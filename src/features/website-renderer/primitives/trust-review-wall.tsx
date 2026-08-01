@@ -22,8 +22,8 @@ import {
   SectionShell,
   SectionTitle,
   displayFont,
-  primitiveName,
 } from "./atoms";
+import { sectionEyebrow } from "../model/section-eyebrow";
 
 /** "Curate reviews that echo the key messages — a · b · c." → [a, b, c] */
 function reviewThemes(direction: string | undefined): string[] {
@@ -187,7 +187,7 @@ export function TrustReviewWall({ section, variant, slots, mode, reviews }: Prim
       <SectionShell section={section}>
         <Container wide>
           <Reveal>
-            <Eyebrow>{primitiveName(section)}</Eyebrow>
+            <Eyebrow>{sectionEyebrow(section, mode)}</Eyebrow>
             <SectionTitle id={`${section.id}-title`}>
               What customers say
             </SectionTitle>
@@ -224,7 +224,7 @@ export function TrustReviewWall({ section, variant, slots, mode, reviews }: Prim
     <SectionShell section={section}>
       <Container wide>
         <Reveal>
-          <Eyebrow>{primitiveName(section)}</Eyebrow>
+          <Eyebrow>{sectionEyebrow(section, mode)}</Eyebrow>
           <SectionTitle id={`${section.id}-title`}>
             {headline ?? attribution ?? ""}
           </SectionTitle>

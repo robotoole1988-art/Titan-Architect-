@@ -250,10 +250,21 @@ function contentFor(
       // between — falling back to the SEO pillars for unclassified trades.
       const tradeId = matchTradeId(meta.trade);
       const services = (tradeId && getTradeDefinition(tradeId)?.services) || [];
-      const anchors =
-        services.length >= 2 ? services : seoStrategy.contentPillars;
+      // NEVER fall back to the SEO content pillars. They are an internal
+      // publishing plan — "project galleries & case studies", "design
+      // inspiration", "Leeds & area pages" — and an off-taxonomy trade was
+      // printing them to customers as its service list. All 35 taxonomy
+      // trades carry real services; anything outside it gets no anchors and
+      // the explorer keeps its honest ADR-034 collapse.
+      const anchors = services.length >= 2 ? services : [];
+      // With no real services the slot still exists (the registry requires
+      // it) but carries no anchor list — no trailing colon, so the primitive
+      // parses zero anchors and degrades to its crafted card grid. What it
+      // must never do is print the publishing plan as the offer.
       return [
-        `services: The core ${trade} services in ${meta.location}, organised around the surfaces and services customers choose: ${anchors.join(" · ")}.`,
+        anchors.length > 0
+          ? `services: The core ${trade} services in ${meta.location}, organised around the surfaces and services customers choose: ${anchors.join(" · ")}.`
+          : `services: The core ${trade} services in ${meta.location}.`,
         `service-explainers: Explain each service through the key messages — ${storytelling.keyMessages.join(" · ")}.`,
       ];
     }

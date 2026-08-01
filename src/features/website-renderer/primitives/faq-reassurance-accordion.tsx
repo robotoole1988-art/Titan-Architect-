@@ -24,8 +24,8 @@ import {
   SectionShell,
   SectionTitle,
   displayFont,
-  primitiveName,
 } from "./atoms";
+import { sectionEyebrow } from "../model/section-eyebrow";
 
 interface FaqSlot {
   question: string;
@@ -148,7 +148,7 @@ export function FaqReassuranceAccordion({ section, variant, slots, mediaAssets, 
       <Container>
         <div className={twoColumn ? "grid gap-10 lg:grid-cols-[2fr_3fr]" : ""}>
           <Reveal>
-            <Eyebrow>{primitiveName(section)}</Eyebrow>
+            <Eyebrow>{sectionEyebrow(section, mode)}</Eyebrow>
             <SectionTitle id={`${section.id}-title`}>
               {items[0]?.question ?? ""}
             </SectionTitle>
