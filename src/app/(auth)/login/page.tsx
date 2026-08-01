@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { COMMAND_CENTRE_PATH } from "@/config/routes";
 import { siteConfig } from "@/config/site";
 import { LoginForm, getFounderSession } from "@/features/auth";
 
@@ -25,7 +26,7 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ notice?: string }>;
 }) {
-  if (await getFounderSession()) redirect("/");
+  if (await getFounderSession()) redirect(COMMAND_CENTRE_PATH);
   const { notice } = await searchParams;
   return (
     <Card className="w-full max-w-sm">

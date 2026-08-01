@@ -84,6 +84,13 @@ ADR that supersedes the old one and update the old one's status.
 | [054](./adr-054-go-live-infrastructure.md) | Go-live infrastructure v1 — founder-only Supabase Auth, RLS lockdown, Vercel production path | Accepted |
 | [056](./adr-056-jarvis-mission-control.md) | Jarvis Mission Control — address contract, test-artifact hygiene, exceptional badges, ⓘ staging (055 does not exist) | Proposed |
 | [057](./adr-057-command-centre-founder-landing.md) | The Command Centre becomes the founder landing surface — two layers, honesty at day-one scale, navigation guarantee | Proposed |
+| [058](./adr-058-markup-and-styles-share-one-budget.md) | Markup and styles share one budget — inlineCss moved the CSS inside the document, so 35+35 measured one artefact against half its allowance | Accepted |
+| [059](./adr-059-never-generate-a-verifiable-fact.md) | TITAN never generates a verifiable fact — accreditations, reviews, prices and photographs of work come from the business or not at all | Accepted |
+| [060](./adr-060-evidence-is-never-generated.md) | Evidence is never generated; illustration always may be — three choke points, and two voices for the same gallery | Accepted |
+| [061](./adr-061-nothing-internal-reaches-the-customer.md) | Nothing internal reaches the customer — primitive names, SEO pillars and substring trade matches off the public page | Accepted |
+| [062](./adr-062-call-now-dials.md) | "Call now" dials — a CTA declares what it does; no layer infers behaviour from its label | Accepted |
+| [063](./adr-063-the-business-is-the-second-axis.md) | The business is the second axis of variation — the archetype fixes the register, the business picks a variation within it | Accepted |
+| [064](./adr-064-titan-has-a-public-face.md) | TITAN has a public face — the root serves the company site, the founder's room moves to /command, and the honesty law turns inward | Accepted |
 
 ### Writing a new ADR
 
