@@ -31,6 +31,7 @@ import {
   SignalCTA,
   monoFont,
 } from "./atoms";
+import { primaryCtaHref } from "../model/cta";
 
 const HERO_CSS = `
 @keyframes wr-gh-bloom {
@@ -164,7 +165,9 @@ export function HeroCinematicReveal({
   blueprint,
   mediaAssets,
   mode,
+  contact,
 }: PrimitiveSectionProps) {
+  const ctaHref = primaryCtaHref(blueprint, contact);
   const split = variant === "split-editorial";
   const video = variant === "video-backdrop";
   const media = section.media?.[0];
@@ -205,7 +208,7 @@ export function HeroCinematicReveal({
       <CssSettle delay={560} className="mt-2 flex flex-wrap items-center gap-5">
         {slots["primary-cta"] && (
           <span className="inline-flex rounded-full transition-transform duration-500 hover:scale-[1.03] active:scale-[0.98] motion-reduce:transition-none motion-reduce:hover:scale-100">
-            <SignalCTA href="#callback" size="lg">
+            <SignalCTA href={ctaHref} size="lg">
               {slots["primary-cta"]}
             </SignalCTA>
           </span>

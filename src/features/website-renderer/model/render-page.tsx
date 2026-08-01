@@ -316,7 +316,7 @@ export function renderPage(
       data-theme={theme.ref}
     >
       <style dangerouslySetInnerHTML={{ __html: ROOT_CSS }} />
-      <SiteHeader blueprint={primitiveBlueprint} nav={nav} />
+      <SiteHeader blueprint={primitiveBlueprint} nav={nav} contact={options.contact} />
       <main>{sections}</main>
       <SiteFooter
         blueprint={primitiveBlueprint}

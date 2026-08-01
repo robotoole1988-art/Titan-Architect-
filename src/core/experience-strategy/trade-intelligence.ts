@@ -37,6 +37,18 @@ export interface TradeProfile {
   isUrgent: boolean;
   hero: { headline: string; subheadline: string; visualConcept: string };
   primaryCta: string;
+  /**
+   * What the primary CTA DOES (ADR-062) — declared, never inferred from the
+   * label. The emergency archetype's CTA reads "Call now" and carries a
+   * phone icon, and it was pointing at the on-page form: a homeowner with
+   * water coming through the ceiling tapped it and got a contact form.
+   *
+   * Deliberately NOT derived from `isUrgent`, and never from sniffing the
+   * label for the word "call". Inferring meaning from a string is the bug
+   * that put roofing FAQs on a damp-proofing site (ADR-061) and roofing
+   * accreditations on it before that (ADR-059). Twice is enough.
+   */
+  primaryCtaAction: "call" | "form";
   secondaryCta: string;
   storyArc: string;
   /**
@@ -225,6 +237,7 @@ export function buildTradeProfile(
           visualConcept: `Calm-in-a-crisis: a real ${business} engineer answering and arriving fast in a recognisable ${location} setting, shot to reassure, not alarm.`,
         },
         primaryCta: "Call now",
+        primaryCtaAction: "call",
         secondaryCta: "Get a fast quote",
         storyArc: `Panic (something has failed) → Relief (${business} answers, fast) → Certainty (a real person, a clear price) → Resolution (sorted and guaranteed).`,
         customerJourney: [
@@ -308,6 +321,7 @@ export function buildTradeProfile(
           visualConcept: `A cinematic reveal of a stunning finished ${spoken} project, shot at true golden hour — warm, low sun raking the finished surface, long soft shadows — with a before/after that lands the transformation.`,
         },
         primaryCta: "Book a free design consultation",
+        primaryCtaAction: "form",
         secondaryCta: "See recent projects",
         storyArc: `Dream (imagine the finished space) → Doubt (fear of choosing the wrong ${spoken}) → Guide (${business}'s proven process & portfolio) → Transformation (the finished result, guaranteed).`,
         customerJourney: [
@@ -391,6 +405,7 @@ export function buildTradeProfile(
           visualConcept: `Editorial, art-directed imagery of signature work — expansive, restrained, unmistakably premium.`,
         },
         primaryCta: "Enquire",
+        primaryCtaAction: "form",
         secondaryCta: "View the portfolio",
         storyArc: `Aspiration (a vision of something exceptional) → Trust (${business}'s signature and pedigree) → Collaboration (a considered, personal process) → Realisation (a result beyond expectation).`,
         customerJourney: [
@@ -473,6 +488,7 @@ export function buildTradeProfile(
           visualConcept: `Warm, human, softly-lit imagery of real people being cared for — calm and reassuring, never clinical.`,
         },
         primaryCta: "Book a consultation",
+        primaryCtaAction: "form",
         secondaryCta: "Request a callback",
         storyArc: `Worry (a personal concern) → Welcome (a warm, unhurried first visit) → Care (expert, gentle treatment) → Confidence (relief and renewed trust).`,
         customerJourney: [
@@ -555,6 +571,7 @@ export function buildTradeProfile(
           visualConcept: `Real UK tradespeople at work on a clean, modern install — a solar array, an EV charger, a consumer unit — precise, tidy, high-quality workmanship in natural light.`,
         },
         primaryCta: "Get a fixed quote",
+        primaryCtaAction: "form",
         secondaryCta: "Book a free survey",
         storyArc: `Question (will it be done right?) → Capability (certified, precise) → Install (clean, safe) → Confidence (future-proofed and certified).`,
         customerJourney: [
@@ -637,6 +654,7 @@ export function buildTradeProfile(
           visualConcept: `Bright, fresh imagery of pristine results and a friendly, vetted team — dependable and easy.`,
         },
         primaryCta: "Get a free quote",
+        primaryCtaAction: "form",
         secondaryCta: "See our plans",
         storyArc: `Hassle (one more thing to manage) → Handover (${business} takes it off your plate) → Consistency (reliable, every time) → Peace of mind (never think about it again).`,
         customerJourney: [
@@ -719,6 +737,7 @@ export function buildTradeProfile(
           visualConcept: `An emotive, cinematic montage of real moments — warm, timeless, and genuinely moving.`,
         },
         primaryCta: "Check your date",
+        primaryCtaAction: "form",
         secondaryCta: "See the portfolio",
         storyArc: `The dream day (imagine it perfectly) → The fear (what if it's not captured?) → The guide (${business}'s portfolio & warmth) → The memory (relived forever).`,
         customerJourney: [
@@ -800,6 +819,7 @@ export function buildTradeProfile(
           visualConcept: `Confident, authentic imagery of ${business}'s real work and team in ${location}.`,
         },
         primaryCta: "Get a free quote",
+        primaryCtaAction: "form",
         secondaryCta: "See our work",
         storyArc: `A need (the job to be done) → A guide (${business}, proven and local) → A simple plan → Sorted, and guaranteed.`,
         customerJourney: [

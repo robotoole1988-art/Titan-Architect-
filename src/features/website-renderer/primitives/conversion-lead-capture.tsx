@@ -26,6 +26,7 @@ import {
   SignalCTA,
   monoFont,
 } from "./atoms";
+import { primaryCtaHref } from "../model/cta";
 import { sectionEyebrow } from "../model/section-eyebrow";
 
 /** Pull the quoted objection from the objective direction, if present. */
@@ -70,7 +71,9 @@ export function ConversionLeadCapture({
   serving,
   mode,
   blueprint,
+  contact,
 }: PrimitiveSectionProps) {
+  const ctaHref = primaryCtaHref(blueprint, contact);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">(
     "idle",
   );
@@ -143,7 +146,7 @@ export function ConversionLeadCapture({
             </Reveal>
             <Reveal delay={0.12}>
               <div className="mt-8">
-                <SignalCTA href="#callback" size="md">
+                <SignalCTA href={ctaHref} size="md">
                   <Phone className="size-4" aria-hidden />
                   {ctaLabel}
                 </SignalCTA>

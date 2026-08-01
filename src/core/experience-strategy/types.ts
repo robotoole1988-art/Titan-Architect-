@@ -69,6 +69,12 @@ export interface MediaDirection extends StrategySection {
 /** 7. Conversion Strategy */
 export interface ConversionStrategy extends StrategySection {
   primaryCta: string;
+  /**
+   * What the primary CTA does when tapped (ADR-062). Declared by the trade
+   * profile, carried through the blueprint, honoured by the renderer — so
+   * no layer has to guess from the label.
+   */
+  primaryCtaAction: "call" | "form";
   leadCaptureFlows: ReadonlyArray<string>;
   trustSignals: ReadonlyArray<string>;
   /**

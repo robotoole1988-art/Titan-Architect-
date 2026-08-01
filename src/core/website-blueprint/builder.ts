@@ -176,14 +176,15 @@ function strategyConfidence(reasoningRef: string): BlueprintConfidence {
 }
 
 /** Deterministic CTA intent from its label. */
-function ctaIntent(label: string): string {
-  const lower = label.toLowerCase();
-  if (lower.includes("call")) return "call";
-  if (lower.includes("book") || lower.includes("consultation")) return "book";
-  if (lower.includes("enquir")) return "enquire";
-  if (lower.includes("date")) return "check-availability";
-  return "quote";
-}
+/**
+ * ctaIntent() USED TO LIVE HERE.
+ *
+ * It read `label.toLowerCase().includes("call")` and nothing consumed the
+ * result, so the renderer hardcoded every CTA to the on-page form — including
+ * the one labelled "Call now". Deleted rather than fixed (ADR-062): the
+ * intent is now DECLARED by the trade profile as `primaryCtaAction` and
+ * carried here, so no layer infers behaviour from a string.
+ */
 
 /** Populate a primitive's required content slots from the strategy. */
 function contentFor(
@@ -514,13 +515,15 @@ function buildCta(
   strategy: ExperienceStrategy,
 ): CallToActionBlueprint {
   const label = strategy.conversionStrategy.primaryCta;
+  const intent = strategy.conversionStrategy.primaryCtaAction;
   return {
     id: `${sectionId}.cta`,
     confidence: strategyConfidence(
       "Primary call to action taken directly from the conversion strategy.",
     ),
     label,
-    intent: ctaIntent(label),
+    intent,
+    destination: intent === "call" ? "the business's phone" : "the on-page lead form",
   };
 }
 
