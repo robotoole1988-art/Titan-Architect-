@@ -91,6 +91,8 @@ ADR that supersedes the old one and update the old one's status.
 | [062](./adr-062-call-now-dials.md) | "Call now" dials — a CTA declares what it does; no layer infers behaviour from its label | Accepted |
 | [063](./adr-063-the-business-is-the-second-axis.md) | The business is the second axis of variation — the archetype fixes the register, the business picks a variation within it | Accepted |
 | [064](./adr-064-titan-has-a-public-face.md) | TITAN has a public face — the root serves the company site, the founder's room moves to /command, and the honesty law turns inward | Accepted |
+| [065](./adr-065-the-price-list-tells-the-truth.md) | The price list tells the truth — how a service is delivered is a typed field, so four hand-delivered channels can no longer read like automation | Accepted |
+| [066](./adr-066-a-trade-is-looked-up-never-guessed.md) | A trade is looked up, never guessed — all 35 taxonomy ids map explicitly; closes the substring-inference class opened by 059, 061 and 062 | Accepted |
 
 ### Writing a new ADR
 

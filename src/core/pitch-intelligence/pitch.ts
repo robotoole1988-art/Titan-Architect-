@@ -186,23 +186,81 @@ const GENERAL: Omit<TradePitch, "tradeLabel"> = {
   ],
 };
 
-const MATCHERS: Array<[TradePitchMatch, ReadonlyArray<string>, Omit<TradePitch, "tradeLabel">]> = [
-  ["roofing", ["roof", "guttering", "fascia", "soffit", "chimney"], ROOFING],
-  ["driveways", ["drive", "paving", "patio", "resin", "landscap", "block pav"], DRIVEWAYS],
-  [
-    "plumbing-heating",
-    ["plumb", "heating", "boiler", "gas", "bathroom fit"],
-    PLUMBING_HEATING,
-  ],
+/**
+ * Free-text fallback, for trades typed by hand rather than chosen from the
+ * taxonomy. ANCHORED — `\b` on every word, never a bare `includes()`.
+ *
+ * The unanchored version of this list is why a **damp-proofing** lead used to
+ * open the founder's screen showing roofing talking points, roofing objection
+ * scripts, NFRC and CompetentRoofer accreditations, and re-roof job values:
+ * `"damp-proofing".includes("roof")` is true, because the word is
+ * damp-p-ROOF-ing. `"chimney-fireplaces"` matched too, and a stove fitter is
+ * not a roofer.
+ *
+ * This is the fourth appearance of one defect: inferring a fact from a
+ * substring. ADR-059 grew accreditations out of a trade name; ADR-061 put
+ * roofing FAQs on a damp-proofing site; ADR-062 read a CTA's behaviour off its
+ * label. Both `faq-content.ts` and `trade-intelligence.ts` carry comments
+ * warning about this exact string. This file never got the fix.
+ */
+const MATCHERS: Array<[TradePitchMatch, RegExp, Omit<TradePitch, "tradeLabel">]> = [
+  ["roofing", /\broof|\bguttering|\bfascia|\bsoffit/i, ROOFING],
+  ["driveways", /\bdrivew|\bpaving|\bpatio|\bresin|\blandscap|\bblock pav|\btarmac/i, DRIVEWAYS],
+  ["plumbing-heating", /\bplumb|\bheating|\bboiler|\bgas safe|\bbathroom fit/i, PLUMBING_HEATING],
 ];
 
-/** Taxonomy id → pitch pack (ADR-026): the id space maps explicitly. */
+/**
+ * Taxonomy id → pitch pack. EVERY id in the taxonomy is listed, including the
+ * ones that get the general pack, because an id absent from this map falls
+ * through to the free-text matcher — and inference is what went wrong.
+ * A trade is assigned a specific pack only where the pack's talking points,
+ * objections and job values genuinely describe that business: a chimney and
+ * fireplace fitter works to HETAS and Part J and sells stoves, so roofing's
+ * storm-damage material is worse than nothing to hand a founder mid-call.
+ *
+ * 4 of 35 trades have a pack written for them. The other 31 get the general
+ * one, honestly labelled in the CRM — which is the size of the gap the trade
+ * knowledge base is being built to close.
+ */
 const PACK_BY_TAXONOMY_ID: Record<string, Omit<TradePitch, "tradeLabel">> = {
+  // ── Purpose-written packs ────────────────────────────────────────────
   roofing: ROOFING,
   "driveways-paving": DRIVEWAYS,
   landscaping: DRIVEWAYS,
   "plumbing-heating-emergency": PLUMBING_HEATING,
   "boiler-installation": PLUMBING_HEATING,
+
+  // ── Explicitly general. Listed so no id can fall through to a guess. ──
+  "solar-pv": GENERAL,
+  "battery-storage": GENERAL,
+  "ev-charger-installation": GENERAL,
+  electricians: GENERAL,
+  "hvac-air-conditioning": GENERAL,
+  scaffolding: GENERAL,
+  "painting-decorating": GENERAL,
+  "builders-general": GENERAL,
+  "extensions-renovations": GENERAL,
+  "windows-doors": GENERAL,
+  conservatories: GENERAL,
+  brickwork: GENERAL,
+  "tarmac-surfacing": DRIVEWAYS,
+  "artificial-grass": DRIVEWAYS,
+  "chimney-fireplaces": GENERAL,
+  "damp-proofing": GENERAL,
+  "tree-surgery": GENERAL,
+  "carpet-cleaning": GENERAL,
+  "domestic-commercial-cleaning": GENERAL,
+  "exterior-cleaning": GENERAL,
+  "waste-removal": GENERAL,
+  "house-clearance": GENERAL,
+  "garage-clearance": GENERAL,
+  "mobile-mechanic": GENERAL,
+  "garage-repairs": GENERAL,
+  "mot-servicing": GENERAL,
+  "car-detailing": GENERAL,
+  "swimming-pools": GENERAL,
+  "dentists-private": GENERAL,
+  solicitors: GENERAL,
 };
 
 /** Resolve the pitch pack for a trade (taxonomy id or free text). */
@@ -210,8 +268,8 @@ export function resolveTradePitch(trade: string): TradePitch {
   const tradeLower = trade.trim().toLowerCase();
   const byId = PACK_BY_TAXONOMY_ID[tradeLower];
   if (byId) return { ...byId, tradeLabel: trade.trim() };
-  for (const [, keywords, pack] of MATCHERS) {
-    if (keywords.some((keyword) => tradeLower.includes(keyword))) {
+  for (const [, pattern, pack] of MATCHERS) {
+    if (pattern.test(tradeLower)) {
       return { ...pack, tradeLabel: trade.trim() };
     }
   }

@@ -20,6 +20,7 @@ import {
   commissionHeroFilm,
   commissionMorphFilm,
   generateBusinessMedia,
+  approveAllMediaInReview,
   setMediaStatus,
   uploadCustomerImage,
 } from "../api/actions";
@@ -144,6 +145,7 @@ export async function MediaPage({ businessId }: { businessId: string }) {
   // Counting them as "missing, click to generate" is what the old button did.
   const generatable = missing.filter((item) => item.sourcing === "generated");
   const shotList = missing.filter((item) => item.sourcing === "customer-photo");
+  const inReview = records.filter((record) => record.status === "review");
   const totalCost = records.reduce(
     (sum, record) => sum + record.provenance.costUsd,
     0,
@@ -468,11 +470,44 @@ export async function MediaPage({ businessId }: { businessId: string }) {
           </p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {records.map((record) => (
-            <MediaCard key={record.id} record={record} />
-          ))}
-        </div>
+        <>
+          {/*
+            The bulk approve sits HERE, immediately above the grid and below
+            nothing else, because that placement is what keeps the gate real:
+            the assets are rendered full-size beneath it, so clicking means "I
+            have looked at these". Rejecting stays per asset — it is how the
+            founder asks for another take, and it should cost a deliberate
+            click. Approving thirty assets one at a time is how a gate becomes
+            a rubber stamp.
+          */}
+          {inReview.length > 0 && (
+            <form
+              action={async () => {
+                "use server";
+                await approveAllMediaInReview(businessId);
+              }}
+              className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border/60 bg-card/30 px-4 py-3"
+              data-approve-all
+            >
+              <span className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  {inReview.length} asset{inReview.length === 1 ? "" : "s"}
+                </span>{" "}
+                awaiting review below. Reject individually; approve together
+                once you have looked.
+              </span>
+              <Button type="submit" className="gap-2">
+                <Check className="size-4" />
+                Approve all {inReview.length}
+              </Button>
+            </form>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {records.map((record) => (
+              <MediaCard key={record.id} record={record} />
+            ))}
+          </div>
+        </>
       )}
 
       <p className="text-[11px] text-muted-foreground">

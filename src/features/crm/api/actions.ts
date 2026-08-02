@@ -549,6 +549,43 @@ export async function commissionMorphFilm(
   revalidateCrm(businessId);
 }
 
+/**
+ * Approve everything currently awaiting review, in one action (ADR-033).
+ *
+ * The per-asset gate is right and stays: rejecting is how the founder asks
+ * for another attempt, and it has to be per asset. But approving is the
+ * common case, a full site plan runs to 20–30 slots, and five sites is a
+ * hundred and fifty separate form submissions. A gate that is exhausting to
+ * pass is a gate people learn to rubber-stamp.
+ *
+ * This does not weaken the gate, because of WHERE the button lives: directly
+ * above the grid, labelled with the count, on a page that has already
+ * rendered every asset full-size. Clicking it means "I have looked at these",
+ * which is exactly what the gate asks for. What it removes is the clicking.
+ *
+ * Logged as a single activity note naming the count, so a bulk approval is
+ * always distinguishable afterwards from a run of considered individual ones.
+ * One revalidation at the end rather than N — the per-asset action calls
+ * `revalidateLiveSite` every time, which for thirty assets is thirty
+ * re-renders of the same page.
+ */
+export async function approveAllMediaInReview(businessId: string): Promise<void> {
+  const spine = await resolveBusinessSpine();
+  const records = await spine.media.listForBusiness(businessId);
+  const pending = records.filter((record) => record.status === "review");
+  if (pending.length === 0) return;
+  for (const record of pending) {
+    await spine.media.setStatus(record.id, "approved");
+  }
+  await spine.activity.log({
+    businessId,
+    kind: "note",
+    message: `${pending.length} media assets approved together at the review gate`,
+  });
+  revalidateCrm(businessId);
+  await revalidateLiveSite(businessId);
+}
+
 /** The founder's per-asset review gate (ADR-033). */
 export async function setMediaStatus(
   mediaId: string,

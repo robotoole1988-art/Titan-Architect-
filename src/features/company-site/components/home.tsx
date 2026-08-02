@@ -98,7 +98,7 @@ export function CompanyHomePage() {
                 How the advertising works
               </Link>
             </div>
-            <p className="mt-10 text-sm text-white/40">
+            <p className="mt-10 text-sm text-white/55">
               Built for {TRADE_COUNT} trades — roofing, driveways, electrical,
               solar, landscaping, motor and more.
             </p>
@@ -160,7 +160,7 @@ export function CompanyHomePage() {
                     {capability.title}
                   </h3>
                   {capability.status === "build" ? (
-                    <span className="rounded-full border border-white/15 px-2.5 py-0.5 text-[0.7rem] font-medium uppercase tracking-wider text-white/45">
+                    <span className="rounded-full border border-white/15 px-2.5 py-0.5 text-[0.7rem] font-medium uppercase tracking-wider text-white/55">
                       In build
                     </span>
                   ) : null}
@@ -192,7 +192,7 @@ export function CompanyHomePage() {
               </li>
             ))}
           </ul>
-          <p className="mt-14 max-w-2xl text-sm leading-relaxed text-white/40">
+          <p className="mt-14 max-w-2xl text-sm leading-relaxed text-white/55">
             There is a commercial reason as well as a moral one. Under the
             Digital Markets, Competition and Consumers Act 2024, misleading
             claims on a trader&rsquo;s own website are the trader&rsquo;s

@@ -167,6 +167,28 @@ describe("the site is as fast as the standard it sells", () => {
   });
 });
 
+describe("the site is as legible as the standard it sells", () => {
+  it("uses no muted text that fails WCAG AA against the page", () => {
+    // Measured against the page ground (#05060a): white/30 is 2.55:1 and
+    // white/40 is 3.74:1 — both below the 4.5:1 AA needs for body text —
+    // and white/45 lands at 4.47:1, under the line by a rounding error.
+    // white/50 is 5.28:1 and white/55 is 6.26:1.
+    //
+    // TITAN advertises an accessibility floor of 95 on the sites it builds.
+    // Its own site is not covered by that gate (law.json audits the archetype
+    // paths, not this one), which is exactly why the rule is written down
+    // here instead of assumed. Found by screenshotting the built page.
+    const FAILING = /text-white\/(?:30|35|40|45)\b/;
+    for (const file of sourceFiles(FEATURE_DIR)) {
+      const source = readFileSync(file, "utf8");
+      const hit = source.match(FAILING);
+      expect(hit?.[0], `${file} uses ${hit?.[0]} — below 4.5:1 on #05060a`).toBe(
+        undefined,
+      );
+    }
+  });
+});
+
 describe("every page is reachable and complete", () => {
   it("renders one h1 per page, and a route exists for every public path", () => {
     for (const [name, Page] of PAGES) {

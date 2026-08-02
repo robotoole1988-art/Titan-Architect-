@@ -40,19 +40,27 @@ export function SiteHeader() {
           <Wordmark />
           <span className="sr-only">TITAN — home</span>
         </Link>
-        <nav aria-label="Primary" className="flex items-center gap-7 text-sm">
+        {/*
+          The text links hide below `sm`. At 320px the wordmark, two links and
+          the button do not fit on one line, and the button was wrapping to
+          three lines and bursting out of the fixed-height bar. Every one of
+          those destinations is in the footer, so nothing becomes unreachable
+          — and a four-page site does not need a hamburger, which would mean
+          shipping a client component to this site to open a menu.
+        */}
+        <nav aria-label="Primary" className="flex items-center gap-5 text-sm sm:gap-7">
           {NAV.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="text-white/60 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
+              className="hidden text-white/60 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70 sm:inline"
             >
               {item.label}
             </Link>
           ))}
           <a
             href={`mailto:${CONTACT_EMAIL}`}
-            className="rounded-full border border-amber-300/30 bg-amber-300/[0.07] px-4 py-1.5 text-amber-100 transition-colors hover:border-amber-300/60 hover:bg-amber-300/[0.14] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
+            className="whitespace-nowrap rounded-full border border-amber-300/30 bg-amber-300/[0.07] px-4 py-1.5 text-amber-100 transition-colors hover:border-amber-300/60 hover:bg-amber-300/[0.14] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
           >
             Get in touch
           </a>
@@ -69,7 +77,7 @@ export function SiteFooter() {
         <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-sm">
             <Wordmark />
-            <p className="mt-4 text-sm leading-relaxed text-white/45">
+            <p className="mt-4 text-sm leading-relaxed text-white/55">
               The growth platform for UK trade businesses — the website, the
               enquiries and the advertising, run as one system.
             </p>
@@ -90,7 +98,7 @@ export function SiteFooter() {
             >
               {CONTACT_EMAIL}
             </a>
-            <Link href="/login" className="text-white/30 hover:text-white/60">
+            <Link href="/login" className="text-white/50 hover:text-white/60">
               Sign in
             </Link>
           </nav>
@@ -100,7 +108,7 @@ export function SiteFooter() {
           both read the legal entity off this line, so it stays factual and
           gets updated the day incorporation completes — not before.
         */}
-        <p className="mt-12 border-t border-white/[0.06] pt-8 text-xs text-white/30">
+        <p className="mt-12 border-t border-white/[0.06] pt-8 text-xs text-white/50">
           TITAN is a United Kingdom business. Registered company details will
           appear here once incorporation completes.
         </p>
