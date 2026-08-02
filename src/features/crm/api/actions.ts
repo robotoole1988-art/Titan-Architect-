@@ -257,11 +257,12 @@ export async function setBuildItemStatus(
 /** Take the live site offline (explicit founder action, ADR-027). */
 export async function unpublishBusinessSite(businessId: string): Promise<void> {
   const spine = await resolveBusinessSpine();
-  const publication = await spine.publications.current(businessId);
-  await unpublishWebsite(spine, businessId);
+  // The workflow returns the publication that WAS live — captured before
+  // the row flips, because afterwards the slug can't be looked up at all.
+  const unpublished = await unpublishWebsite(spine, businessId);
   // Taking a site offline must evict the cached snapshot immediately: the
   // slug has to start 404ing, not keep serving from the edge.
-  revalidatePublishedSite(publication?.slug);
+  revalidatePublishedSite(unpublished?.slug);
   revalidateCrm(businessId);
 }
 

@@ -21,6 +21,7 @@ import { EstimateCard } from "@/features/market";
 import { addBusinessNote, addVerifiedReview, moveBusinessStage } from "../api/actions";
 import { ActivityLog, CrmChrome, StageBadge } from "./crm-atoms";
 import { SellingTools } from "./selling-tools";
+import { SitePanel } from "./site-panel";
 
 /**
  * The lead/business detail (ADR-024): intake data, the full stage control
@@ -141,12 +142,14 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
   const spine = await resolveBusinessSpine();
   const business = await spine.businesses.get(businessId);
   if (!business) notFound();
-  const [entries, marketProvider, dealArtifact, reviews] = await Promise.all([
-    spine.activity.list(businessId),
-    resolveMarketDataProvider(),
-    spine.artifacts.latest<Deal>(businessId, "deal"),
-    spine.reviews.listForBusiness(businessId),
-  ]);
+  const [entries, marketProvider, dealArtifact, reviews, publication] =
+    await Promise.all([
+      spine.activity.list(businessId),
+      resolveMarketDataProvider(),
+      spine.artifacts.latest<Deal>(businessId, "deal"),
+      spine.reviews.listForBusiness(businessId),
+      spine.publications.current(businessId),
+    ]);
   // The founder pitches with this lead's own economics on screen (ADR-025);
   // taxonomy ids resolve exactly, legacy free text falls back (ADR-026).
   const cplEstimate = await resolveCplEstimate(
@@ -225,6 +228,10 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
         </div>
 
         <div className="flex flex-col gap-6">
+          {/* The takedown control lives HERE, not on Accounts: a publication
+              can exist at any stage, so the off switch must too. */}
+          <SitePanel businessId={business.id} publication={publication} />
+
           {/* Stage control — the one place with the full state list + reason */}
           <section
             aria-label="Lifecycle stage"

@@ -70,6 +70,23 @@ describe("publishWebsite", () => {
     const entries = await repos.activity.list(business.id);
     expect(entries[0].message).toMatch(/unpublish/i);
   });
+
+  it("unpublishWebsite returns the publication that WAS live — the caller needs its slug to evict the cached pages", async () => {
+    const repos = createMemoryBusinessSpine();
+    const business = await repos.businesses.create(DRAFT);
+    await repos.artifacts.save({ businessId: business.id, kind: "blueprint", payload: {} });
+    const published = await publishWebsite(repos, business.id);
+
+    const unpublished = await unpublishWebsite(repos, business.id);
+    expect(unpublished?.slug).toBe(published.slug);
+    expect(unpublished?.version).toBe(published.version);
+  });
+
+  it("unpublishWebsite returns null when nothing was live", async () => {
+    const repos = createMemoryBusinessSpine();
+    const business = await repos.businesses.create(DRAFT);
+    expect(await unpublishWebsite(repos, business.id)).toBeNull();
+  });
 });
 
 describe("uniqueSlugFor", () => {
