@@ -28,6 +28,7 @@ import {
   SignalCTA,
   monoFont,
 } from "./atoms";
+import { primaryCtaHref } from "../model/cta";
 
 /** Static film-grain (tiny inline SVG turbulence, no network request). */
 const NOISE =
@@ -161,7 +162,8 @@ function promiseOf(direction: string | undefined): string | undefined {
   return segments.length >= 2 ? segments[1] : direction;
 }
 
-export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAssets, mode }: PrimitiveSectionProps) {
+export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAssets, mode, contact }: PrimitiveSectionProps) {
+  const ctaHref = primaryCtaHref(blueprint, contact);
   const callFirst = variant !== "quote-first";
   const media = section.media?.[0];
   const secondary = blueprint.pages.pages[0].conversion?.ctas?.[0];
@@ -272,7 +274,7 @@ export function HeroRapidResponse({ section, variant, slots, blueprint, mediaAss
                   className="wr-hero-beacon absolute inset-0 rounded-full border-2"
                   style={{ borderColor: "var(--wr-accent)" }}
                 />
-                <SignalCTA href="#callback" size="lg">
+                <SignalCTA href={ctaHref} size="lg">
                   <Phone className="size-5" aria-hidden />
                   {slots["primary-cta"]}
                 </SignalCTA>

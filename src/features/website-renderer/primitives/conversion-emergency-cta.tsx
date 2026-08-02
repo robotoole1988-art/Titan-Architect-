@@ -20,6 +20,7 @@ import {
   SignalCTA,
   displayFont,
 } from "./atoms";
+import { primaryCtaHref } from "../model/cta";
 
 /** Pull the quoted objection out of the reassurance direction, if present. */
 function extractQuote(text: string | undefined): string | undefined {
@@ -30,9 +31,11 @@ function extractQuote(text: string | undefined): string | undefined {
 function StickyCallBar({
   businessName,
   label,
+  ctaHref,
 }: {
   businessName?: string;
   label: string;
+  ctaHref: string;
 }) {
   return (
     <div className="wr-sticky-bar fixed inset-x-0 bottom-0 z-50 pb-[env(safe-area-inset-bottom)]">
@@ -50,7 +53,7 @@ function StickyCallBar({
         >
           {businessName}
         </span>
-        <SignalCTA href="#callback" size="sm">
+        <SignalCTA href={ctaHref} size="sm">
           <Phone className="size-4" aria-hidden />
           {label}
         </SignalCTA>
@@ -64,8 +67,10 @@ export function ConversionEmergencyCta({
   variant,
   slots,
   blueprint,
+  contact,
 }: PrimitiveSectionProps) {
   const label = slots["cta-label"] ?? "";
+  const ctaHref = primaryCtaHref(blueprint, contact);
   const objection = extractQuote(slots.reassurance);
 
   return (
@@ -94,7 +99,7 @@ export function ConversionEmergencyCta({
               </div>
               {label && (
                 <div className="shrink-0">
-                  <SignalCTA href="#callback" size="md">
+                  <SignalCTA href={ctaHref} size="md">
                     <Phone className="size-4" aria-hidden />
                     {label}
                   </SignalCTA>
@@ -106,7 +111,7 @@ export function ConversionEmergencyCta({
       </Container>
 
       {variant === "sticky-call-bar" && label && (
-        <StickyCallBar businessName={blueprint.identity.businessName} label={label} />
+        <StickyCallBar businessName={blueprint.identity.businessName} label={label} ctaHref={ctaHref} />
       )}
     </SectionShell>
   );

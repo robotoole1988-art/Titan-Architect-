@@ -10,6 +10,7 @@ import {
   primaryNavigation,
   secondaryNavigation,
 } from "@/config/navigation";
+import { COMMAND_CENTRE_PATH } from "@/config/routes";
 import {
   allDestinations,
   clickCountTable,
@@ -105,13 +106,22 @@ describe("the navigation guarantee (M2 addendum)", () => {
 
 describe("the way home (ADR-057 §7)", () => {
   it("the home entry points at the room and stays out of the Layer 2 registry", () => {
-    expect(commandCentreHome.href).toBe("/");
-    expect(allDestinations().map((item) => item.href)).not.toContain("/");
+    expect(commandCentreHome.href).toBe(COMMAND_CENTRE_PATH);
+    expect(allDestinations().map((item) => item.href)).not.toContain(
+      COMMAND_CENTRE_PATH,
+    );
   });
 
   it("the palette finds home by name and by 'home'", () => {
     const items = [commandCentreHome, ...allDestinations()];
-    expect(filterDestinations("command", items)[0].href).toBe("/");
-    expect(filterDestinations("home", items)[0].href).toBe("/");
+    expect(filterDestinations("command", items)[0].href).toBe(COMMAND_CENTRE_PATH);
+    expect(filterDestinations("home", items)[0].href).toBe(COMMAND_CENTRE_PATH);
+  });
+
+  it("no internal destination sits on the root — that belongs to the public site", () => {
+    // ADR-064 moved the room to /command. A stray "/" in the registry would
+    // send the founder to the marketing page and look like a broken build.
+    const everywhere = [commandCentreHome, ...allDestinations()];
+    expect(everywhere.map((item) => item.href)).not.toContain("/");
   });
 });

@@ -50,13 +50,6 @@ export function buildMorphFilmPrompt(brief: string, context: PromptContext): str
   return buildMediaPrompt(treatment, context);
 }
 
-export interface PairPrompts {
-  before: string;
-  after: string;
-  /** One seed → the provider renders a coherent pair. */
-  seed: number;
-}
-
 /** Deterministic seed from a string (stable across runs — no randomness). */
 export function seedFrom(text: string): number {
   let hash = 2166136261;
@@ -68,23 +61,16 @@ export function seedFrom(text: string): number {
 }
 
 /**
- * A before/after PAIR: the same property, the same camera angle — one
- * coherent transformation, not two unrelated photos.
+ * buildPairPrompts USED TO LIVE HERE.
+ *
+ * It composed a seed-matched before/after: "the SAME PROPERTY from the SAME
+ * CAMERA ANGLE", one state worn and the other "newly finished, pristine,
+ * completed to a premium standard". Every site shipped with one, and it was
+ * the most persuasive thing on the page — an invented photograph of a job
+ * the business never did.
+ *
+ * Deleted rather than left unused (ADR-060). An exported helper with a green
+ * test is an invitation; the accreditation defect survived months behind
+ * exactly that. Before/after halves are now customer photographs, planned
+ * without prompts, and there is nothing left to call.
  */
-export function buildPairPrompts(
-  brief: string,
-  context: PromptContext,
-): PairPrompts {
-  const scene = `${brief.trim().replace(/\.?$/, "")} — a single UK residential property. Both photographs show the SAME PROPERTY from the SAME CAMERA ANGLE at the same distance, consistent framing.`;
-  return {
-    before: buildMediaPrompt(
-      `${scene} State: BEFORE the work — worn, tired, weathered and cracked surfaces, moss and staining, in need of the trade's help`,
-      context,
-    ),
-    after: buildMediaPrompt(
-      `${scene} State: AFTER the work — newly finished, pristine, completed to a premium standard, immaculate detailing`,
-      context,
-    ),
-    seed: seedFrom(`${brief}|${context.trade}|${context.location}`),
-  };
-}

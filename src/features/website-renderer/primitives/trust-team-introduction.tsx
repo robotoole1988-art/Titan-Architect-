@@ -22,6 +22,7 @@ import {
   monoFont,
   primitiveName,
 } from "./atoms";
+import { sectionEyebrow } from "../model/section-eyebrow";
 import { CinematicImage } from "./cinematic-image";
 
 export function TrustTeamIntroduction({
@@ -50,7 +51,7 @@ export function TrustTeamIntroduction({
     <SectionShell section={section}>
       <Container>
         <div className="max-w-[46rem]">
-          <Eyebrow id={`${section.id}-title`}>{primitiveName(section)}</Eyebrow>
+          <Eyebrow id={`${section.id}-title`}>{sectionEyebrow(section, mode)}</Eyebrow>
           <Reveal>
             <SectionTitle id={`${section.id}-heading`} size="var(--wr-text-2xl)">
               {headline}

@@ -19,8 +19,8 @@ import {
   SectionShell,
   SectionTitle,
   displayFont,
-  primitiveName,
 } from "./atoms";
+import { sectionEyebrow } from "../model/section-eyebrow";
 
 function headingOf(coverage: string | undefined): string {
   if (!coverage) return "";
@@ -130,7 +130,7 @@ export function LocationServiceArea({ section, variant, slots, blueprint, mode }
           </Reveal>
           <div className="lg:[direction:ltr]">
             <Reveal>
-              <Eyebrow>{primitiveName(section)}</Eyebrow>
+              <Eyebrow>{sectionEyebrow(section, mode)}</Eyebrow>
               <SectionTitle id={`${section.id}-title`}>
                 <MapPin
                   aria-hidden

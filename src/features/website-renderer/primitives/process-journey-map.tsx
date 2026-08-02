@@ -20,8 +20,8 @@ import {
   SectionTitle,
   displayFont,
   monoFont,
-  primitiveName,
 } from "./atoms";
+import { sectionEyebrow } from "../model/section-eyebrow";
 
 interface Stage {
   title: string;
@@ -45,7 +45,7 @@ function guaranteesOf(direction: string | undefined): string[] {
   return splitList(afterColon);
 }
 
-export function ProcessJourneyMap({ section, slots, mediaAssets }: PrimitiveSectionProps) {
+export function ProcessJourneyMap({ section, slots, mediaAssets, mode }: PrimitiveSectionProps) {
   const supportAsset =
     mediaAssets?.[`${section.media?.[0]?.generationRef ?? `media/${section.id}`}.support`];
 
@@ -56,7 +56,7 @@ export function ProcessJourneyMap({ section, slots, mediaAssets }: PrimitiveSect
     <SectionShell section={section}>
       <Container>
         <Reveal>
-          <Eyebrow>{primitiveName(section)}</Eyebrow>
+          <Eyebrow>{sectionEyebrow(section, mode)}</Eyebrow>
           <SectionTitle id={`${section.id}-title`}>
             {slots["steps-headline"] ?? "How it works"}
           </SectionTitle>

@@ -177,6 +177,7 @@ export function generateExperienceStrategy(
   const conversionStrategy: ConversionStrategy = {
     summary: `Remove the one objection that blocks the sale — "${profile.primaryObjection}" — and make the next step effortless.`,
     primaryCta: profile.primaryCta,
+    primaryCtaAction: profile.primaryCtaAction,
     leadCaptureFlows: [
       `a sticky "${profile.primaryCta}" action`,
       `a secondary "${profile.secondaryCta}" path for researchers`,

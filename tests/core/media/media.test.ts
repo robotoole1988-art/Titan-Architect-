@@ -3,7 +3,6 @@ import { generateExperienceStrategy } from "@/core/experience-strategy";
 import { buildWebsiteBlueprint } from "@/core/website-blueprint";
 import {
   buildMediaPrompt,
-  buildPairPrompts,
   createReplicateProvider,
   deriveMediaPlan,
   estimateGenerationCostUsd,
@@ -34,26 +33,13 @@ describe("buildMediaPrompt — UK authenticity is LAW, not discipline", () => {
   });
 });
 
-describe("buildPairPrompts — before/after coherence", () => {
-  const pair = buildPairPrompts(
-    "Before/after of a driveway transformation",
-    { trade: "Driveways & Paving", location: "Sale" },
-  );
-
-  it("shares one property and one camera angle across both prompts", () => {
-    expect(pair.before).toMatch(/same property/i);
-    expect(pair.after).toMatch(/same property/i);
-    expect(pair.before).toMatch(/same camera angle/i);
-    expect(pair.after).toMatch(/same camera angle/i);
-    // One seed → the provider renders a coherent pair.
-    expect(pair.seed).toBeTypeOf("number");
-  });
-
-  it("differs only in state: worn vs finished", () => {
-    expect(pair.before).toMatch(/worn|tired|cracked|weathered|before/i);
-    expect(pair.after).toMatch(/newly|finished|pristine|completed|after/i);
-  });
-});
+/**
+ * buildPairPrompts and its two tests were DELETED here (ADR-060). They
+ * asserted that a generated before/after showed "the same property from the
+ * same camera angle" — coherence, which was the wrong property to be
+ * checking. The pair is now the customer's own two photographs; the law that
+ * replaced this lives in tests/core/evidence-law.test.ts.
+ */
 
 describe("the Replicate adapter (image, seam ready for video)", () => {
   it("posts the prompt and returns the asset + cost", async () => {
@@ -192,7 +178,7 @@ describe("generateMissingMedia — rejection reopens the slot", () => {
         provenance: {
           provider: "replicate",
           model: "test",
-          prompt: item.prompt,
+          prompt: item.prompt ?? item.brief,
           costUsd: 0.04,
           generatedAt: new Date().toISOString(),
         },
@@ -390,11 +376,22 @@ describe("deriveMediaPlan — every empty frame accounted for", () => {
     }
   });
 
-  it("pairs share a seed for provider coherence", () => {
+  it("the before/after pair is PLANNED but never prompted (ADR-060)", () => {
+    // These used to be a seed-matched GENERATED pair, so every site shipped
+    // with an AI-invented photograph of a job it claimed to have done. The
+    // slots survive — the founder still needs the shot list, and the CRM
+    // upload targets them — but they carry no prompt, which is what makes
+    // commissioning one impossible rather than merely discouraged.
     const before = plan.find((item) => item.slotRef.endsWith(".before"));
     const after = plan.find((item) => item.slotRef.endsWith(".after"));
-    expect(before?.pairSeed).toBeDefined();
-    expect(before?.pairSeed).toBe(after?.pairSeed);
+    expect(before, "the before slot is still planned").toBeDefined();
+    expect(after, "the after slot is still planned").toBeDefined();
+    for (const half of [before, after]) {
+      expect(half?.sourcing).toBe("customer-photo");
+      expect(half?.prompt).toBeUndefined();
+      // The brief is addressed to a human with a camera, not a model.
+      expect(half?.brief).toMatch(/customer's OWN photograph/i);
+    }
   });
 
   it("adds ONE homepage-hero FILM slot mapping the strategy's media direction (ADR-036)", () => {

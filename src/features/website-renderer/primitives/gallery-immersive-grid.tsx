@@ -3,12 +3,20 @@
  *
  * For work bought with the eyes: expansive, editorial frames given full
  * attention. Every frame is an art-directed slot with its shooting brief —
- * atmosphere from composed light, never fake photography. Variants:
- * "masonry" (staggered editorial column heights) / "full-bleed-slider"
- * (scroll-snap panels the width of the viewport).
+ * atmosphere from composed light, never fake photography.
+ *
+ * TWO VOICES (ADR-060): a gallery captioned "our work" is EVIDENCE and needs
+ * the customer's own photographs; the same grid captioned as the trade's
+ * finishes is ILLUSTRATION and may be generated. It opens illustrative and
+ * upgrades itself the moment real photographs arrive.
+ *
+ * Variants: "masonry" (staggered editorial column heights) /
+ * "full-bleed-slider" (scroll-snap panels the width of the viewport).
  */
 
 import { MoveHorizontal } from "lucide-react";
+import { projectFrameCount, showcaseSlot } from "@/core/media/sourcing";
+import { evidenceVoice, illustrativeVoice } from "../model/showcase-copy";
 import type { PrimitiveSectionProps } from "../model/types";
 import { CinematicImage } from "./cinematic-image";
 import type { ResolvedMediaAsset } from "../model/types";
@@ -31,6 +39,7 @@ function GalleryFrame({
   height,
   asset,
   annotate,
+  alt,
 }: {
   index: number;
   brief?: string;
@@ -38,6 +47,8 @@ function GalleryFrame({
   asset?: ResolvedMediaAsset;
   /** Preview-only pencil marks (ADR-034). */
   annotate?: boolean;
+  /** Names a JOB in evidence mode, a MATERIAL in illustrative mode. */
+  alt: string;
 }) {
   const angle = [160, 120, 195, 140, 175, 110][index % 6];
   const warm = index % 2 === 0;
@@ -63,11 +74,11 @@ function GalleryFrame({
         }}
       />
       {asset && (
-        <CinematicImage asset={asset} alt={`Gallery photograph ${index + 1}`} fit="inset" />
+        <CinematicImage asset={asset} alt={alt} fit="inset" />
       )}
       {!asset && annotate && (
       <figcaption className="absolute inset-x-5 bottom-4 flex flex-col gap-1.5">
-        <AnnotationTag>gallery {String(index + 1).padStart(2, "0")} · media slot</AnnotationTag>
+        <AnnotationTag>gallery {String(index + 1).padStart(2, "0")} · customer photo</AnnotationTag>
         {brief && (
           <span
             className="line-clamp-2 text-xs leading-relaxed"
@@ -86,6 +97,7 @@ export function GalleryImmersiveGrid({
   section,
   variant,
   slots,
+  blueprint,
   mediaAssets,
   mode,
 }: PrimitiveSectionProps) {
@@ -95,14 +107,37 @@ export function GalleryImmersiveGrid({
   const frameAsset = (index: number) => mediaAssets?.[`${baseRef}.frame-${index + 1}`];
   const slider = variant === "full-bleed-slider";
 
+  // ADR-060: the same law as the portfolio. Preview is the shot list; public
+  // renders exactly the supplied frames and collapses when there are none.
+  const isPublic = mode === "public";
+  const frames = Array.from(
+    { length: projectFrameCount(section.identifier, variant) },
+    (_, index) => ({ index, asset: frameAsset(index) }),
+  );
+  const evidence = frames.filter((frame) => frame.asset);
+  const isEvidence = evidence.length > 0;
+  const voice = isEvidence
+    ? evidenceVoice()
+    : illustrativeVoice(
+        blueprint.designSystem?.themeRef,
+        blueprint.identity.trade,
+      );
+  const dressed = isEvidence
+    ? evidence
+    : frames.map((frame) => ({
+        ...frame,
+        // Showcase slots are 1-based, matching frame-N.
+        asset: mediaAssets?.[showcaseSlot(baseRef, frame.index + 1)],
+      }));
+  const shown = isPublic ? dressed.filter((frame) => frame.asset) : dressed;
+  if (isPublic && shown.length === 0) return null;
+
   return (
     <SectionShell section={section} className="overflow-hidden">
       <Container wide>
         <Reveal duration={0.9}>
-          <Eyebrow>{primitiveName(section)}</Eyebrow>
-          <SectionTitle id={`${section.id}-title`}>
-            Look closer
-          </SectionTitle>
+          <Eyebrow>{isPublic ? voice.eyebrow : primitiveName(section)}</Eyebrow>
+          <SectionTitle id={`${section.id}-title`}>{voice.title}</SectionTitle>
         </Reveal>
       </Container>
 
@@ -113,28 +148,37 @@ export function GalleryImmersiveGrid({
             role="group"
             aria-label="Immersive gallery"
           >
-            {Array.from({ length: 4 }, (_, index) => (
-              <div key={index} className="w-[min(88vw,60rem)] shrink-0 snap-center">
-                <GalleryFrame index={index} brief={brief} height="clamp(20rem, 55vw, 32rem)" asset={frameAsset(index)} annotate={annotate} />
+            {shown.map((frame) => (
+              <div key={frame.index} className="w-[min(88vw,60rem)] shrink-0 snap-center">
+                <GalleryFrame index={frame.index} brief={brief} height="clamp(20rem, 55vw, 32rem)" asset={frame.asset} annotate={annotate} alt={voice.alt(frame.index)} />
               </div>
             ))}
           </div>
-          <Container wide>
-            <p
-              className="mt-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em]"
-              style={{ ...monoFont, color: "var(--wr-ink-faint)" }}
-            >
-              <MoveHorizontal className="size-3.5" aria-hidden />
-              drag to explore
-            </p>
-          </Container>
+          {shown.length > 1 && (
+            <Container wide>
+              <p
+                className="mt-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em]"
+                style={{ ...monoFont, color: "var(--wr-ink-faint)" }}
+              >
+                <MoveHorizontal className="size-3.5" aria-hidden />
+                drag to explore
+              </p>
+            </Container>
+          )}
         </div>
       ) : (
         <Container wide>
           <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {HEIGHTS.map((height, index) => (
-              <Parallax key={index} distance={index % 3 === 1 ? 28 : 14}>
-                <GalleryFrame index={index} brief={brief} height={height} asset={frameAsset(index)} annotate={annotate} />
+            {shown.map((frame) => (
+              <Parallax key={frame.index} distance={frame.index % 3 === 1 ? 28 : 14}>
+                <GalleryFrame
+                  index={frame.index}
+                  brief={brief}
+                  height={HEIGHTS[frame.index % HEIGHTS.length]}
+                  asset={frame.asset}
+                  annotate={annotate}
+                  alt={voice.alt(frame.index)}
+                />
               </Parallax>
             ))}
           </div>

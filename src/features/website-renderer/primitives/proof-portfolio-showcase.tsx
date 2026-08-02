@@ -5,6 +5,14 @@
  * media-brief annotations — never fake photography. Each frame is a slot for
  * a real project; the captions direction tells the founder exactly what to
  * shoot. Hover lifts a frame toward the light; scroll staggers the entrance.
+ *
+ * The section has TWO VOICES (ADR-060). With the customer's own photographs
+ * it is EVIDENCE — "Our recent work", their jobs, their captions. Without
+ * them it is ILLUSTRATIVE — the same layout dressed in generated imagery of
+ * the trade's materials and finish, under a heading that claims a standard
+ * rather than a job. Only the first voice asserts provenance, so only the
+ * first requires real photographs.
+ *
  * Variants: "before-after-reveal" (the comparison leads), "cinematic-carousel"
  * (a scroll-snap strip), "filterable-grid" (filters activate with real data).
  */
@@ -12,6 +20,8 @@
 import { MoveHorizontal } from "lucide-react";
 import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal, Stagger, StaggerItem } from "../motion/motion";
+import { projectFrameCount, showcaseSlot } from "@/core/media/sourcing";
+import { evidenceVoice, illustrativeVoice } from "../model/showcase-copy";
 import { afterFirstDash } from "../model/slots";
 import { CinematicImage } from "./cinematic-image";
 import type { ResolvedMediaAsset } from "../model/types";
@@ -47,6 +57,7 @@ function ProjectFrame({
   tall = false,
   asset,
   annotate,
+  alt,
 }: {
   index: number;
   caption?: string;
@@ -54,6 +65,8 @@ function ProjectFrame({
   asset?: ResolvedMediaAsset;
   /** Preview-only pencil marks (ADR-034). */
   annotate?: boolean;
+  /** Names a JOB in evidence mode, a MATERIAL in illustrative mode. */
+  alt: string;
 }) {
   return (
     <figure
@@ -68,7 +81,7 @@ function ProjectFrame({
       {asset && (
         <CinematicImage
           asset={asset}
-          alt={`Completed project ${index + 1}`}
+          alt={alt}
           fit="inset"
           className="transition-transform duration-700 group-hover:scale-[1.04] motion-reduce:transition-none"
         />
@@ -90,7 +103,7 @@ function ProjectFrame({
       {!asset && annotate && (
         <figcaption className="absolute inset-x-5 bottom-4 flex flex-col gap-1.5">
           <AnnotationTag>
-            project {String(index + 1).padStart(2, "0")} · media slot
+            project {String(index + 1).padStart(2, "0")} · customer photo
           </AnnotationTag>
           {caption && (
             <span
@@ -110,6 +123,7 @@ export function ProofPortfolioShowcase({
   section,
   variant,
   slots,
+  blueprint,
   mediaAssets,
   mode,
 }: PrimitiveSectionProps) {
@@ -120,16 +134,55 @@ export function ProofPortfolioShowcase({
   const captionBrief = afterFirstDash(slots["captions-direction"]).trim();
   const carousel = variant === "cinematic-carousel";
   const beforeAfter = variant === "before-after-reveal";
-  const frameCount = carousel ? 5 : 4;
+  const pairBefore = mediaAssets?.[`${baseRef}.pair-before`];
+  const pairAfter = mediaAssets?.[`${baseRef}.pair-after`];
+  const hasPair = Boolean(pairBefore && pairAfter);
+
+  // TWO VOICES (ADR-060).
+  //
+  // EVIDENCE MODE the moment the business supplies its own photographs of
+  // finished jobs: "Our recent work", their frames, alt text that names a
+  // job. ILLUSTRATIVE MODE otherwise: the identical layout dressed with
+  // generated imagery of the trade's materials and finish, under a heading
+  // that claims a STANDARD rather than a job, with alt text that names a
+  // material. Nothing about the pixels changes — only what the page says
+  // about them, which is the whole of the legal difference.
+  const isPublic = mode === "public";
+  const frames = Array.from(
+    { length: projectFrameCount(section.identifier, variant) },
+    (_, index) => ({ index, asset: frameAsset(index) }),
+  );
+  const evidence = frames.filter((frame) => frame.asset);
+  const isEvidence = evidence.length > 0;
+  const voice = isEvidence
+    ? evidenceVoice()
+    : illustrativeVoice(
+        blueprint.designSystem?.themeRef,
+        blueprint.identity.trade,
+      );
+  const dressed = isEvidence
+    ? evidence
+    : frames.map((frame) => ({
+        ...frame,
+        // Showcase slots are 1-based, matching frame-N.
+        asset: mediaAssets?.[showcaseSlot(baseRef, frame.index + 1)],
+      }));
+  // Preview keeps every frame as a shot list; public shows only what exists,
+  // because a public page of empty coloured boxes is the ADR-034 defect
+  // whichever voice it is speaking in.
+  const shown = isPublic ? dressed.filter((frame) => frame.asset) : dressed;
+
+  // The before/after pair is EVIDENCE with no illustrative substitute — a
+  // comparison is structurally a claim about one property — so it waits.
+  const showComparison = beforeAfter && (hasPair || !isPublic);
+  if (isPublic && shown.length === 0 && !showComparison) return null;
 
   return (
     <SectionShell section={section} className="overflow-hidden">
       <Container wide>
         <Reveal duration={0.9}>
-          <Eyebrow>{primitiveName(section)}</Eyebrow>
-          <SectionTitle id={`${section.id}-title`}>
-            The work speaks first
-          </SectionTitle>
+          <Eyebrow>{isPublic ? voice.eyebrow : primitiveName(section)}</Eyebrow>
+          <SectionTitle id={`${section.id}-title`}>{voice.title}</SectionTitle>
           {/* portfolio-direction is photography DIRECTION, not customer copy */}
           {direction && annotate && (
             <p
@@ -141,61 +194,60 @@ export function ProofPortfolioShowcase({
           )}
         </Reveal>
 
-        {beforeAfter && (
+        {showComparison && (
           <div className="mt-12">
             <Comparison
-              mediaDirection={
-                mediaAssets?.[`${baseRef}.pair-before`] ? undefined : captionBrief || undefined
-              }
-              beforeAsset={mediaAssets?.[`${baseRef}.pair-before`]}
-              afterAsset={mediaAssets?.[`${baseRef}.pair-after`]}
+              mediaDirection={pairBefore ? undefined : captionBrief || undefined}
+              beforeAsset={pairBefore}
+              afterAsset={pairAfter}
               mode={mode}
             />
           </div>
         )}
 
-        {carousel ? (
-          <div className="relative mt-12">
-            <div
-              className="-mx-[var(--wr-space-gutter)] flex snap-x snap-mandatory gap-6 overflow-x-auto px-[var(--wr-space-gutter)] pb-4"
-              role="group"
-              aria-label="Project showcase"
-            >
-              {Array.from({ length: frameCount }, (_, index) => (
-                <div key={index} className="w-[min(78vw,34rem)] shrink-0 snap-center">
-                  <ProjectFrame index={index} caption={captionBrief} tall asset={frameAsset(index)} annotate={annotate} />
-                </div>
-              ))}
+        {shown.length > 0 &&
+          (carousel ? (
+            <div className="relative mt-12">
+              <div
+                className="-mx-[var(--wr-space-gutter)] flex snap-x snap-mandatory gap-6 overflow-x-auto px-[var(--wr-space-gutter)] pb-4"
+                role="group"
+                aria-label="Project showcase"
+              >
+                {shown.map((frame) => (
+                  <div key={frame.index} className="w-[min(78vw,34rem)] shrink-0 snap-center">
+                    <ProjectFrame index={frame.index} caption={captionBrief} tall asset={frame.asset} annotate={annotate} alt={voice.alt(frame.index)} />
+                  </div>
+                ))}
+              </div>
+              {shown.length > 1 && (
+                <p
+                  className="mt-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em]"
+                  style={{ ...monoFont, color: "var(--wr-ink-faint)" }}
+                >
+                  <MoveHorizontal className="size-3.5" aria-hidden />
+                  drag to explore
+                </p>
+              )}
             </div>
-            <p
-              className="mt-2 flex items-center gap-2 text-[11px] uppercase tracking-[0.18em]"
-              style={{ ...monoFont, color: "var(--wr-ink-faint)" }}
+          ) : (
+            <Stagger
+              className={`mt-12 grid gap-6 sm:grid-cols-2 ${beforeAfter ? "lg:grid-cols-3" : ""}`}
+              gap={0.12}
             >
-              <MoveHorizontal className="size-3.5" aria-hidden />
-              drag to explore
-            </p>
-          </div>
-        ) : (
-          <Stagger
-            className={`mt-12 grid gap-6 sm:grid-cols-2 ${beforeAfter ? "lg:grid-cols-3" : ""}`}
-            gap={0.12}
-          >
-            {Array.from(
-              { length: beforeAfter ? 3 : frameCount },
-              (_, index) => (
-                <StaggerItem key={index}>
+              {shown.map((frame) => (
+                <StaggerItem key={frame.index}>
                   <ProjectFrame
-                    index={beforeAfter ? index + 1 : index}
+                    index={frame.index}
                     caption={captionBrief}
-                    tall={!beforeAfter && index % 3 === 0}
-                    asset={frameAsset(index)}
+                    tall={!beforeAfter && frame.index % 3 === 0}
+                    asset={frame.asset}
                     annotate={annotate}
+                    alt={voice.alt(frame.index)}
                   />
                 </StaggerItem>
-              ),
-            )}
-          </Stagger>
-        )}
+              ))}
+            </Stagger>
+          ))}
 
         {variant === "filterable-grid" && annotate && (
           <Reveal delay={0.15}>

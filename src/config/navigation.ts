@@ -16,6 +16,7 @@ import {
   Target,
   type LucideIcon,
 } from "lucide-react";
+import { COMMAND_CENTRE_PATH } from "./routes";
 
 /**
  * Navigation is config-driven: the sidebar renders from these structures.
@@ -128,7 +129,7 @@ export const primaryNavigation: NavSection[] = [
  */
 export const commandCentreHome: NavItem = {
   title: "Command Centre",
-  href: "/",
+  href: COMMAND_CENTRE_PATH,
   icon: Home,
   description: "Home — the room: the state of the business, addressed to you.",
 };

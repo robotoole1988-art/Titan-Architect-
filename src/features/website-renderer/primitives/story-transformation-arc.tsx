@@ -9,6 +9,13 @@
  * operable. Scenes are art-directed atmospheres with explicit media-slot
  * annotations (no fake photography — ADR-022). Variants: "scroll-narrative" /
  * "chaptered".
+ *
+ * The pair is EVIDENCE (ADR-060): a before/after asserts "we turned that
+ * into this" about a real property, so both halves must be the customer's
+ * own photographs — a comparison is the one format with no honest generated
+ * substitute. Until both arrive the section keeps its place with an
+ * ATMOSPHERIC treatment instead: one generated image of the trade at its
+ * best, the real journey steps over it, and no comparison at all.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -17,7 +24,9 @@ import type { PrimitiveSectionProps } from "../model/types";
 import { Reveal, Stagger, StaggerItem } from "../motion/motion";
 import { CinematicImage } from "./cinematic-image";
 import type { ResolvedMediaAsset } from "../model/types";
+import { atmosphereSlot } from "@/core/media/sourcing";
 import { splitList } from "../model/slots";
+import { atmosphericArcTitle } from "../model/showcase-copy";
 import {
   AnnotationTag,
   Container,
@@ -99,7 +108,7 @@ export function Comparison({
           />
           {!afterAsset && annotate && (
             <div className="absolute bottom-4 right-5">
-              <AnnotationTag>after · media slot</AnnotationTag>
+              <AnnotationTag>after · customer photo</AnnotationTag>
             </div>
           )}
         </div>
@@ -126,7 +135,7 @@ export function Comparison({
           )}
           {!beforeAsset && annotate && (
             <div className="absolute bottom-4 left-5">
-              <AnnotationTag>before · media slot</AnnotationTag>
+              <AnnotationTag>before · customer photo</AnnotationTag>
             </div>
           )}
         </div>
@@ -175,7 +184,13 @@ export function Comparison({
   );
 }
 
-export function StoryTransformationArc({ section, slots, mediaAssets, mode }: PrimitiveSectionProps) {
+export function StoryTransformationArc({
+  section,
+  slots,
+  blueprint,
+  mediaAssets,
+  mode,
+}: PrimitiveSectionProps) {
   // The narrative arc is INTERNAL framework language (ADR-034) — visible copy
   // comes only from arc-headline + journey-steps (real customer steps).
   const journey = splitList(slots["journey-steps"]);
@@ -186,22 +201,72 @@ export function StoryTransformationArc({ section, slots, mediaAssets, mode }: Pr
   const beforeAsset = mediaAssets?.[`${baseRef}.before`];
   const afterAsset = mediaAssets?.[`${baseRef}.after`];
 
+  // ADR-060: the comparison IS the claim "we turned that into this" about a
+  // specific property, and half a pair is not a pair — a wipe over an empty
+  // scene reads as a broken image. So the slider requires BOTH of the
+  // customer's own photographs.
+  //
+  // It does not follow that the section must disappear. Without the pair it
+  // renders ATMOSPHERICALLY: one generated image of the trade at its best,
+  // the business's real journey steps over it, and no before/after at all.
+  // Full-strength visually, asserting nothing about whose job it was.
+  const hasPair = Boolean(beforeAsset && afterAsset);
+  const atmosphere = mediaAssets?.[atmosphereSlot(baseRef)];
+  const showComparison = hasPair || mode !== "public";
+  // Nothing to show and nothing to say — the ADR-034 collapse still applies.
+  if (!showComparison && !atmosphere && journey.length < 2) return null;
+
   return (
     <SectionShell section={section}>
       <Container wide>
         <Reveal>
-          <Eyebrow>{primitiveName(section)}</Eyebrow>
-          <SectionTitle id={`${section.id}-title`}>{headline}</SectionTitle>
+          <Eyebrow>
+            {mode === "public"
+              ? showComparison
+                ? "Before and after"
+                : "The standard"
+              : primitiveName(section)}
+          </Eyebrow>
+          <SectionTitle id={`${section.id}-title`}>
+            {showComparison
+              ? headline
+              : headline || atmosphericArcTitle(blueprint.designSystem?.themeRef)}
+          </SectionTitle>
         </Reveal>
 
-        <div className="mt-12">
-          <Comparison
-            mediaDirection={beforeAsset ? undefined : media?.direction}
-            beforeAsset={beforeAsset}
-            afterAsset={afterAsset}
-            mode={mode}
-          />
-        </div>
+        {showComparison ? (
+          <div className="mt-12">
+            <Comparison
+              mediaDirection={beforeAsset ? undefined : media?.direction}
+              beforeAsset={beforeAsset}
+              afterAsset={afterAsset}
+              mode={mode}
+            />
+          </div>
+        ) : (
+          atmosphere && (
+            <div className="mt-12">
+              <div
+                className="relative aspect-[16/10] w-full overflow-hidden rounded-[var(--wr-radius-lg)] border sm:aspect-[21/9]"
+                style={{ borderColor: "var(--wr-line)" }}
+              >
+                <CinematicImage
+                  asset={atmosphere}
+                  alt={`${blueprint.identity.trade ?? "The work"} at its best`}
+                  fit="inset"
+                />
+                <div
+                  aria-hidden
+                  className="absolute inset-0"
+                  style={{
+                    background:
+                      "linear-gradient(180deg, color-mix(in oklab, var(--wr-ink) 18%, transparent) 0%, transparent 45%)",
+                  }}
+                />
+              </div>
+            </div>
+          )
+        )}
 
         {journey.length > 1 && (
           <Stagger className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" gap={0.07}>

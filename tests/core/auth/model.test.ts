@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isFounderEmail, isProtectedAppPath } from "@/core/auth";
+import {
+  isFounderEmail,
+  isProtectedAppPath,
+  PUBLIC_COMPANY_SITE_PATHS,
+} from "@/core/auth";
 
 /**
  * ADR-054: the founder gate's pure rules. Deny-by-default everywhere —
@@ -30,7 +34,7 @@ describe("isFounderEmail", () => {
 describe("isProtectedAppPath", () => {
   it("protects every internal surface", () => {
     for (const path of [
-      "/",
+      "/command",
       "/dashboard",
       "/brain",
       "/crm",
@@ -48,8 +52,13 @@ describe("isProtectedAppPath", () => {
     }
   });
 
-  it("leaves the door, the published sites, and the API public", () => {
+  it("leaves the company site, the door, the published sites, and the API public", () => {
     for (const path of [
+      // TITAN's own public face (ADR-064) — the root is no longer the room.
+      "/",
+      "/advertising",
+      "/about",
+      "/privacy",
       "/login",
       "/auth/callback",
       "/sites/summit-roofing-rescue",
@@ -75,5 +84,31 @@ describe("isProtectedAppPath", () => {
     expect(isProtectedAppPath("/sitesX")).toBe(true);
     expect(isProtectedAppPath("/loginX")).toBe(true);
     expect(isProtectedAppPath("/authX")).toBe(true);
+  });
+
+  it("the company site is EXACT paths, so nothing rides in behind one", () => {
+    // Every other public rule is a prefix and needed the case above to prove
+    // it. The company site is a Set membership test, so a child path, a
+    // trailing slash and a look-alike are all simply not on the list — which
+    // is the entire reason it was built that way (ADR-064).
+    for (const path of [
+      "/advertising/secret",
+      "/advertisingX",
+      "/about/",
+      "/aboutX",
+      "/privacy/internal",
+      "/privacyX",
+    ]) {
+      expect(isProtectedAppPath(path), path).toBe(true);
+    }
+  });
+
+  it("every advertised public page is actually reachable", () => {
+    // The list and the gate cannot drift: whatever the company site declares
+    // public must pass the gate, or a page ships as a redirect to /login and
+    // the first person to notice is a stranger.
+    for (const path of PUBLIC_COMPANY_SITE_PATHS) {
+      expect(isProtectedAppPath(path), path).toBe(false);
+    }
   });
 });

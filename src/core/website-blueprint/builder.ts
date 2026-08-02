@@ -29,6 +29,12 @@ import type {
   MediaBlueprint,
 } from "./aspects";
 import type { BlueprintConfidence } from "./common";
+import {
+  ACCENT_REFS,
+  FORM_REFS,
+  identitySeed,
+  pickFor,
+} from "./identity-seed";
 import type { ComponentBlueprint } from "./components";
 import type {
   WebsiteBlueprintDependencies,
@@ -176,14 +182,15 @@ function strategyConfidence(reasoningRef: string): BlueprintConfidence {
 }
 
 /** Deterministic CTA intent from its label. */
-function ctaIntent(label: string): string {
-  const lower = label.toLowerCase();
-  if (lower.includes("call")) return "call";
-  if (lower.includes("book") || lower.includes("consultation")) return "book";
-  if (lower.includes("enquir")) return "enquire";
-  if (lower.includes("date")) return "check-availability";
-  return "quote";
-}
+/**
+ * ctaIntent() USED TO LIVE HERE.
+ *
+ * It read `label.toLowerCase().includes("call")` and nothing consumed the
+ * result, so the renderer hardcoded every CTA to the on-page form — including
+ * the one labelled "Call now". Deleted rather than fixed (ADR-062): the
+ * intent is now DECLARED by the trade profile as `primaryCtaAction` and
+ * carried here, so no layer infers behaviour from a string.
+ */
 
 /** Populate a primitive's required content slots from the strategy. */
 function contentFor(
@@ -250,10 +257,21 @@ function contentFor(
       // between — falling back to the SEO pillars for unclassified trades.
       const tradeId = matchTradeId(meta.trade);
       const services = (tradeId && getTradeDefinition(tradeId)?.services) || [];
-      const anchors =
-        services.length >= 2 ? services : seoStrategy.contentPillars;
+      // NEVER fall back to the SEO content pillars. They are an internal
+      // publishing plan — "project galleries & case studies", "design
+      // inspiration", "Leeds & area pages" — and an off-taxonomy trade was
+      // printing them to customers as its service list. All 35 taxonomy
+      // trades carry real services; anything outside it gets no anchors and
+      // the explorer keeps its honest ADR-034 collapse.
+      const anchors = services.length >= 2 ? services : [];
+      // With no real services the slot still exists (the registry requires
+      // it) but carries no anchor list — no trailing colon, so the primitive
+      // parses zero anchors and degrades to its crafted card grid. What it
+      // must never do is print the publishing plan as the offer.
       return [
-        `services: The core ${trade} services in ${meta.location}, organised around the surfaces and services customers choose: ${anchors.join(" · ")}.`,
+        anchors.length > 0
+          ? `services: The core ${trade} services in ${meta.location}, organised around the surfaces and services customers choose: ${anchors.join(" · ")}.`
+          : `services: The core ${trade} services in ${meta.location}.`,
         `service-explainers: Explain each service through the key messages — ${storytelling.keyMessages.join(" · ")}.`,
       ];
     }
@@ -503,13 +521,15 @@ function buildCta(
   strategy: ExperienceStrategy,
 ): CallToActionBlueprint {
   const label = strategy.conversionStrategy.primaryCta;
+  const intent = strategy.conversionStrategy.primaryCtaAction;
   return {
     id: `${sectionId}.cta`,
     confidence: strategyConfidence(
       "Primary call to action taken directly from the conversion strategy.",
     ),
     label,
-    intent: ctaIntent(label),
+    intent,
+    destination: intent === "call" ? "the business's phone" : "the on-page lead form",
   };
 }
 
@@ -981,6 +1001,9 @@ export function buildWebsiteBlueprint(
   const { strategy } = request;
   const { meta } = strategy;
   const archetype = classifyArchetype(meta.trade.toLowerCase());
+  // ADR-063: the second axis of variation. Stable per business, so a site
+  // never reshuffles itself between regenerations.
+  const identity = identitySeed(meta.businessName, meta.location);
   const homePage = buildHomePage(strategy, archetype);
   const coverageAreas = (request.coverageAreas ?? []).filter(
     (area) => area.trim().length > 0,
@@ -1096,9 +1119,12 @@ export function buildWebsiteBlueprint(
     designSystem: {
       id: "design-system",
       confidence: strategyConfidence(
-        "Theme reference chosen deterministically from the trade archetype; renderers resolve it to a token set.",
+        "Theme from the trade archetype; accent and form varied per business so two customers in one trade never get the same site (ADR-063).",
       ),
       themeRef: `titan-${archetype}`,
+      // The archetype fixes the register; the business picks within it.
+      colourRef: pickFor(identity, "accent", ACCENT_REFS),
+      typographyRef: pickFor(identity, "form", FORM_REFS),
     },
     futureExpansion: {
       id: "future-expansion",

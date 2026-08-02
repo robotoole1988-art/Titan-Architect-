@@ -87,6 +87,12 @@ export interface GenerateMediaSummary {
   planned: number;
   generated: number;
   skipped: number;
+  /**
+   * Evidentiary slots refused (ADR-060) — portfolio frames and before/after
+   * pairs. Not a failure: they are waiting for the business's own
+   * photographs, and the sections that use them stay collapsed until then.
+   */
+  awaitingCustomerPhotos: number;
   failed: Array<{ slotRef: string; error: string }>;
   totalCostUsd: number;
 }
@@ -126,6 +132,7 @@ export async function generateMissingMedia(
     planned: plan.length,
     generated: 0,
     skipped: 0,
+    awaitingCustomerPhotos: 0,
     failed: [],
     totalCostUsd: 0,
   };
@@ -137,15 +144,23 @@ export async function generateMissingMedia(
       summary.skipped += 1;
       continue;
     }
+    // ADR-060: an evidentiary slot is never commissioned, so it is never
+    // paid for. `prompt` is undefined on those items by construction — the
+    // narrowing below is the type system enforcing the law, not a courtesy
+    // check. The founder uploads the customer's own photograph instead.
+    const { prompt } = item;
+    if (item.sourcing !== "generated" || !prompt) {
+      summary.awaitingCustomerPhotos += 1;
+      continue;
+    }
     options.onProgress?.(item, index, plan.length);
     try {
       const isVideo = item.modality === "video";
       const generated = await provider.generate({
         modality: item.modality,
-        prompt: item.prompt,
+        prompt,
         width: item.width,
         height: item.height,
-        seed: item.pairSeed,
         ...(isVideo ? { durationSeconds: item.durationSeconds ?? 5 } : {}),
         format: isVideo ? "mp4" : "webp",
       });
@@ -185,7 +200,7 @@ export async function generateMissingMedia(
         provenance: {
           provider: generated.provider,
           model: generated.model,
-          prompt: item.prompt,
+          prompt,
           costUsd: generated.costUsd,
           generatedAt: new Date().toISOString(),
         },

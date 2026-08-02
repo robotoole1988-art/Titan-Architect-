@@ -11,6 +11,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { createServerClient } from "@supabase/ssr";
 import { isFounderEmail, type FounderSession } from "@/core/auth";
+import { COMMAND_CENTRE_PATH } from "@/config/routes";
 
 export function supabaseAuthConfigured(): boolean {
   return Boolean(
@@ -103,6 +104,8 @@ export async function completeMagicLinkSignIn(params: {
     await supabase.auth.signOut();
     return { destination: "/login?notice=not-authorised" };
   }
-  // The founder lands in the Command Centre (ADR-057).
-  return { destination: "/" };
+  // The founder lands in the Command Centre (ADR-057). Since ADR-064 gave
+  // the root to the public company site, that is /command — so the founder's
+  // actual journey, click the link and arrive in the room, is unchanged.
+  return { destination: COMMAND_CENTRE_PATH };
 }

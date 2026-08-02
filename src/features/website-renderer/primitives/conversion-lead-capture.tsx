@@ -25,8 +25,9 @@ import {
   SectionTitle,
   SignalCTA,
   monoFont,
-  primitiveName,
 } from "./atoms";
+import { primaryCtaHref } from "../model/cta";
+import { sectionEyebrow } from "../model/section-eyebrow";
 
 /** Pull the quoted objection from the objective direction, if present. */
 function extractQuote(text: string | undefined): string | undefined {
@@ -70,7 +71,9 @@ export function ConversionLeadCapture({
   serving,
   mode,
   blueprint,
+  contact,
 }: PrimitiveSectionProps) {
+  const ctaHref = primaryCtaHref(blueprint, contact);
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "failed">(
     "idle",
   );
@@ -134,7 +137,7 @@ export function ConversionLeadCapture({
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div>
             <Reveal>
-              <Eyebrow>{primitiveName(section)}</Eyebrow>
+              <Eyebrow>{sectionEyebrow(section, mode)}</Eyebrow>
               <SectionTitle id={`${section.id}-title`}>
                 {objection ? `“${objection}”` : ctaLabel}
               </SectionTitle>
@@ -143,7 +146,7 @@ export function ConversionLeadCapture({
             </Reveal>
             <Reveal delay={0.12}>
               <div className="mt-8">
-                <SignalCTA href="#callback" size="md">
+                <SignalCTA href={ctaHref} size="md">
                   <Phone className="size-4" aria-hidden />
                   {ctaLabel}
                 </SignalCTA>

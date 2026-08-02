@@ -44,3 +44,6 @@ next-env.d.ts
 
 # Supabase CLI workspace state (link ref, session scratch) — never committed.
 supabase/.temp/
+
+# handoff staging from the cloud session — never committed
+.titan-tmp/

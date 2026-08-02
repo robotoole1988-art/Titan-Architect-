@@ -9,7 +9,19 @@
 export interface TradeDefinition {
   /** Canonical id — matches market-intelligence tradeKey. */
   id: string;
+  /**
+   * The OPERATIONAL label — the founder's workbook wording, used in the CRM
+   * dropdown and internal reports. May carry qualifiers a customer should
+   * never read: "Plumbing & Heating (emergency)", "Garage — Clutch/Cambelt".
+   */
   label: string;
+  /**
+   * The CUSTOMER-FACING phrase, cased for the middle of a sentence
+   * (ADR-061). This is what reaches the visitor's H1, so acronyms keep their
+   * capitals and internal qualifiers are gone: "solar PV", "MOT & servicing",
+   * "private dentistry" — never "solar pv" or "dentists (private)".
+   */
+  customerName: string;
   services: ReadonlyArray<string>;
   /** Legacy free-text matchers (substring, lowercase) for old records. */
   matchers: ReadonlyArray<string>;
@@ -25,6 +37,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "roofing",
     label: "Roofing",
+    customerName: "roofing",
     matchers: ["roof", "guttering", "fascia", "soffit", "chimney"],
     services: [
       "Roof repairs",
@@ -42,6 +55,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "plumbing-heating-emergency",
     label: "Plumbing & Heating (emergency)",
+    customerName: "emergency plumbing & heating",
     matchers: ["plumb", "heating", "gas", "drain", "leak"],
     services: [
       "Emergency plumbing (24/7)",
@@ -59,6 +73,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "boiler-installation",
     label: "Boiler Installation",
+    customerName: "boiler installation",
     matchers: ["boiler"],
     services: [
       "Combi boiler installation",
@@ -72,6 +87,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "driveways-paving",
     label: "Driveways & Paving",
+    customerName: "driveways & paving",
     matchers: ["drive", "paving", "patio", "resin", "block pav"],
     services: [
       "Block paving driveways",
@@ -89,6 +105,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "landscaping",
     label: "Landscaping",
+    customerName: "landscaping",
     matchers: ["landscap", "garden design", "turf", "fencing"],
     services: [
       "Garden design",
@@ -106,6 +123,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "tree-surgery",
     label: "Tree Surgery",
+    customerName: "tree surgery",
     matchers: ["tree"],
     services: [
       "Tree felling & removal",
@@ -119,6 +137,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "solar-pv",
     label: "Solar PV",
+    customerName: "solar PV",
     matchers: ["solar"],
     services: [
       "Solar PV installation",
@@ -135,6 +154,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "battery-storage",
     label: "Battery Storage",
+    customerName: "battery storage",
     matchers: ["battery"],
     services: [
       "Home battery installation",
@@ -147,6 +167,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "ev-charger-installation",
     label: "EV Charger Installation",
+    customerName: "EV charger installation",
     matchers: ["ev charg", "ev-charg", "electric vehicle", "car charg", "evse"],
     services: [
       "Home EV charger installation",
@@ -159,6 +180,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "scaffolding",
     label: "Scaffolding",
+    customerName: "scaffolding",
     matchers: ["scaffold"],
     services: [
       "Domestic scaffolding",
@@ -172,6 +194,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "carpet-cleaning",
     label: "Carpet Cleaning",
+    customerName: "carpet cleaning",
     matchers: ["carpet"],
     services: [
       "Carpet deep cleaning",
@@ -185,6 +208,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "domestic-commercial-cleaning",
     label: "Domestic/Commercial Cleaning",
+    customerName: "domestic & commercial cleaning",
     matchers: ["cleaning", "cleaner"],
     services: [
       "Regular domestic cleaning",
@@ -198,6 +222,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "exterior-cleaning",
     label: "Exterior Cleaning (jet wash/render)",
+    customerName: "exterior cleaning",
     matchers: ["jet wash", "pressure wash", "render clean", "exterior clean", "gutter clean"],
     services: [
       "Driveway & patio jet washing",
@@ -211,6 +236,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "painting-decorating",
     label: "Painting & Decorating",
+    customerName: "painting & decorating",
     matchers: ["paint", "decorat"],
     services: [
       "Interior painting",
@@ -224,6 +250,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "mobile-mechanic",
     label: "Mobile Mechanic",
+    customerName: "mobile car repair",
     matchers: ["mobile mechanic"],
     services: [
       "Roadside diagnostics",
@@ -237,6 +264,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "garage-repairs",
     label: "Garage — Clutch/Cambelt/Wetbelt",
+    customerName: "clutch, cambelt & wetbelt repair",
     matchers: ["clutch", "cambelt", "wetbelt", "gearbox"],
     services: [
       "Clutch replacement",
@@ -250,6 +278,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "mot-servicing",
     label: "MOT & Servicing",
+    customerName: "MOT & servicing",
     matchers: ["mot", "car service", "servicing"],
     services: [
       "MOT tests",
@@ -263,6 +292,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "house-clearance",
     label: "House Clearance",
+    customerName: "house clearance",
     matchers: ["house clear", "clearance"],
     services: [
       "Full house clearances",
@@ -275,6 +305,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "garage-clearance",
     label: "Garage Clearance",
+    customerName: "garage clearance",
     matchers: ["garage clearance"],
     services: [
       "Single/double garage clearances",
@@ -286,6 +317,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "waste-removal",
     label: "Waste Removal (man & van)",
+    customerName: "waste removal",
     matchers: ["waste", "rubbish", "man and van", "man & van"],
     services: [
       "Household waste collection",
@@ -300,6 +332,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "electricians",
     label: "Electricians",
+    customerName: "electrical work",
     matchers: ["electric", "sparky", "rewir", "fuse board", "eicr"],
     services: [
       "Emergency electrician (24/7)",
@@ -315,6 +348,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "builders-general",
     label: "Builders (General)",
+    customerName: "building work",
     matchers: ["builder", "building contractor", "general build"],
     services: [
       "New builds",
@@ -328,6 +362,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "extensions-renovations",
     label: "Extensions & Renovations",
+    customerName: "extensions & renovations",
     matchers: ["extension", "renovation", "refurb", "loft conversion"],
     services: [
       "Single-storey extensions",
@@ -343,6 +378,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "windows-doors",
     label: "Windows & Doors (Double Glazing)",
+    customerName: "windows & doors",
     matchers: ["double glazing", "upvc", "window", "glazing", "bifold", "composite door"],
     services: [
       "uPVC windows",
@@ -358,6 +394,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "conservatories",
     label: "Conservatories",
+    customerName: "conservatories",
     matchers: ["conservator", "orangery"],
     services: [
       "New conservatories",
@@ -370,6 +407,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "dentists-private",
     label: "Dentists (Private)",
+    customerName: "private dentistry",
     matchers: ["dentist", "dental", "implant", "invisalign"],
     services: [
       "New patient examinations",
@@ -384,6 +422,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "solicitors",
     label: "Solicitors",
+    customerName: "legal services",
     matchers: ["solicitor", "law firm", "legal", "conveyanc"],
     services: [
       "Residential conveyancing",
@@ -397,6 +436,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "car-detailing",
     label: "Car Detailing",
+    customerName: "car detailing",
     matchers: ["detailing", "valeting", "ceramic coating"],
     services: [
       "Full detail (interior + exterior)",
@@ -410,6 +450,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "brickwork",
     label: "Brickwork",
+    customerName: "brickwork",
     matchers: ["brick", "repointing", "masonry"],
     services: [
       "Garden & boundary walls",
@@ -422,6 +463,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "swimming-pools",
     label: "Swimming Pools",
+    customerName: "swimming pools",
     matchers: ["swimming pool", "pool build", "pool install"],
     services: [
       "New pool design & build",
@@ -435,6 +477,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "tarmac-surfacing",
     label: "Tarmac & Surfacing",
+    customerName: "tarmac & surfacing",
     matchers: ["tarmac", "surfacing", "asphalt"],
     services: [
       "Tarmac driveways",
@@ -447,6 +490,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "artificial-grass",
     label: "Artificial Grass",
+    customerName: "artificial grass",
     matchers: ["artificial grass", "astro turf", "astroturf", "fake grass"],
     services: [
       "Artificial lawn installation",
@@ -459,6 +503,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "chimney-fireplaces",
     label: "Chimney & Fireplaces",
+    customerName: "chimneys & fireplaces",
     matchers: ["fireplace", "log burner", "wood burner", "stove install", "chimney sweep"],
     services: [
       "Log burner & stove installation",
@@ -471,6 +516,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "damp-proofing",
     label: "Damp Proofing",
+    customerName: "damp proofing",
     // "damp proofing" (two words) must out-rank roofing's "roof", which
     // hides inside the word "proofing" — the substring trap.
     matchers: ["damp proofing", "damp proof", "rising damp", "damp", "condensation control", "basement tanking"],
@@ -486,6 +532,7 @@ export const TRADE_TAXONOMY: ReadonlyArray<TradeDefinition> = [
   {
     id: "hvac-air-conditioning",
     label: "HVAC / Air Conditioning",
+    customerName: "air conditioning & HVAC",
     matchers: ["hvac", "air con", "aircon", "heat pump", "ventilation"],
     services: [
       "Air conditioning installation",
@@ -506,6 +553,41 @@ export function getTradeDefinition(id: string): TradeDefinition | undefined {
 
 export function tradeServices(id: string): ReadonlyArray<string> {
   return BY_ID.get(id)?.services ?? [];
+}
+
+/**
+ * The trade as a CUSTOMER should read it, mid-sentence (ADR-061).
+ *
+ * Prose used to interpolate `meta.trade.toLowerCase()`, which produced live
+ * headlines reading "Certified, future-proof solar pv in Leeds",
+ * "Leeds's mot & servicing, done right" and "Gentle, expert dentists
+ * (private) in Leeds". The H1 is the most-read string on the site.
+ *
+ * Lowercasing is still right for KEYWORDS and MATCHING — "solar pv leeds" is
+ * a real search — so those call sites keep `.toLowerCase()`. Only prose
+ * comes through here.
+ */
+export function tradePhrase(freeText: string): string {
+  const id = matchTradeId(freeText);
+  const known = id ? BY_ID.get(id)?.customerName : undefined;
+  if (known) return known;
+  return humaniseTradePhrase(freeText);
+}
+
+/**
+ * The off-taxonomy fallback. Drops internal parentheticals and lowercases
+ * ordinary words while leaving ACRONYMS alone, so a free-text "EV Charger
+ * Installation" survives as "EV charger installation" rather than becoming
+ * "ev charger installation".
+ */
+export function humaniseTradePhrase(freeText: string): string {
+  return freeText
+    .replace(/\s*\([^)]*\)\s*/g, " ")
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => (/[A-Z]{2,}/.test(word) ? word : word.toLowerCase()))
+    .join(" ")
+    .trim();
 }
 
 /**

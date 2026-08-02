@@ -230,7 +230,15 @@ export function renderPage(
       `Page "${options.pageId}" is not in this blueprint's collection.`,
     );
   }
-  const theme = resolveTheme(blueprint.designSystem?.themeRef);
+  // ADR-063: the archetype's register, in this business's shade.
+  const theme = resolveTheme(blueprint.designSystem?.themeRef, {
+    ...(blueprint.designSystem?.colourRef
+      ? { colourRef: blueprint.designSystem.colourRef }
+      : {}),
+    ...(blueprint.designSystem?.typographyRef
+      ? { typographyRef: blueprint.designSystem.typographyRef }
+      : {}),
+  });
   const pageHref =
     options.pageHref ??
     ((pageId: string, suggestedUrl: string) => suggestedUrl || `/${pageId}`);
@@ -316,7 +324,7 @@ export function renderPage(
       data-theme={theme.ref}
     >
       <style dangerouslySetInnerHTML={{ __html: ROOT_CSS }} />
-      <SiteHeader blueprint={primitiveBlueprint} nav={nav} />
+      <SiteHeader blueprint={primitiveBlueprint} nav={nav} contact={options.contact} />
       <main>{sections}</main>
       <SiteFooter
         blueprint={primitiveBlueprint}

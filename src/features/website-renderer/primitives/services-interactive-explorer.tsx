@@ -22,8 +22,8 @@ import {
   SectionTitle,
   displayFont,
   monoFont,
-  primitiveName,
 } from "./atoms";
+import { sectionEyebrow } from "../model/section-eyebrow";
 
 /** "The core X services in Y, organised around…" → the lead sentence. */
 function leadSentence(direction: string | undefined): string {
@@ -70,7 +70,7 @@ export function ServicesInteractiveExplorer({ section, variant, slots, mediaAsse
     <SectionShell section={section}>
       <Container wide>
         <Reveal>
-          <Eyebrow>{primitiveName(section)}</Eyebrow>
+          <Eyebrow>{sectionEyebrow(section, mode)}</Eyebrow>
           <SectionTitle id={`${section.id}-title`}>{heading}</SectionTitle>
         </Reveal>
 

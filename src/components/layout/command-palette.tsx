@@ -19,6 +19,7 @@ import {
   secondaryNavigation,
   type NavItem,
 } from "@/config/navigation";
+import { COMMAND_CENTRE_PATH } from "@/config/routes";
 
 function allDestinations(): NavItem[] {
   return [
@@ -46,7 +47,9 @@ export function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   // The way home rides at the top of the list — except in the room itself.
   const items = useMemo(
-    () => (pathname === "/" ? allDestinations() : [commandCentreHome, ...allDestinations()]),
+    () => (pathname === COMMAND_CENTRE_PATH
+        ? allDestinations()
+        : [commandCentreHome, ...allDestinations()]),
     [pathname],
   );
   const matches = useMemo(() => filter(query, items), [query, items]);

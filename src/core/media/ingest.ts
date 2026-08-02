@@ -8,9 +8,10 @@
 import type { Business, BusinessSpineRepositories, MediaRecord } from "@/core/business";
 import { createLqip } from "./lqip";
 import type { MediaStorage } from "./generate";
+import { CUSTOMER_UPLOAD_PROVIDER } from "./sourcing";
 
 /** Providers whose assets are the business's own (not generated). */
-export const CUSTOMER_UPLOAD_PROVIDER = "customer-upload";
+export { CUSTOMER_UPLOAD_PROVIDER };
 
 /** Accepted upload formats, normalised (jpg → jpeg). */
 const ACCEPTED_FORMATS = new Set(["webp", "jpeg", "png"]);

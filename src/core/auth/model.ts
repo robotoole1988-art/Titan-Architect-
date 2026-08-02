@@ -28,10 +28,29 @@ export function isFounderEmail(
 }
 
 /**
+ * The public company site (ADR-064) — TITAN's own front door.
+ *
+ * EXACT paths, deliberately not a prefix. Every other public rule here is a
+ * `startsWith`, and each one needed a look-alike test to prove `/sitesX`
+ * stays shut. The company site needs no such proof: a page is public because
+ * its exact pathname is written on this list, so adding one is a decision
+ * somebody made on purpose, in a diff, rather than a prefix quietly widening.
+ * This is the one surface where a mistake is world-readable.
+ */
+export const PUBLIC_COMPANY_SITE_PATHS: ReadonlySet<string> = new Set([
+  "/",
+  "/advertising",
+  "/about",
+  "/privacy",
+]);
+
+/**
  * Route classification for the auth gate (ADR-054).
  *
  * PUBLIC (cookieless — the middleware must never touch auth or Set-Cookie
  * here, keeping the sites' no-tracking-cookies claim true):
+ * - `/`, `/advertising`, `/about`, `/privacy` — TITAN's own company site
+ *   (ADR-064). The founder's room moved to `/command` to free the root.
  * - `/sites/*` — published customer sites (slug + hostname serving)
  * - `/login`, `/auth/*` — the door itself
  * - `/api/*` — enquiry submit, metrics beacon, media streaming, keepalive
@@ -41,6 +60,7 @@ export function isFounderEmail(
  * founder session.
  */
 export function isProtectedAppPath(pathname: string): boolean {
+  if (PUBLIC_COMPANY_SITE_PATHS.has(pathname)) return false;
   if (pathname === "/login" || pathname.startsWith("/login/")) return false;
   if (pathname.startsWith("/auth/")) return false;
   if (pathname.startsWith("/sites/")) return false;

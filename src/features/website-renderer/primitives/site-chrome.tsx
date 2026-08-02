@@ -8,6 +8,7 @@ import { Mail, Phone } from "lucide-react";
 import type { WebsiteBlueprint } from "@/core/website-blueprint";
 import type { RenderContact, RenderMode, SiteNavLink } from "../model/types";
 import { AnnotationTag, Container, SignalCTA, displayFont, monoFont } from "./atoms";
+import { primaryCtaHref, telHref } from "../model/cta";
 
 /** Page-collection links (ADR-028) — blueprint navigation drives these. */
 function NavLinks({ nav, footer = false }: { nav: SiteNavLink[]; footer?: boolean }) {
@@ -38,11 +39,15 @@ function NavLinks({ nav, footer = false }: { nav: SiteNavLink[]; footer?: boolea
 export function SiteHeader({
   blueprint,
   nav = [],
+  contact,
 }: {
   blueprint: WebsiteBlueprint;
   nav?: SiteNavLink[];
+  /** ADR-062: the header CTA dials on a call-first site. */
+  contact?: RenderContact;
 }) {
   const { identity, header } = blueprint;
+  const ctaHref = primaryCtaHref(blueprint, contact);
   return (
     <header className="absolute inset-x-0 top-0 z-40">
       <Container wide className="flex items-center justify-between gap-4 py-5">
@@ -77,7 +82,7 @@ export function SiteHeader({
               header.cta.label.length > 14 ? "hidden sm:inline-flex" : "inline-flex"
             }
           >
-            <SignalCTA href="#callback" size="sm">
+            <SignalCTA href={ctaHref} size="sm">
               <Phone className="size-3.5" aria-hidden />
               {header.cta.label}
             </SignalCTA>
@@ -128,7 +133,7 @@ export function SiteFooter({
               <div className="flex flex-col items-start gap-2.5">
                 {contact.phone && (
                   <a
-                    href={`tel:${contact.phone.replace(/\s+/g, "")}`}
+                    href={telHref(contact.phone)}
                     className="inline-flex items-center gap-2 text-base font-semibold focus-visible:outline-2 focus-visible:outline-offset-4"
                     style={{ color: "var(--wr-ink)", outlineColor: "var(--wr-accent)" }}
                   >

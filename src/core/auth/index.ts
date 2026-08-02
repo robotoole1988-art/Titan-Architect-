@@ -6,5 +6,6 @@
 export {
   isFounderEmail,
   isProtectedAppPath,
+  PUBLIC_COMPANY_SITE_PATHS,
   type FounderSession,
 } from "./model";
