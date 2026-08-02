@@ -1,5 +1,5 @@
 import type { IndustryDna } from "../industry-dna";
-import { sourced, vol2 } from "./sources";
+import { sourced, vol2, vol3 } from "./sources";
 
 /**
  * Track C — outdoor / visual transformation trades.
@@ -80,7 +80,26 @@ export const TRACK_C_DNA: Readonly<Record<string, IndustryDna>> = {
       extensions: SRC_LANDSCAPING,
     },
     searchSeo: {},
-    paidAdvertising: {},
+    paidAdvertising: {
+      googleAds: [
+        {
+          label: "UK benchmark",
+          value: "CPL £15–£40",
+        },
+      ],
+      metaAds: [
+        {
+          label: "Visual-transformation trade: Meta can be the PRIMARY channel",
+          value: "planning CPL £20–£40",
+          description:
+            "A UK premium landscaper ran Meta at £0.38 CPC alongside Google's £7.22 CPL on a £21.50/day combined budget for 2–3 qualified leads/week. Before/after with town + price anchor is the format.",
+        },
+      ],
+      extensions: sourced(
+        vol3("2. GOOGLE SEARCH ADS FOR TRADES"),
+        vol3("Part IV — Meta ads"),
+      ),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {
@@ -455,7 +474,17 @@ export const TRACK_C_DNA: Readonly<Record<string, IndustryDna>> = {
       extensions: SRC_EXTERIOR,
     },
     searchSeo: {},
-    paidAdvertising: {},
+    paidAdvertising: {
+      metaAds: [
+        {
+          label: "The strongest Meta trade in the portfolio",
+          value: "CPL £15–30 ($25–40) · 15–25% lead→booked · 4–6x ROAS reported",
+          description:
+            "Transformation content is native to the feed; before/after IS the ad. Spring-weighted pacing — March is the cheapest UK buying month.",
+        },
+      ],
+      extensions: sourced(vol3("Part IV — Meta ads")),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {

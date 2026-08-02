@@ -1,5 +1,5 @@
 import type { IndustryDna } from "../industry-dna";
-import { sourced, vol2 } from "./sources";
+import { sourced, vol2, vol3 } from "./sources";
 
 /**
  * Track E — solicitors: the heaviest-regulated vertical TITAN serves.
@@ -81,7 +81,35 @@ export const TRACK_E_DNA: Readonly<Record<string, IndustryDna>> = {
       extensions: SRC_SOLICITORS,
     },
     searchSeo: {},
-    paidAdvertising: {},
+    paidAdvertising: {
+      googleAds: [
+        {
+          label: "UK benchmark",
+          value: "CPC £8.25 average — among the highest of TITAN's verticals",
+          description:
+            "Long cycles, forms over calls, enhanced conversions for leads, and strict negatives (job-seekers, students, 'free advice').",
+        },
+      ],
+      localServicesAds: [
+        {
+          label: "No UK LSA outside London",
+          description:
+            "Professional Services LSAs (16 legal specialties) are a Greater London pilot only — everywhere else, solicitors are Search-only.",
+        },
+      ],
+      metaAds: [
+        {
+          label: "Meta works for PLANNABLE matters only",
+          description:
+            "Wills, conveyancing, family — not distress matters. Social proof is the campaign: testimonial video, review cards, practitioner-to-camera.",
+        },
+      ],
+      extensions: sourced(
+        vol3("2. GOOGLE SEARCH ADS FOR TRADES"),
+        vol3("1. LOCAL SERVICES ADS (LSAs) IN THE UK, 2025–26"),
+        vol3("Part IV — Meta ads"),
+      ),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {

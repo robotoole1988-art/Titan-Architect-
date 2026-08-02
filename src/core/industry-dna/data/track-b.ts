@@ -1,5 +1,5 @@
 import type { IndustryDna } from "../industry-dna";
-import { sourced, vol2 } from "./sources";
+import { sourced, vol2, vol3 } from "./sources";
 
 /**
  * Track B — big-ticket considered purchases.
@@ -455,7 +455,20 @@ export const TRACK_B_DNA: Readonly<Record<string, IndustryDna>> = {
       extensions: SRC_BUILDERS,
     },
     searchSeo: {},
-    paidAdvertising: {},
+    paidAdvertising: {
+      googleAds: [
+        {
+          label: "UK benchmark",
+          value: "CPL £40–£100 (extensions family)",
+          description:
+            "Justified by £1.5k–£50k jobs — Search-first with quote-form landing pages and lead-quality scoring via offline conversion import.",
+        },
+      ],
+      extensions: sourced(
+        vol3("2. GOOGLE SEARCH ADS FOR TRADES"),
+        vol3("6. WHAT THE BEST TRADE-PPC OPERATORS PUBLISH (NUMBERS)"),
+      ),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {

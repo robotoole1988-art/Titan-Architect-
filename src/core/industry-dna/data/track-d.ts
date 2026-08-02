@@ -1,5 +1,5 @@
 import type { IndustryDna } from "../industry-dna";
-import { sourced, vol2 } from "./sources";
+import { sourced, vol2, vol3 } from "./sources";
 
 /**
  * Track D — booked van services.
@@ -116,7 +116,16 @@ export const TRACK_D_DNA: Readonly<Record<string, IndustryDna>> = {
       extensions: SRC_CARPET,
     },
     searchSeo: {},
-    paidAdvertising: {},
+    paidAdvertising: {
+      googleAds: [
+        {
+          label: "UK benchmark",
+          value: "CPL £8–£25 (cleaning family)",
+          description: "The cheapest lead family in the portfolio — budget maths work even at modest spend.",
+        },
+      ],
+      extensions: sourced(vol3("2. GOOGLE SEARCH ADS FOR TRADES")),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {},
