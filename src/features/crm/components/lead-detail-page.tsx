@@ -20,6 +20,7 @@ import type { Deal } from "@/core/pricing";
 import { EstimateCard } from "@/features/market";
 import { addBusinessNote, addVerifiedReview, moveBusinessStage } from "../api/actions";
 import { ActivityLog, CrmChrome, StageBadge } from "./crm-atoms";
+import { KnowledgePanel } from "./knowledge-panel";
 import { SellingTools } from "./selling-tools";
 import { SitePanel } from "./site-panel";
 
@@ -225,6 +226,11 @@ export async function CrmLeadDetailPage({ businessId }: { businessId: string }) 
             existingVersion={dealArtifact?.version ?? null}
           />
           <PitchPanel business={business} />
+          {/* Queue item 2: the industry knowledge base, in hand mid-pitch. */}
+          <KnowledgePanel
+            trade={business.trade}
+            tradeId={business.tradeId ?? undefined}
+          />
         </div>
 
         <div className="flex flex-col gap-6">
