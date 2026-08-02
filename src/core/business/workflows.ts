@@ -176,11 +176,18 @@ export async function publishWebsite(
   return publication;
 }
 
-/** Take the live site offline (explicit founder action). */
+/**
+ * Take the live site offline (explicit founder action).
+ *
+ * Returns the publication that WAS live (or null if nothing was), so the
+ * caller can evict its cached pages. Capturing it here — before the row
+ * flips — is what makes the eviction reliable: once the publication is
+ * unpublished, its slug can no longer be looked up.
+ */
 export async function unpublishWebsite(
   repos: BusinessSpineRepositories,
   businessId: string,
-): Promise<void> {
+): Promise<Publication | null> {
   const current = await repos.publications.current(businessId);
   await repos.publications.unpublish(businessId);
   await repos.activity.log({
@@ -191,6 +198,7 @@ export async function unpublishWebsite(
       : "Unpublish requested — nothing was live",
     meta: { unpublished: true },
   });
+  return current;
 }
 
 export interface EnquiryInput {
