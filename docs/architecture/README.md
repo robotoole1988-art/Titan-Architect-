@@ -93,6 +93,7 @@ ADR that supersedes the old one and update the old one's status.
 | [064](./adr-064-titan-has-a-public-face.md) | TITAN has a public face — the root serves the company site, the founder's room moves to /command, and the honesty law turns inward | Accepted |
 | [065](./adr-065-the-price-list-tells-the-truth.md) | The price list tells the truth — how a service is delivered is a typed field, so four hand-delivered channels can no longer read like automation | Accepted |
 | [066](./adr-066-a-trade-is-looked-up-never-guessed.md) | A trade is looked up, never guessed — all 35 taxonomy ids map explicitly; closes the substring-inference class opened by 059, 061 and 062 | Accepted |
+| [067](./adr-067-knowledge-is-sourced-or-silent.md) | Knowledge is sourced or it is silent — the 35-trade Industry DNA knowledge base: provenance-gated, exact-id resolved, no silent gaps | Accepted |
 
 ### Writing a new ADR
 
