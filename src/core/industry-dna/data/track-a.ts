@@ -1,5 +1,5 @@
 import type { IndustryDna } from "../industry-dna";
-import { sourced, vol2 } from "./sources";
+import { sourced, vol2, vol3 } from "./sources";
 
 /**
  * Track A — emergency and compliance-led home trades.
@@ -100,7 +100,27 @@ export const TRACK_A_DNA: Readonly<Record<string, IndustryDna>> = {
       ],
       extensions: SRC_PLUMBING,
     },
-    paidAdvertising: {},
+    paidAdvertising: {
+      googleAds: [
+        {
+          label: "UK benchmarks",
+          value: "CPC £4–£12 ('emergency plumber near me' £9.52–£22) · CPL £25–£60",
+          description:
+            "24/7 scheduling only if calls are answered 24/7 — nights and weekends are the highest-value auctions, but an unanswered £15 click is pure waste.",
+        },
+      ],
+      localServicesAds: [
+        {
+          label: "LSA-first for emergency plumbing",
+          description:
+            "Pay-per-lead and typically materially cheaper than Search for emergency trades; responsiveness (answered calls) is simultaneously the top LSA ranking lever.",
+        },
+      ],
+      extensions: sourced(
+        vol3("2. GOOGLE SEARCH ADS FOR TRADES"),
+        vol3("1. LOCAL SERVICES ADS (LSAs) IN THE UK, 2025–26"),
+      ),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {
@@ -196,7 +216,17 @@ export const TRACK_A_DNA: Readonly<Record<string, IndustryDna>> = {
       extensions: SRC_BOILER,
     },
     searchSeo: {},
-    paidAdvertising: {},
+    paidAdvertising: {
+      googleAds: [
+        {
+          label: "UK benchmarks",
+          value: "CPC £3–£8 · CPL £30–£65 (job value £200–£2,500)",
+          description:
+            "One campaign per service line is the structural law here: boiler install ≠ boiler repair ≠ emergency callout — different urgency, ticket and CPL tolerance.",
+        },
+      ],
+      extensions: sourced(vol3("2. GOOGLE SEARCH ADS FOR TRADES")),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {
@@ -387,7 +417,17 @@ export const TRACK_A_DNA: Readonly<Record<string, IndustryDna>> = {
       ],
       extensions: SRC_ELECTRICIANS,
     },
-    paidAdvertising: {},
+    paidAdvertising: {
+      googleAds: [
+        {
+          label: "UK benchmarks",
+          value: "CPC £2.49–£8.23 · CPL £20–£50",
+          description:
+            "The fixed-price certificate landers (EICR, fuseboard) are the natural dedicated landing pages the structure law demands.",
+        },
+      ],
+      extensions: sourced(vol3("2. GOOGLE SEARCH ADS FOR TRADES")),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {

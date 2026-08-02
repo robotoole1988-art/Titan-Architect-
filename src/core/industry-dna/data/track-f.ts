@@ -1,5 +1,5 @@
 import type { IndustryDna } from "../industry-dna";
-import { sourced, vol1 } from "./sources";
+import { sourced, vol1, vol3 } from "./sources";
 
 /**
  * Track F — the four trades researched in Volume 1 (site-excellence
@@ -86,7 +86,29 @@ export const TRACK_F_DNA: Readonly<Record<string, IndustryDna>> = {
       extensions: SRC_ROOFING,
     },
     searchSeo: {},
-    paidAdvertising: {},
+    paidAdvertising: {
+      googleAds: [
+        {
+          label: "UK benchmark — with the category's health warning",
+          value: "CPL £35–£80 (jobs £500–£5,000+) · US roofing CVR ~3.7%, the worst in home services",
+          description:
+            "Roofing CPL is meaningless without lead-quality classification — repair vs re-roof leads differ 10x in value under one number. Offline conversion import and lead scoring are essential, not optional.",
+        },
+      ],
+      metaAds: [
+        {
+          label: "Strong on Meta with quality controls",
+          value: "benchmark ~$30 CPL, healthy range $25–60",
+          description:
+            "Storm-reactive is the one emergency play that works on Meta: post-storm roof-repair ads see ~50% higher engagement in a 6–72h window. Calls objective is a legitimate B-test for the 55+ homeowner skew.",
+        },
+      ],
+      extensions: sourced(
+        vol3("2. GOOGLE SEARCH ADS FOR TRADES"),
+        vol3("6. WHAT THE BEST TRADE-PPC OPERATORS PUBLISH (NUMBERS)"),
+        vol3("Part IV — Meta ads"),
+      ),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {},
@@ -157,7 +179,26 @@ export const TRACK_F_DNA: Readonly<Record<string, IndustryDna>> = {
       ],
       extensions: SRC_DRIVEWAYS,
     },
-    paidAdvertising: {},
+    paidAdvertising: {
+      googleAds: [
+        {
+          label: "UK benchmark",
+          value: "CPL £25–£60 (jobs £1,500–£8,000)",
+        },
+      ],
+      metaAds: [
+        {
+          label: "Visual-transformation trade: Meta can be the PRIMARY channel",
+          value: "planning CPL £20–£40",
+          description:
+            "Before/after carousel + timelapse + drone finish shot, town-named, price-anchored ('driveways from £4,500' repels bad fits by design). Finance copy stays off Meta or triggers the Financial Products category.",
+        },
+      ],
+      extensions: sourced(
+        vol3("2. GOOGLE SEARCH ADS FOR TRADES"),
+        vol3("Part IV — Meta ads"),
+      ),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {},
@@ -221,7 +262,25 @@ export const TRACK_F_DNA: Readonly<Record<string, IndustryDna>> = {
       extensions: SRC_SOLAR,
     },
     searchSeo: {},
-    paidAdvertising: {},
+    paidAdvertising: {
+      googleAds: [
+        {
+          label: "Search-only on Google — no UK solar LSA category exists",
+        },
+      ],
+      metaAds: [
+        {
+          label: "Facebook still dominates UK solar lead gen",
+          value: "CPL £20–£80 · a worked case: 6:1 ROI at £50 CPL",
+          description:
+            "Winning angles: ROI calculators, neighbourhood social proof ('12 installs in {town}' — only when true), grant/deadline urgency where real. Savings figures are always tariff-dependent estimates, never promises (the honesty law outranks the ad angle).",
+        },
+      ],
+      extensions: sourced(
+        vol3("1. LOCAL SERVICES ADS (LSAs) IN THE UK, 2025–26"),
+        vol3("Part IV — Meta ads"),
+      ),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {},
@@ -295,7 +354,27 @@ export const TRACK_F_DNA: Readonly<Record<string, IndustryDna>> = {
       extensions: SRC_DENTAL,
     },
     searchSeo: {},
-    paidAdvertising: {},
+    paidAdvertising: {
+      googleAds: [
+        {
+          label: "The priciest clicks in the portfolio — no UK LSA route",
+          description:
+            "Dental clicks run highest of all verticals (US benchmark CPC $9.78, CPL $76.71); forms and booking flows over calls, enhanced conversions for leads, strict negatives.",
+        },
+      ],
+      metaAds: [
+        {
+          label: "Meta for cosmetic offers; Google captures the high-ticket search",
+          value: "£8–£35 CPL cosmetic · £250–£450 per BOOKED implant/Invisalign patient",
+          description:
+            "Judge on cost per booked patient, never CPL. Social proof IS the campaign — testimonial video, review cards, practitioner-to-camera — all inside the GDC/ASA consent and claims rules.",
+        },
+      ],
+      extensions: sourced(
+        vol3("2. GOOGLE SEARCH ADS FOR TRADES"),
+        vol3("Part IV — Meta ads"),
+      ),
+    },
     brand: {},
     sales: {},
     marketIntelligence: {},
