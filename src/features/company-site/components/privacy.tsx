@@ -37,7 +37,7 @@ export function CompanyPrivacyPage() {
           </div>
         </section>
 
-        <Section id="site" eyebrow="This website" title="No tracking, no cookies, no form.">
+        <Section id="site" eyebrow="This website" title="No tracking, no cookies, one form.">
           <Prose>
             <p>
               These pages carry no analytics, no advertising tags and no
@@ -45,22 +45,27 @@ export function CompanyPrivacyPage() {
               them.
             </p>
             <p>
-              There is no contact form. The only way to contact TITAN from this
-              site is by email, which means the decision to send your details,
-              and which details to send, stays entirely with you.
+              There is one contact form, and it stores exactly what you type
+              into it — your name, your business&rsquo;s name and trade, the
+              area you work, your email, a phone number if you give one, and
+              your message. It stores nothing you did not type. Submissions go
+              into TITAN&rsquo;s own enquiry system — the same capture TITAN
+              builds for its customers — so the founder can read them and
+              reply. Nothing else touches them.
             </p>
             <p>
-              If you do email us, we hold that correspondence in order to reply
-              to you and, if we go on to work together, to keep a record of what
-              was agreed. We do not add you to a mailing list and we do not pass
-              your details to anyone else. Ask us to delete the correspondence
-              and we will, unless we are required to keep it.
+              Whether you use the form or email instead, we hold what you send
+              in order to reply to you and, if we go on to work together, to
+              keep a record of what was agreed. We do not add you to a mailing
+              list and we do not pass your details to anyone else. Ask us to
+              delete it and we will, unless we are required to keep it.
             </p>
             <p>
               This site is hosted on infrastructure that keeps standard server
               logs, including IP addresses, for security and operational
-              purposes. That is a function of the hosting, not something TITAN
-              reads or analyses.
+              purposes. The form&rsquo;s spam protection counts recent
+              submissions per network address and keeps no record beyond that
+              window. Neither is something TITAN reads or analyses.
             </p>
           </Prose>
         </Section>

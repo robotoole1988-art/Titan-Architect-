@@ -42,6 +42,7 @@ export const PUBLIC_COMPANY_SITE_PATHS: ReadonlySet<string> = new Set([
   "/advertising",
   "/about",
   "/privacy",
+  "/thanks",
 ]);
 
 /**

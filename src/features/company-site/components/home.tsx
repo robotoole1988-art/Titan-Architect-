@@ -1,13 +1,13 @@
 import Link from "next/link";
 import {
   CAPABILITIES,
-  CONTACT_EMAIL,
   STANDARDS,
   STATUS_BODY,
   STATUS_HEADING,
   TRADE_COUNT,
 } from "../model/facts";
 import { Prose, Section, SiteFooter, SiteHeader } from "./chrome";
+import { ContactForm } from "./contact-form";
 
 /**
  * TITAN's home page (ADR-064).
@@ -86,7 +86,7 @@ export function CompanyHomePage() {
             </p>
             <div className="mt-11 flex flex-wrap items-center gap-4">
               <a
-                href={`mailto:${CONTACT_EMAIL}`}
+                href="#contact"
                 className="rounded-full bg-amber-300 px-6 py-3 text-sm font-semibold text-[#0b0803] transition-colors hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
               >
                 Talk to us
@@ -252,12 +252,11 @@ export function CompanyHomePage() {
               honestly whether TITAN would move the needle for you, and say so
               if it would not.
             </p>
-            <a
-              href={`mailto:${CONTACT_EMAIL}`}
-              className="mt-9 inline-block rounded-full bg-amber-300 px-6 py-3 text-sm font-semibold text-[#0b0803] transition-colors hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
-            >
-              {CONTACT_EMAIL}
-            </a>
+            {/* TITAN's own enquiry capture, on TITAN's own site. For months
+                this card ended in a mailto: to a personal Gmail address —
+                the one page on the internet where TITAN visibly did not use
+                TITAN. Never again. */}
+            <ContactForm />
           </div>
         </Section>
       </main>

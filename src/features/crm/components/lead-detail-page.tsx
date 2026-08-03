@@ -60,7 +60,9 @@ function PitchPanel({ business }: { business: Business }) {
             <p className="text-[11px] text-muted-foreground">
               {pitch.matched === "general"
                 ? "General trade knowledge"
-                : `Matched: ${pitch.matched.replace("-", " & ")}`}{" "}
+                : pitch.matched === "knowledge"
+                  ? "Derived from the trade knowledge base — sourced (ADR-067)"
+                  : `Matched: ${pitch.matched.replace("-", " & ")}`}{" "}
               · deterministic knowledge module
             </p>
           </div>

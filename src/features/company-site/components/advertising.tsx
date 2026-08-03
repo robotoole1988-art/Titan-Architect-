@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { CONTACT_EMAIL } from "../model/facts";
 import { Prose, Section, SiteFooter, SiteHeader } from "./chrome";
 
@@ -225,12 +226,22 @@ export function CompanyAdvertisingPage() {
               Tell us the trade and the towns you cover and we will walk you
               through the numbers behind it.
             </p>
-            <a
-              href={`mailto:${CONTACT_EMAIL}`}
+            <Link
+              href="/#contact"
               className="mt-9 inline-block rounded-full bg-amber-300 px-6 py-3 text-sm font-semibold text-[#0b0803] transition-colors hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
             >
-              {CONTACT_EMAIL}
-            </a>
+              Tell us your trade and towns
+            </Link>
+            <p className="mt-5 text-sm text-white/55">
+              Prefer email?{" "}
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                className="text-amber-200/80 underline underline-offset-4 hover:text-amber-100"
+              >
+                Write to us directly
+              </a>
+              .
+            </p>
           </div>
         </Section>
       </main>

@@ -62,8 +62,11 @@ describe("every taxonomy trade is decided, never guessed", () => {
     }
   });
 
-  it("only trades a pack was written for get a specific pack", () => {
-    const SPECIFIC: Record<string, string> = {
+  it("curated packs where they were written; sourced knowledge everywhere else", () => {
+    // The knowledge base (ADR-067) closed the gap this suite used to pin:
+    // 7 assignments reach a purpose-written pack, and the other 28 draw
+    // sourced per-trade material — never a guess, never a substring.
+    const CURATED: Record<string, string> = {
       roofing: "roofing",
       "driveways-paving": "driveways",
       landscaping: "driveways",
@@ -74,20 +77,20 @@ describe("every taxonomy trade is decided, never guessed", () => {
     };
     for (const trade of TRADE_TAXONOMY) {
       expect(resolveTradePitch(trade.id).matched, trade.id).toBe(
-        SPECIFIC[trade.id] ?? "general",
+        CURATED[trade.id] ?? "knowledge",
       );
     }
   });
 
-  it("the coverage gap is visible, not hidden", () => {
-    // 7 of 35 trades reach a purpose-written pack; the rest are honestly
-    // general and the CRM says so. This number is the case for the trade
-    // knowledge base — if it silently improved, that would be a guess
-    // creeping back in rather than knowledge being written.
-    const specific = TRADE_TAXONOMY.filter(
-      (trade) => resolveTradePitch(trade.id).matched !== "general",
-    ).length;
-    expect(specific).toBe(7);
+  it("no taxonomy trade falls to the general pack — and the source is named, not guessed", () => {
+    // The old pin here held the number at 7-of-35 so the gap stayed
+    // VISIBLE until knowledge was actually written (ADR-067). It has been:
+    // every record is provenance-gated, so this improvement is written
+    // knowledge, not a guess creeping back in. The general pack survives
+    // for free-typed trades outside the taxonomy only.
+    for (const trade of TRADE_TAXONOMY) {
+      expect(resolveTradePitch(trade.id).matched, trade.id).not.toBe("general");
+    }
   });
 });
 
