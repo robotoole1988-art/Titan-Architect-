@@ -14,3 +14,11 @@ This directory holds **Product Requirement Documents (PRDs)**: the *what* and
 | [004](./prd-004-experience-studio.md) | Experience Studio | Draft |
 | [005](./prd-005-website-blueprint-engine.md) | Website Blueprint Engine | Draft |
 | [006](./prd-006-business-intake.md) | Business Intake | Draft |
+| [007](./prd-007-flagship-experience-the-working-mind.md) | The Working Mind — the flagship site experience | Draft — gated on ADR-068 |
+| [008](./prd-008-call-tracking.md) | Call Tracking & Enquiry Capture | Draft — compliance brief awaits legal review |
+
+PRD-008 carries two supporting documents in this directory:
+[call-tracking-uk-compliance-brief.md](./call-tracking-uk-compliance-brief.md)
+(the sourced UK recording-consent law analysis) and
+[call-tracking-architecture.md](./call-tracking-architecture.md) (the Twilio
+design). They are not PRDs; they are the evidence and the mechanism behind 008.

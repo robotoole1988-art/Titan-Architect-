@@ -17,6 +17,7 @@ export { CompanyHomePage } from "./components/home";
 export { CompanyAdvertisingPage } from "./components/advertising";
 export { CompanyAboutPage } from "./components/about";
 export { CompanyPrivacyPage } from "./components/privacy";
+export { CompanyThanksPage } from "./components/thanks";
 export {
   CAPABILITIES,
   CONTACT_EMAIL,

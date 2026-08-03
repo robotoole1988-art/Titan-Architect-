@@ -46,6 +46,8 @@ describe("pitch intelligence", () => {
     expect(resolveTradePitch("boiler-installation").matched).toBe(
       "plumbing-heating",
     );
-    expect(resolveTradePitch("mot-servicing").matched).toBe("general");
+    // Once the fall-through to the general pack; now the knowledge base
+    // covers all 35 trades, an uncurated id gets sourced material instead.
+    expect(resolveTradePitch("mot-servicing").matched).toBe("knowledge");
   });
 });

@@ -43,7 +43,13 @@ export const PERFORMANCE_FLOOR: number =
 export const ACCESSIBILITY_FLOOR: number =
   PERFORMANCE_LAW.categories.accessibility.floor;
 
-/** Contact. The only route in — there is deliberately no form (see privacy). */
+/**
+ * Contact. The primary route in is now TITAN's own contact form — running
+ * on the same enquiry capture the product sells, landing as a lead in the
+ * TITAN CRM (the privacy page states exactly what is stored and why).
+ * Email remains for anyone who prefers to keep the exchange in their own
+ * hands, and this address moves to the company domain the day it exists.
+ */
 export const CONTACT_EMAIL = "robotoole1988@gmail.com";
 
 /**

@@ -121,23 +121,31 @@ export function CompanyAboutPage() {
         <Section id="contact" eyebrow="Contact" title="Get in touch." tone="raised">
           <Prose>
             <p>
-              The fastest way to reach TITAN is email. There is no contact form
-              on this site — see{" "}
+              The fastest way to reach TITAN is the contact form on the home
+              page — it runs on TITAN&rsquo;s own enquiry capture, and the{" "}
               <Link
                 href="/privacy"
                 className="text-amber-200/80 underline underline-offset-4 hover:text-amber-100"
               >
-                privacy
+                privacy page
               </Link>{" "}
-              for why.
+              says exactly what it stores. Email works too, if you would
+              rather keep the exchange in your own hands:{" "}
+              <a
+                href={`mailto:${CONTACT_EMAIL}`}
+                className="text-amber-200/80 underline underline-offset-4 hover:text-amber-100"
+              >
+                write to us directly
+              </a>
+              .
             </p>
           </Prose>
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
+          <Link
+            href="/#contact"
             className="mt-9 inline-block rounded-full bg-amber-300 px-6 py-3 text-sm font-semibold text-[#0b0803] transition-colors hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
           >
-            {CONTACT_EMAIL}
-          </a>
+            Start the conversation
+          </Link>
         </Section>
       </main>
       <SiteFooter />

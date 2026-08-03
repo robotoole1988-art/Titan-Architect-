@@ -58,12 +58,12 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          <a
-            href={`mailto:${CONTACT_EMAIL}`}
+          <Link
+            href="/#contact"
             className="whitespace-nowrap rounded-full border border-amber-300/30 bg-amber-300/[0.07] px-4 py-1.5 text-amber-100 transition-colors hover:border-amber-300/60 hover:bg-amber-300/[0.14] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
           >
             Get in touch
-          </a>
+          </Link>
         </nav>
       </div>
     </header>

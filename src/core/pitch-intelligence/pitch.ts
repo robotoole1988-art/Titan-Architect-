@@ -1,15 +1,19 @@
 /**
- * Per-trade pitch intelligence (ADR-024). Deterministic keyword matching in
- * the spirit of the strategy generator's trade intelligence (ADR-020):
- * richly seeded for roofing, driveways, and plumbing & heating; sensible
- * defaults for everything else. Job values are INDICATIVE UK ranges — a sales
- * aid, never presented as measured data.
+ * Per-trade pitch intelligence (ADR-024). Deterministic: richly seeded packs
+ * for roofing, driveways, and plumbing & heating; knowledge-base-derived
+ * material for every other taxonomy trade (ADR-067); the general pack as the
+ * final floor. Job values are INDICATIVE UK ranges — a sales aid, never
+ * presented as measured data.
  */
+
+import { deriveDnaPitch } from "./dna-pitch";
 
 export type TradePitchMatch =
   | "roofing"
   | "driveways"
   | "plumbing-heating"
+  /** Derived from the trade knowledge base (ADR-067) — sourced, per-trade. */
+  | "knowledge"
   | "general";
 
 export interface ObjectionHandler {
@@ -263,15 +267,49 @@ const PACK_BY_TAXONOMY_ID: Record<string, Omit<TradePitch, "tradeLabel">> = {
   solicitors: GENERAL,
 };
 
-/** Resolve the pitch pack for a trade (taxonomy id or free text). */
+/**
+ * Resolve the pitch pack for a trade (taxonomy id or free text).
+ *
+ * The ladder, in honesty order:
+ * 1. A purpose-written pack (the four curated ones) — richest, wins always.
+ * 2. Material derived from the trade knowledge base (ADR-067) — sourced
+ *    per-trade lines for the trades no pack was written for. Objection
+ *    handlers stay general (the research wrote none, so none are invented);
+ *    pain points and job values fall back to general where the record is
+ *    thin.
+ * 3. The anchored free-text matchers, then the general pack.
+ */
 export function resolveTradePitch(trade: string): TradePitch {
-  const tradeLower = trade.trim().toLowerCase();
+  const tradeLabel = trade.trim();
+  const tradeLower = tradeLabel.toLowerCase();
+
   const byId = PACK_BY_TAXONOMY_ID[tradeLower];
-  if (byId) return { ...byId, tradeLabel: trade.trim() };
+  if (byId && byId !== GENERAL) return { ...byId, tradeLabel };
+
+  // Lowercased so a shouted taxonomy id ("MOBILE-MECHANIC") resolves the
+  // same as its canonical form — the knowledge base's exact-id check is
+  // case-sensitive by design, and case must never change the answer here.
+  const derived = deriveDnaPitch(tradeLower);
+  if (derived) {
+    // A free-text trade can resolve to an id that HAS a curated pack
+    // ("Plumbing and Heating" → plumbing-heating-emergency): curated wins.
+    const curated = PACK_BY_TAXONOMY_ID[derived.tradeId];
+    if (curated && curated !== GENERAL) return { ...curated, tradeLabel };
+    return {
+      matched: "knowledge",
+      tradeLabel,
+      talkingPoints: derived.talkingPoints,
+      painPoints: derived.painPoints ?? GENERAL.painPoints,
+      objections: GENERAL.objections,
+      averageJobValues: derived.averageJobValues ?? GENERAL.averageJobValues,
+    };
+  }
+
+  if (byId) return { ...byId, tradeLabel };
   for (const [, pattern, pack] of MATCHERS) {
     if (pattern.test(tradeLower)) {
-      return { ...pack, tradeLabel: trade.trim() };
+      return { ...pack, tradeLabel };
     }
   }
-  return { ...GENERAL, tradeLabel: trade.trim() };
+  return { ...GENERAL, tradeLabel };
 }

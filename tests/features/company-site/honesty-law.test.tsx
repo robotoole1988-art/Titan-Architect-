@@ -10,6 +10,7 @@ import {
   CompanyAdvertisingPage,
   CompanyHomePage,
   CompanyPrivacyPage,
+  CompanyThanksPage,
   CONTACT_EMAIL,
   PERFORMANCE_FLOOR,
   TRADE_COUNT,
@@ -36,16 +37,22 @@ const PAGES: ReadonlyArray<[string, () => React.JSX.Element]> = [
   ["advertising", CompanyAdvertisingPage],
   ["about", CompanyAboutPage],
   ["privacy", CompanyPrivacyPage],
+  ["thanks", CompanyThanksPage],
 ];
 
 /** Rendered text, tags stripped, entities folded — what a reader sees. */
 function textOf(Page: () => React.JSX.Element): string {
-  return renderToStaticMarkup(<Page />)
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&rsquo;|&#x27;|&apos;/g, "'")
-    .replace(/&amp;/g, "&")
-    .replace(/&nbsp;/g, " ")
-    .replace(/\s+/g, " ");
+  return (
+    renderToStaticMarkup(<Page />)
+      // React's static render injects a form-replay <script> for server-action
+      // forms. It is runtime plumbing, not page copy — a reader never sees it.
+      .replace(/<script>[\s\S]*?<\/script>/g, " ")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/&rsquo;|&#x27;|&apos;/g, "'")
+      .replace(/&amp;/g, "&")
+      .replace(/&nbsp;/g, " ")
+      .replace(/\s+/g, " ")
+  );
 }
 
 const RENDERED = PAGES.map(([name, Page]) => [name, textOf(Page)] as const);
@@ -196,7 +203,7 @@ describe("every page is reachable and complete", () => {
       expect((markup.match(/<h1\b/g) ?? []).length, `${name} h1 count`).toBe(1);
       expect(markup, `${name} skips the main landmark`).toContain('id="main"');
     }
-    // /, /advertising, /about, /privacy — one page component each.
+    // /, /advertising, /about, /privacy, /thanks — one page component each.
     expect(PUBLIC_COMPANY_SITE_PATHS.size).toBe(PAGES.length);
   });
 
@@ -206,5 +213,38 @@ describe("every page is reachable and complete", () => {
         `mailto:${CONTACT_EMAIL}`,
       );
     }
+  });
+});
+
+describe("TITAN uses TITAN — the contact form is the product", () => {
+  // For months this site's only route in was a mailto: to a personal Gmail
+  // address — on a platform whose product IS enquiry capture. These pins
+  // keep the correction corrected.
+  const home = renderToStaticMarkup(<CompanyHomePage />);
+
+  it("no page anywhere carries a raw-address CTA", () => {
+    expect(home).toContain("<form");
+    expect(home).toContain('name="tradeId"');
+    // The address survives as a quiet footer/alternative link, never as
+    // the text of the amber pill somebody has to tap to become a lead —
+    // that was the shape the founder called amateur, and he was right.
+    // Checked on EVERY page: the first fix cured only the home page and
+    // the advertising and about pages kept the pill for another day.
+    const escaped = CONTACT_EMAIL.replace(/[.@]/g, "\\$&");
+    const pill = new RegExp(`bg-amber-300[^"]*"[^>]*>${escaped}<`);
+    for (const [name, Page] of PAGES) {
+      expect(renderToStaticMarkup(<Page />), `${name} still has the pill`).not.toMatch(pill);
+    }
+  });
+
+  it("the trade select is the taxonomy, whole — a lead arrives classified", () => {
+    const options = home.match(/<option\b/g) ?? [];
+    // All 35 trades plus the disabled placeholder.
+    expect(options.length).toBe(TRADE_COUNT + 1);
+  });
+
+  it("the honeypot is present and hidden from humans", () => {
+    expect(home).toContain('name="website"');
+    expect(home).toMatch(/aria-hidden="true"[^>]*>[\s\S]{0,200}name="website"/);
   });
 });
