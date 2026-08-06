@@ -43,6 +43,10 @@ export const PUBLIC_COMPANY_SITE_PATHS: ReadonlySet<string> = new Set([
   "/about",
   "/privacy",
   "/thanks",
+  // The flagship motion prototype (PRD-007 v2, Increment 1). Public so the
+  // founder judges it on a real deployment; noindex, linked from nowhere,
+  // deleted if it misses the standard. A deliberate diff, per the rule above.
+  "/lab/arrival",
 ]);
 
 /**
@@ -65,6 +69,11 @@ export function isProtectedAppPath(pathname: string): boolean {
   if (pathname === "/login" || pathname.startsWith("/login/")) return false;
   if (pathname.startsWith("/auth/")) return false;
   if (pathname.startsWith("/sites/")) return false;
+  // The generator demo (PRD-007 §3.5, proposed ADR-070): 35 trades × any
+  // town is unbounded, so this is a prefix, not a Set entry — which means
+  // it owes the look-alike test every other prefix here paid
+  // ("/experience/demoX" stays shut).
+  if (pathname.startsWith("/experience/demo/")) return false;
   if (pathname.startsWith("/api/")) return false;
   if (pathname.startsWith("/_next/") || pathname === "/favicon.ico") return false;
   // Public static assets the SITES render (audit fault F1: gating these

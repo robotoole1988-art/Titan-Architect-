@@ -75,6 +75,9 @@ describe("isProtectedAppPath", () => {
       "/renderer/golden-poster.png",
       "/renderer/storm-poster.png",
       "/generated-media/some-business/hero.webp",
+      // The generator demo (PRD-007 §3.5): unbounded trade × town params.
+      "/experience/demo/roofing/leeds",
+      "/experience/demo/mot-servicing/york",
     ]) {
       expect(isProtectedAppPath(path), path).toBe(false);
     }
@@ -84,6 +87,11 @@ describe("isProtectedAppPath", () => {
     expect(isProtectedAppPath("/sitesX")).toBe(true);
     expect(isProtectedAppPath("/loginX")).toBe(true);
     expect(isProtectedAppPath("/authX")).toBe(true);
+    // The demo prefix pays the same toll as every other prefix rule.
+    expect(isProtectedAppPath("/experience/demoX")).toBe(true);
+    expect(isProtectedAppPath("/experience/demo")).toBe(true);
+    expect(isProtectedAppPath("/experience")).toBe(true);
+    expect(isProtectedAppPath("/experienceX/demo/roofing/leeds")).toBe(true);
   });
 
   it("the company site is EXACT paths, so nothing rides in behind one", () => {

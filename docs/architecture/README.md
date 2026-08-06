@@ -94,8 +94,9 @@ ADR that supersedes the old one and update the old one's status.
 | [065](./adr-065-the-price-list-tells-the-truth.md) | The price list tells the truth — how a service is delivered is a typed field, so four hand-delivered channels can no longer read like automation | Accepted |
 | [066](./adr-066-a-trade-is-looked-up-never-guessed.md) | A trade is looked up, never guessed — all 35 taxonomy ids map explicitly; closes the substring-inference class opened by 059, 061 and 062 | Accepted |
 | [067](./adr-067-knowledge-is-sourced-or-silent.md) | Knowledge is sourced or it is silent — the 35-trade Industry DNA knowledge base: provenance-gated, exact-id resolved, no silent gaps | Accepted |
-| [068](./adr-068-particles-return-for-the-public-face.md) | Particles return, for the public face only — the flagship experience under two-ledger byte accounting; reverses ADR-041 narrowly | Proposed |
+| [068](./adr-068-particles-return-for-the-public-face.md) | Particles return, for the public face only — proposed reversal of ADR-041; the founder declined on quality grounds, so ADR-041 stands and the flagship runs on motion design, not particles | Rejected |
 | [069](./adr-069-the-brain-is-built-from-feeds-not-faith.md) | The brain is built from feeds, not faith — memory, senses, judgment; departments are ledgers; proposals, never fiats | Proposed |
+| [070](./adr-070-the-demo-is-the-product-run-honestly.md) | The demo is the product, run honestly — `/experience/demo/[trade]/[town]` serves the pure chain under nine laws: exact ids, hard sanitisation, permanent Example strip, never indexed, deterministic | Proposed |
 
 ### Writing a new ADR
 
