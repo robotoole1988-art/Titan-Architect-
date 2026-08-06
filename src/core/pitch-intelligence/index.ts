@@ -16,3 +16,5 @@ export type {
   ObjectionHandler,
   JobValue,
 } from "./pitch";
+export { deriveBudgetGuidance } from "./dna-pitch";
+export type { BudgetGuidance } from "./dna-pitch";
