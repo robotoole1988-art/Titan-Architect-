@@ -65,6 +65,10 @@ export interface CommandCentreFacts {
   measuredVisitsAllTime: number;
   /** Measured page views in the 7 days before `now`. */
   measuredVisitsWeek: number;
+  /** Publications currently serving (status "live") across the book. */
+  liveSites: number;
+  /** Enquiries captured across the book, all time (internal rows excluded). */
+  enquiriesAllTime: number;
   /**
    * Revenue is structurally unmeasured today (no revenue table, no payments
    * integration). Stays null until a real measurement path exists — the UI

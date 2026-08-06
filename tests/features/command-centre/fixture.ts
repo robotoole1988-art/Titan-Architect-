@@ -46,6 +46,8 @@ export function makeFacts(
     newThisMonth: 1,
     measuredVisitsAllTime: 176,
     measuredVisitsWeek: 0,
+    liveSites: 3,
+    enquiriesAllTime: 12,
     revenue: null,
     departments: [
       { id: "pipeline", label: "Pipeline", band: "green", note: "score 82" },
