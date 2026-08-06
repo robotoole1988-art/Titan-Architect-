@@ -18,6 +18,7 @@ export { CompanyAdvertisingPage } from "./components/advertising";
 export { CompanyAboutPage } from "./components/about";
 export { CompanyPrivacyPage } from "./components/privacy";
 export { CompanyThanksPage } from "./components/thanks";
+export { CompanyArrivalLabPage } from "./components/arrival-lab";
 export {
   CAPABILITIES,
   CONTACT_EMAIL,

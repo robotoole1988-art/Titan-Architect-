@@ -8,6 +8,7 @@ import { TRADE_TAXONOMY } from "@/core/trade-taxonomy";
 import {
   CompanyAboutPage,
   CompanyAdvertisingPage,
+  CompanyArrivalLabPage,
   CompanyHomePage,
   CompanyPrivacyPage,
   CompanyThanksPage,
@@ -38,6 +39,9 @@ const PAGES: ReadonlyArray<[string, () => React.JSX.Element]> = [
   ["about", CompanyAboutPage],
   ["privacy", CompanyPrivacyPage],
   ["thanks", CompanyThanksPage],
+  // The flagship motion prototype (PRD-007 v2, Increment 1). A lab page is
+  // still a public page: every law in this file binds it, this one included.
+  ["lab-arrival", CompanyArrivalLabPage],
 ];
 
 /** Rendered text, tags stripped, entities folded — what a reader sees. */
