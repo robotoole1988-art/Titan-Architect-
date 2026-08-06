@@ -31,7 +31,7 @@ import type {
   StrategyDocumentMeta,
   VisualDirection,
 } from "./types";
-import { buildTradeProfile } from "./trade-intelligence";
+import { buildTradeProfile, possessive } from "./trade-intelligence";
 
 /** The version of the Experience Strategy engine these interfaces implement. */
 export const EXPERIENCE_STRATEGY_VERSION = "0.2";
@@ -164,7 +164,7 @@ export function generateExperienceStrategy(
   };
 
   const mediaDirection: MediaDirection = {
-    summary: `Media that proves ${business}'s credibility to a customer who buys on: ${profile.decisionTriggers[0]}.`,
+    summary: `Media that proves ${possessive(business)} credibility to a customer who buys on: ${profile.decisionTriggers[0]}.`,
     photographyStyle: profile.photographyStyle,
     videoStyle: profile.videoStyle,
     threeDStyle:
