@@ -146,6 +146,8 @@ export async function loadCommandCentreFacts(input: {
     ).length,
     measuredVisitsAllTime,
     measuredVisitsWeek,
+    liveSites: snapshot.publications.filter((p) => p.status === "live").length,
+    enquiriesAllTime: snapshot.enquiries.length,
     // Structurally unmeasured today: no revenue store exists (ADR-057).
     revenue: null,
     departments: health.map(toGlow),

@@ -1,67 +1,188 @@
 "use client";
 
 /**
- * The particle Brain (ADR-057) — ported from the approved v5 prototype
- * (docs/experience/prototypes/titan-opening-v5.html).
+ * The Brain (ADR-057) — the anatomical engine, ported from the room
+ * prototype the founder approved on 2026-08-06 ("that brain looks
+ * amazing").
  *
- * Canvas 2D, requestAnimationFrame, DPR-aware (capped at 2). The Brain
- * breathes, slowly rotates, and morphs between four particle shapes;
- * inbound motes stream toward it as unlabelled sparks (labelled streams
- * read as stray UI in production, 2026-07-26 — reinstate only with a
- * designed treatment). Pauses when the tab is hidden; prefers-reduced-motion renders one
- * static frame and never starts the loop. Budget: well under 4ms/frame on a
- * mid-range laptop — dots are fillRect, not arc.
+ * Canvas 2D: a side-profile cortex polygon filled with ~7.5k pre-rendered
+ * glow sprites that cluster along cortical fold ridges, a cerebellum and
+ * brainstem, precomputed synapse links, additive compositing, a white-hot
+ * core, cursor-follow rotation and cursor-proximity flare. Layout is
+ * deterministic (seeded PRNG) so the room looks the same on every visit;
+ * the mass is re-centred on its true centre of mass so the cerebellum
+ * cannot drag it off-axis (the founder caught exactly that, 2026-08-06).
+ *
+ * Pauses when the tab hides; prefers-reduced-motion renders one calm
+ * static frame and never starts the loop. The alert palette warms the
+ * sprites when any department bands red.
  */
 
 import { useEffect, useRef } from "react";
 
-const PARTICLES = 700;
-type Vec3 = [number, number, number];
-
-function fib(i: number, n: number): Vec3 {
-  const golden = Math.PI * (3 - Math.sqrt(5));
-  const y = 1 - (i / (n - 1)) * 2;
-  const r = Math.sqrt(1 - y * y);
-  const t = golden * i;
-  return [Math.cos(t) * r, y, Math.sin(t) * r];
+interface BrainPoint {
+  x: number;
+  y: number;
+  z: number;
+  /** brightness mass */
+  m: number;
+  /** twinkle phase */
+  tw: number;
+  /** cortical ridge weight 0..1 — ridges glow brighter than valleys */
+  ridge: number;
 }
 
-const SHAPES: Array<(i: number) => Vec3> = [
-  (i) => fib(i, PARTICLES),
-  (i) => {
-    // neural clusters
-    const c = i % 14;
-    const cc = fib((c * 61) % PARTICLES, PARTICLES);
-    const j = fib(i, PARTICLES);
-    return [cc[0] * 0.75 + j[0] * 0.3, cc[1] * 0.75 + j[1] * 0.3, cc[2] * 0.75 + j[2] * 0.3];
-  },
-  (i) => {
-    // two-lobed brain
-    let [x, y, z] = fib(i, PARTICLES);
-    const s = x < 0 ? -1 : 1;
-    x = x * 0.72 + s * 0.34;
-    y *= 0.82;
-    z *= 1.05;
-    const w = Math.sin(y * 9 + z * 7) * 0.05;
-    return [x + w, y + Math.sin(x * 8) * 0.05, z + w];
-  },
-  (i) => {
-    // energy coil
-    const a = (i / PARTICLES) * Math.PI * 14;
-    const r2 = 0.55 + 0.4 * Math.sin(i * 0.7);
-    return [Math.cos(a) * r2, (i / PARTICLES - 0.5) * 1.5 * Math.sin(a * 0.33), Math.sin(a) * r2];
-  },
+interface Projected {
+  sx: number;
+  sy: number;
+  d: number;
+  m: number;
+  tw: number;
+  z: number;
+  ridge: number;
+  near: number;
+}
+
+type Poly = ReadonlyArray<readonly [number, number]>;
+
+/** Side-profile cortex silhouette (facing left), unit-ish coordinates. */
+const CORTEX: Poly = [
+  [-0.78, -0.06], [-0.76, -0.26], [-0.62, -0.44], [-0.4, -0.56], [-0.12, -0.62],
+  [0.16, -0.6], [0.42, -0.52], [0.62, -0.36], [0.72, -0.16], [0.72, 0.02],
+  [0.62, 0.14], [0.44, 0.2], [0.2, 0.26], [-0.06, 0.3], [-0.32, 0.3],
+  [-0.56, 0.26], [-0.72, 0.14],
 ];
 
-interface Particle {
-  x: number; y: number; z: number;
-  tx: number; ty: number; tz: number;
-  ph: number;
+/** The cerebellum, tucked under the occipital curve. */
+const CEREB: Poly = [
+  [0.3, 0.26], [0.44, 0.2], [0.58, 0.22], [0.66, 0.32], [0.62, 0.44],
+  [0.5, 0.5], [0.36, 0.48], [0.28, 0.38],
+];
+
+function inPoly(x: number, y: number, poly: Poly): boolean {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, yi] = poly[i];
+    const [xj, yj] = poly[j];
+    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
+      inside = !inside;
+    }
+  }
+  return inside;
 }
 
-interface Mote {
-  sx: number; sy: number; t: number; sp: number;
-  c: number;
+/** Depth of the mass at (x, y): fat in the middle, thin at the edges. */
+function depthAt(x: number, y: number): number {
+  const e = 1 - ((x + 0.03) / 0.78) ** 2 - ((y + 0.16) / 0.5) ** 2;
+  return Math.max(0.06, 0.52 * Math.sqrt(Math.max(0, e)));
+}
+
+/** Cortical fold field — points cluster into wavy ridge cords. */
+function fold(x: number, y: number, z: number): number {
+  return Math.sin(x * 16 + Math.sin(y * 7) * 2.2 + z * 5) * Math.cos(y * 13 + x * 5);
+}
+
+/** Deterministic layout: same seed, same brain, every visit. */
+function buildPoints(): BrainPoint[] {
+  let seed = 20260806;
+  const rnd = (): number => (seed = (seed * 16807) % 2147483647) / 2147483647;
+
+  const points: BrainPoint[] = [];
+  const scatter = (count: number, poly: Poly, bright: number): void => {
+    let placed = 0;
+    let guard = 0;
+    while (placed < count && guard < count * 40) {
+      guard++;
+      const x = (rnd() * 2 - 1) * 0.85;
+      const y = (rnd() * 2 - 1) * 0.75;
+      if (!inPoly(x, y, poly)) continue;
+      const depth = depthAt(x, y);
+      const z = (rnd() < 0.5 ? -1 : 1) * depth * Math.pow(rnd(), 0.3);
+      const ridge = Math.abs(fold(x, y, z));
+      if (ridge < 0.3 && rnd() < 0.72) continue; // valleys stay sparse
+      points.push({
+        x,
+        y,
+        z,
+        m: (0.7 + rnd() * 1.0) * bright,
+        tw: rnd() * Math.PI * 2,
+        ridge,
+      });
+      placed++;
+    }
+  };
+
+  scatter(6200, CORTEX, 1);
+  scatter(1100, CEREB, 0.9);
+  // brainstem cord
+  for (let i = 0; i < 180; i++) {
+    const t = rnd();
+    points.push({
+      x: 0.16 - t * 0.1 + (rnd() - 0.5) * 0.05,
+      y: 0.3 + t * 0.28 + (rnd() - 0.5) * 0.03,
+      z: (rnd() - 0.5) * 0.1,
+      m: 0.6 + rnd() * 0.6,
+      tw: rnd() * 6.28,
+      ridge: 0.4,
+    });
+  }
+
+  // Self-centre: HORIZONTAL by bounding-box midpoint — what the eye reads
+  // as centred. Centroid centring left the silhouette hanging left of the
+  // room's axis (the founder caught it twice): the cerebellum side is
+  // denser, so the centre of mass sits right of the shape's middle.
+  // VERTICAL stays centre-of-mass — the thin brainstem would skew a y-bbox.
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let my = 0;
+  for (const p of points) {
+    if (p.x < minX) minX = p.x;
+    if (p.x > maxX) maxX = p.x;
+    my += p.y;
+  }
+  const mx = (minX + maxX) / 2;
+  my /= points.length;
+  for (const p of points) {
+    p.x -= mx;
+    p.y -= my;
+  }
+  return points;
+}
+
+/** Nearest-neighbour synapse links over a deterministic probe pattern. */
+function buildLinks(points: readonly BrainPoint[]): Array<[number, number]> {
+  const links: Array<[number, number]> = [];
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i];
+    let best = -1;
+    let bd = 1e9;
+    for (let k = 0; k < 20; k++) {
+      const j = (i + 11 + ((k * 131) % (points.length - 1))) % points.length;
+      const b = points[j];
+      const d = (a.x - b.x) ** 2 + (a.y - b.y) ** 2 + (a.z - b.z) ** 2;
+      if (d < bd && d > 0.0008) {
+        bd = d;
+        best = j;
+      }
+    }
+    if (best >= 0 && bd < 0.02) links.push([i, best]);
+  }
+  return links;
+}
+
+function makeSprite(hex: string): HTMLCanvasElement {
+  const sprite = document.createElement("canvas");
+  sprite.width = 64;
+  sprite.height = 64;
+  const g = sprite.getContext("2d")!;
+  const gradient = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+  gradient.addColorStop(0, "rgba(255,255,255,1)");
+  gradient.addColorStop(0.22, `${hex}ee`);
+  gradient.addColorStop(0.55, `${hex}55`);
+  gradient.addColorStop(1, "rgba(0,0,0,0)");
+  g.fillStyle = gradient;
+  g.fillRect(0, 0, 64, 64);
+  return sprite;
 }
 
 export function BrainCanvas({ alert = false }: { alert?: boolean }) {
@@ -70,139 +191,140 @@ export function BrainCanvas({ alert = false }: { alert?: boolean }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const cx = canvas.getContext("2d");
-    if (!cx) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const DPR = Math.min(window.devicePixelRatio || 1, 2);
-    let W = 0, H = 0, CX = 0, CY = 0, R = 0;
+
+    const points = buildPoints();
+    const links = buildLinks(points);
+
+    // Palette: cold blue-white intelligence; warmed when a department reds.
+    const spBase = makeSprite(alert ? "#ff9a5c" : "#5b96ff");
+    const spNear = makeSprite(alert ? "#ffd2a8" : "#a8dbff");
+    const spDeep = makeSprite(alert ? "#e8722f" : "#3566e8");
+    const linkTint = alert ? "255,170,120" : "110,160,255";
+    const ambient0 = alert ? "rgba(205,96,40,0.30)" : "rgba(52,96,210,0.34)";
+    const ambient1 = alert ? "rgba(96,40,18,0.12)" : "rgba(20,38,95,0.12)";
+    const coreMid = alert ? "rgba(255,205,160,0.5)" : "rgba(160,200,255,0.5)";
+
     let raf = 0;
-    let time = 0;
-    let flare = 0;
-    let shapeIx = 0;
-    let mx = window.innerWidth / 2;
-
-    const tint: Vec3 = alert ? [240, 170, 100] : [130, 175, 255];
-
-    const particles: Particle[] = [];
-    for (let i = 0; i < PARTICLES; i++) {
-      const s = SHAPES[0](i);
-      particles.push({ x: s[0], y: s[1], z: s[2], tx: s[0], ty: s[1], tz: s[2], ph: (i * 2654435761) % 7 });
-    }
-
-    const motes: Mote[] = [];
-    let moteSeed = 1;
-    function rand(): number {
-      // deterministic-ish LCG so the room looks the same on every visit
-      moteSeed = (moteSeed * 1664525 + 1013904223) % 4294967296;
-      return moteSeed / 4294967296;
-    }
-    function spawnMote(initialT = 0): void {
-      const edge = Math.floor(rand() * 3);
-      const s = rand();
-      const sx = edge === 0 ? -0.02 : edge === 1 ? 1.02 : 0.1 + s * 0.8;
-      const sy = edge === 2 ? -0.02 : 0.15 + s * 0.7;
-      motes.push({
-        sx, sy, t: initialT,
-        sp: 0.004 + rand() * 0.004,
-        c: rand() - 0.5,
-      });
-    }
-    for (let i = 0; i < 9; i++) spawnMote(rand());
+    let rot = 0;
+    const cursor = { x: -1e4, y: -1e4, tx: 0, active: false };
 
     function size(): void {
-      W = canvas!.width = window.innerWidth * DPR;
-      H = canvas!.height = window.innerHeight * DPR;
+      canvas!.width = window.innerWidth * DPR;
+      canvas!.height = window.innerHeight * DPR;
       canvas!.style.width = `${window.innerWidth}px`;
       canvas!.style.height = `${window.innerHeight}px`;
-      CX = W / 2;
-      CY = H * 0.25;
-      R = Math.min(W, H) * 0.105;
     }
     size();
 
-    function drawFrame(): void {
-      cx!.clearRect(0, 0, W, H);
-      const breathe = 1 + Math.sin(time * 1.05) * 0.05;
-      const rr = R * breathe * (1 + flare * 0.12);
-      const rot = time * 0.22 + ((mx / window.innerWidth) - 0.5) * 0.35;
+    function drawFrame(now: number): void {
+      const W = canvas!.width;
+      const H = canvas!.height;
+      ctx!.setTransform(1, 0, 0, 1, 0, 0);
+      ctx!.clearRect(0, 0, W, H);
 
-      // ambient halo
-      const halo = cx!.createRadialGradient(CX, CY, 0, CX, CY, rr * 3.4);
-      halo.addColorStop(0, `rgba(${tint[0]},${tint[1]},${tint[2]},${0.13 + flare * 0.12})`);
-      halo.addColorStop(0.55, `rgba(${tint[0]},${tint[1]},${tint[2]},0.04)`);
-      halo.addColorStop(1, "rgba(0,0,0,0)");
-      cx!.fillStyle = halo;
-      cx!.beginPath();
-      cx!.arc(CX, CY, rr * 3.4, 0, 7);
-      cx!.fill();
+      // ambient room glow
+      const amb = ctx!.createRadialGradient(W * 0.5, H * 0.42, 0, W * 0.5, H * 0.42, H * 0.6);
+      amb.addColorStop(0, ambient0);
+      amb.addColorStop(0.55, ambient1);
+      amb.addColorStop(1, "rgba(0,0,0,0)");
+      ctx!.fillStyle = amb;
+      ctx!.fillRect(0, 0, W, H);
 
-      // inbound data motes
-      for (let i = motes.length - 1; i >= 0; i--) {
-        const p = motes[i];
-        p.t += p.sp;
-        if (p.t >= 1) {
-          motes.splice(i, 1);
-          flare = Math.min(1, flare + 0.08);
-          continue;
-        }
-        const e = 1 - (1 - p.t) * (1 - p.t);
-        const sx = p.sx * W;
-        const sy = p.sy * H;
-        const midX = (sx + CX) / 2 + (sy - CY) * p.c * 0.4;
-        const midY = (sy + CY) / 2 - (sx - CX) * p.c * 0.4;
-        const x = (1 - e) * (1 - e) * sx + 2 * (1 - e) * e * midX + e * e * CX;
-        const y = (1 - e) * (1 - e) * sy + 2 * (1 - e) * e * midY + e * e * CY;
-        cx!.globalAlpha = Math.min(1, p.t * 4) * 0.85;
-        cx!.fillStyle = "#79e6ea";
-        cx!.fillRect(x - DPR, y - DPR, 2.4 * DPR, 2.4 * DPR);
+      // cursor-follow rotation, eased, with a slow idle sway
+      const want = (cursor.active ? cursor.tx : 0) + Math.sin(now / 9000) * 0.06;
+      rot += (want - rot) * 0.04;
+      const sinT = Math.sin(rot);
+      const cosT = Math.cos(rot);
+
+      const cx = W * 0.5;
+      const cy = H * 0.42;
+      const S = H * 0.46;
+      const R2 = (150 * DPR) ** 2;
+
+      const pr: Projected[] = points.map((p) => {
+        const x = p.x * cosT - p.z * sinT;
+        const z = p.x * sinT + p.z * cosT;
+        const depth = 1 / (1.55 - z * 0.5);
+        const sx = cx + x * S * depth;
+        const sy = cy + p.y * S * depth;
+        const dxc = sx - cursor.x;
+        const dyc = sy - cursor.y;
+        const near = Math.max(0, 1 - (dxc * dxc + dyc * dyc) / R2);
+        return { sx, sy, d: depth, m: p.m, tw: p.tw, z, ridge: p.ridge, near };
+      });
+
+      ctx!.globalCompositeOperation = "lighter";
+
+      // synapse links — flare near the cursor
+      ctx!.lineWidth = DPR * 0.55;
+      for (const [i, j] of links) {
+        const a = pr[i];
+        const b = pr[j];
+        const flare = Math.max(a.near, b.near);
+        const alpha = 0.13 + 0.24 * Math.max(0, (a.z + b.z) / 2 + 0.4) + flare * 0.5;
+        ctx!.strokeStyle = `rgba(${linkTint},${Math.min(0.9, alpha).toFixed(3)})`;
+        ctx!.beginPath();
+        ctx!.moveTo(a.sx, a.sy);
+        ctx!.lineTo(b.sx, b.sy);
+        ctx!.stroke();
       }
 
-      // the Brain
-      const ca = Math.cos(rot);
-      const sa = Math.sin(rot);
-      for (const p of particles) {
-        p.x += (p.tx - p.x) * 0.028;
-        p.y += (p.ty - p.y) * 0.028;
-        p.z += (p.tz - p.z) * 0.028;
-        const x3 = p.x * ca - p.z * sa;
-        const z3 = p.x * sa + p.z * ca;
-        const depth = (z3 + 1.6) / 2.6;
-        const j = Math.sin(time * 2 + p.ph) * 0.008;
-        const X = CX + (x3 + j) * rr * 1.35;
-        const Y = CY + (p.y + j) * rr * 1.15;
-        cx!.globalAlpha = (0.12 + depth * 0.55) * (1 + flare * 0.5);
-        cx!.fillStyle = depth > 0.72 ? "#eef4ff" : `rgb(${tint[0]},${tint[1]},${tint[2]})`;
-        const size2 = (0.6 + depth * 1.1) * DPR * 1.6;
-        cx!.fillRect(X - size2 / 2, Y - size2 / 2, size2, size2);
+      // the mass itself
+      const tsec = now / 1000;
+      for (const q of pr) {
+        const twinkle = 0.8 + 0.2 * Math.sin(tsec * 1.4 + q.tw);
+        const ridgeBoost = 0.7 + q.ridge * 0.9;
+        const sz = (3.0 + q.m * 4.8) * q.d * DPR * twinkle * (1 + q.near * 1.1);
+        const sprite =
+          q.near > 0.15 ? spNear : q.z > 0.2 ? spNear : q.z < -0.2 ? spDeep : spBase;
+        ctx!.globalAlpha = Math.min(
+          1,
+          (0.55 + q.d * 0.55) * twinkle * ridgeBoost + q.near * 0.4,
+        );
+        ctx!.drawImage(sprite, q.sx - sz / 2, q.sy - sz / 2, sz, sz);
       }
+      ctx!.globalAlpha = 1;
 
-      // core
-      cx!.globalAlpha = 0.45 + 0.3 * Math.sin(time * 1.8) + flare * 0.4;
-      const core = cx!.createRadialGradient(CX, CY, 0, CX, CY, rr * 0.4);
-      core.addColorStop(0, "rgba(255,255,255,0.85)");
-      core.addColorStop(1, "rgba(255,255,255,0)");
-      cx!.fillStyle = core;
-      cx!.beginPath();
-      cx!.arc(CX, CY, rr * 0.4, 0, 7);
-      cx!.fill();
-      cx!.globalAlpha = 1;
+      // white-hot core, on the room's axis — any horizontal offset here
+      // reads as the whole brain sitting off-centre
+      const kx = cx;
+      const ky = cy - S * 0.05;
+      const core = ctx!.createRadialGradient(kx, ky, 0, kx, ky, S * 0.3);
+      core.addColorStop(0, "rgba(245,250,255,0.95)");
+      core.addColorStop(0.28, coreMid);
+      core.addColorStop(1, "rgba(0,0,0,0)");
+      ctx!.fillStyle = core;
+      ctx!.beginPath();
+      ctx!.arc(kx, ky, S * 0.3, 0, 7);
+      ctx!.fill();
+
+      ctx!.globalCompositeOperation = "source-over";
     }
 
-    function frame(): void {
-      time += 1 / 60;
-      flare *= 0.965;
-      if (motes.length < 14 && rand() < 0.03) spawnMote();
-      drawFrame();
+    function frame(now: number): void {
+      drawFrame(now);
       raf = requestAnimationFrame(frame);
     }
 
+    const onPointerMove = (event: PointerEvent) => {
+      cursor.x = event.clientX * DPR;
+      cursor.y = event.clientY * DPR;
+      cursor.tx = (event.clientX / window.innerWidth - 0.5) * 0.55;
+      cursor.active = true;
+    };
+    const onPointerGone = () => {
+      cursor.active = false;
+      cursor.x = -1e4;
+      cursor.y = -1e4;
+    };
     const onResize = () => {
       size();
-      if (reduced) drawFrame();
-    };
-    const onMouse = (event: MouseEvent) => {
-      mx = event.clientX;
+      if (reduced) drawFrame(0);
     };
     const onVisibility = () => {
       if (document.hidden) {
@@ -211,35 +333,24 @@ export function BrainCanvas({ alert = false }: { alert?: boolean }) {
         raf = requestAnimationFrame(frame);
       }
     };
-    const morph = window.setInterval(() => {
-      if (document.hidden || reduced) return;
-      shapeIx = (shapeIx + 1) % SHAPES.length;
-      const shape = SHAPES[shapeIx];
-      for (let i = 0; i < PARTICLES; i++) {
-        const t = shape(i);
-        particles[i].tx = t[0];
-        particles[i].ty = t[1];
-        particles[i].tz = t[2];
-      }
-    }, 8500);
 
+    window.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("mouseleave", onPointerGone);
     window.addEventListener("resize", onResize);
-    window.addEventListener("mousemove", onMouse);
     document.addEventListener("visibilitychange", onVisibility);
 
     if (reduced) {
       // one calm, complete frame — the room is still, not broken
-      time = 2;
-      drawFrame();
+      drawFrame(0);
     } else {
       raf = requestAnimationFrame(frame);
     }
 
     return () => {
       cancelAnimationFrame(raf);
-      window.clearInterval(morph);
+      window.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("mouseleave", onPointerGone);
       window.removeEventListener("resize", onResize);
-      window.removeEventListener("mousemove", onMouse);
       document.removeEventListener("visibilitychange", onVisibility);
     };
   }, [alert]);

@@ -33,21 +33,29 @@ function reveal(delayMs: number): { className: string; style: React.CSSPropertie
 export function PulseStrip({ facts }: { facts: CommandCentreFacts }) {
   const items: Array<[string, string]> = [
     ["Businesses", String(facts.bookSize)],
-    ["Live", String(facts.liveAccounts)],
+    ["Live sites", String(facts.liveSites)],
     ["Visits · 7d", String(facts.measuredVisitsWeek)],
+    ["Enquiries", String(facts.enquiriesAllTime)],
     ["Decisions", String(facts.pendingDecisions.length)],
-    ["Departments", String(facts.departments.length)],
   ];
   return (
     <div
       data-pulse-strip
-      className="cc-reveal fixed left-1/2 top-[52px] z-10 flex -translate-x-1/2 gap-6 whitespace-nowrap text-[10.5px] tracking-wide text-[#6c7a94]"
+      className="cc-reveal fixed left-1/2 top-[58px] z-10 flex -translate-x-1/2 gap-12 whitespace-nowrap text-center"
       style={{ animationDelay: "600ms" }}
     >
       {items.map(([label, value]) => (
-        <span key={label}>
-          {label} <b className="font-medium tabular-nums text-[#c9d4e6]">{value}</b>
-        </span>
+        <div key={label}>
+          <div
+            className="text-[28px] font-semibold leading-none tracking-tight tabular-nums text-[#e9edf4]"
+            style={{ textShadow: "0 0 24px rgba(90,150,255,0.45)" }}
+          >
+            {value}
+          </div>
+          <div className="mt-1.5 text-[9.5px] uppercase tracking-[0.26em] text-[#5d7396]">
+            {label}
+          </div>
+        </div>
       ))}
     </div>
   );
@@ -66,7 +74,7 @@ export function HealthChips({
   return (
     <div
       data-health-chips
-      className={`${className} mt-4 flex flex-wrap justify-center gap-2.5`}
+      className={`${className} mt-3 flex flex-wrap justify-center gap-2`}
       style={style}
     >
       {chips.map((chip) => (
@@ -75,7 +83,7 @@ export function HealthChips({
           href={chip.href}
           data-chip={chip.key}
           data-empty={chip.empty || undefined}
-          className="group rounded-xl border border-[rgba(100,125,180,0.2)] bg-[rgba(9,13,22,0.55)] px-3.5 py-2 text-left backdrop-blur-md transition-all duration-200 hover:-translate-y-px hover:border-[rgba(140,175,255,0.5)] motion-reduce:transition-none"
+          className="group rounded-lg border border-[rgba(100,125,180,0.2)] bg-[rgba(9,13,22,0.55)] px-3 py-1.5 text-left backdrop-blur-md transition-all duration-200 hover:-translate-y-px hover:border-[rgba(140,175,255,0.5)] motion-reduce:transition-none"
         >
           <span className="flex items-center gap-1">
             <span className="block text-[8.5px] uppercase tracking-[0.18em] text-[#5d7396]">
@@ -84,7 +92,7 @@ export function HealthChips({
             <ProvenanceInfo label={`${chip.label} — provenance`} lines={chip.provenance} />
           </span>
           <span
-            className={`text-base font-semibold ${
+            className={`text-[13px] font-semibold ${
               chip.gold ? "text-[#d8b26a]" : chip.empty ? "text-[#7d8ea0]" : "text-white"
             }`}
           >
@@ -112,15 +120,15 @@ export function RevenueStory({
       <div
         data-revenue-story
         data-empty
-        className={`${className} mx-auto mt-4 max-w-md text-center`}
+        className={`${className} mx-auto mt-3 max-w-lg text-center`}
         style={style}
       >
-        <div className="mx-auto h-px w-40 bg-gradient-to-r from-transparent via-[rgba(140,175,255,0.35)] to-transparent" />
-        <p className="mt-3 text-[12.5px] leading-relaxed text-[#7d8ea0]">
+        <div className="mx-auto h-px w-32 bg-gradient-to-r from-transparent via-[rgba(140,175,255,0.35)] to-transparent" />
+        <p className="mt-2 text-[11.5px] leading-relaxed text-[#7d8ea0]">
           Measurement begins with your first live campaign.
         </p>
         {facts.measuredVisitsAllTime > 0 && (
-          <p className="mt-1 text-[11px] text-[#5d7396]">
+          <p className="mt-0.5 text-[10.5px] text-[#5d7396]">
             {facts.measuredVisitsAllTime} page views measured to date across the
             published sites — every one first-party.
           </p>
@@ -156,7 +164,7 @@ export function DecisionsRow({
       <p
         data-decisions-row
         data-empty
-        className={`${className} fixed bottom-[86px] left-1/2 -translate-x-1/2 text-[12px] tracking-wide text-[#5d7396]`}
+        className={`${className} mx-auto mt-4 text-[12px] tracking-wide text-[#5d7396]`}
         style={style}
       >
         {EMPTY_DECISIONS_LINE}
@@ -166,7 +174,7 @@ export function DecisionsRow({
   return (
     <div
       data-decisions-row
-      className={`${className} fixed bottom-[86px] left-1/2 flex max-w-[94vw] -translate-x-1/2 gap-2.5 overflow-x-auto`}
+      className={`${className} mx-auto mt-4 flex max-w-[94vw] flex-wrap justify-center gap-2.5`}
       style={style}
     >
       {cards.map((card) => (
@@ -247,7 +255,7 @@ export function TimelineFeed({
   return (
     <div
       data-timeline
-      className={`${className} fixed inset-x-0 bottom-0 flex h-14 items-center gap-0 overflow-x-auto whitespace-nowrap bg-gradient-to-t from-[rgba(2,4,9,0.92)] to-transparent px-8 [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)]`}
+      className={`${className} fixed inset-x-0 bottom-0 flex h-12 items-center gap-0 overflow-x-auto whitespace-nowrap bg-gradient-to-t from-[rgba(2,4,9,0.92)] to-transparent px-8 [mask-image:linear-gradient(90deg,transparent,#000_6%,#000_94%,transparent)]`}
       style={style}
     >
       {entries.length === 0 ? (
