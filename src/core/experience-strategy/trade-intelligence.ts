@@ -126,6 +126,19 @@ export function classifyArchetype(tradeLower: string): TradeArchetype {
 }
 
 /**
+ * A possessive that survives towns and trading names ending in s.
+ *
+ * Every headline template used to append "'s" to the interpolated town,
+ * which produced "Leeds's finest roofing" in a real generated H1 — found
+ * by the first archetype sweep, the night the demo route was built. Ad
+ * copy takes the cleaner s-apostrophe form: Leeds' finest, St Albans'
+ * most responsive; York's unchanged.
+ */
+export function possessive(noun: string): string {
+  return /s$/i.test(noun) ? `${noun}'` : `${noun}'s`;
+}
+
+/**
  * TITAN NEVER PUBLISHES AN ACCREDITATION IT HAS NOT VERIFIED (ADR-059).
  *
  * This function returns an empty list, always. It used to guess UK
@@ -232,7 +245,7 @@ export function buildTradeProfile(
         ],
         isUrgent: true,
         hero: {
-          headline: `${location}'s most responsive ${spoken}`,
+          headline: `${possessive(location)} most responsive ${spoken}`,
           subheadline: `${business} — we actually answer: fast response, upfront pricing, and the job done right the first time.`,
           visualConcept: `Calm-in-a-crisis: a real ${business} engineer answering and arriving fast in a recognisable ${location} setting, shot to reassure, not alarm.`,
         },
@@ -316,14 +329,14 @@ export function buildTradeProfile(
         ],
         isUrgent: false,
         hero: {
-          headline: `${location}'s finest ${spoken}, done properly`,
+          headline: `${possessive(location)} finest ${spoken}, done properly`,
           subheadline: `${business} — design-led ${spoken} in ${location}, with a finish you'll be proud to show off.`,
           visualConcept: `A cinematic reveal of a stunning finished ${spoken} project, shot at true golden hour — warm, low sun raking the finished surface, long soft shadows — with a before/after that lands the transformation.`,
         },
         primaryCta: "Book a free design consultation",
         primaryCtaAction: "form",
         secondaryCta: "See recent projects",
-        storyArc: `Dream (imagine the finished space) → Doubt (fear of choosing the wrong ${spoken}) → Guide (${business}'s proven process & portfolio) → Transformation (the finished result, guaranteed).`,
+        storyArc: `Dream (imagine the finished space) → Doubt (fear of choosing the wrong ${spoken}) → Guide (${possessive(business)} proven process & portfolio) → Transformation (the finished result, guaranteed).`,
         customerJourney: [
           "A design consultation at your home",
           "A detailed written quote — itemised, no surprises",
@@ -407,7 +420,7 @@ export function buildTradeProfile(
         primaryCta: "Enquire",
         primaryCtaAction: "form",
         secondaryCta: "View the portfolio",
-        storyArc: `Aspiration (a vision of something exceptional) → Trust (${business}'s signature and pedigree) → Collaboration (a considered, personal process) → Realisation (a result beyond expectation).`,
+        storyArc: `Aspiration (a vision of something exceptional) → Trust (${possessive(business)} signature and pedigree) → Collaboration (a considered, personal process) → Realisation (a result beyond expectation).`,
         customerJourney: [
           "A private consultation, at your convenience",
           "A considered proposal, crafted around your home",
@@ -429,7 +442,7 @@ export function buildTradeProfile(
         ],
         typographyDirection:
           "A refined high-contrast serif for display with an impeccable sans body — a design-press feel.",
-        photographyStyle: `Art-directed, editorial photography of ${business}'s signature ${spoken} work.`,
+        photographyStyle: `Art-directed, editorial photography of ${possessive(business)} signature ${spoken} work.`,
         videoStyle: "Slow, elegant, film-like — atmosphere over information.",
         shotList: [
           "a signature project, art-directed",
@@ -678,7 +691,7 @@ export function buildTradeProfile(
         ],
         typographyDirection:
           "A clean, friendly sans — simple, warm, and effortless to scan.",
-        photographyStyle: `Bright, real photography of ${business}'s spotless results and a friendly, uniformed team in ${location}.`,
+        photographyStyle: `Bright, real photography of ${possessive(business)} spotless results and a friendly, uniformed team in ${location}.`,
         videoStyle: "Upbeat and light — the ease of a reliable, recurring service.",
         shotList: [
           "a pristine 'after' result",
@@ -739,7 +752,7 @@ export function buildTradeProfile(
         primaryCta: "Check your date",
         primaryCtaAction: "form",
         secondaryCta: "See the portfolio",
-        storyArc: `The dream day (imagine it perfectly) → The fear (what if it's not captured?) → The guide (${business}'s portfolio & warmth) → The memory (relived forever).`,
+        storyArc: `The dream day (imagine it perfectly) → The fear (what if it's not captured?) → The guide (${possessive(business)} portfolio & warmth) → The memory (relived forever).`,
         customerJourney: [
           "A relaxed first chat about your day",
           "A tailored plan and transparent pricing",
@@ -814,9 +827,9 @@ export function buildTradeProfile(
         ],
         isUrgent: false,
         hero: {
-          headline: `${location}'s ${spoken}, done right`,
+          headline: `${possessive(location)} ${spoken}, done right`,
           subheadline: `${business} — honest, reliable ${spoken} with a finish you can trust.`,
-          visualConcept: `Confident, authentic imagery of ${business}'s real work and team in ${location}.`,
+          visualConcept: `Confident, authentic imagery of ${possessive(business)} real work and team in ${location}.`,
         },
         primaryCta: "Get a free quote",
         primaryCtaAction: "form",

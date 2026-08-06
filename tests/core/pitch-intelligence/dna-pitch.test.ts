@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolveTradePitch } from "@/core/pitch-intelligence";
+import { deriveBudgetGuidance, resolveTradePitch } from "@/core/pitch-intelligence";
 import { TRADE_TAXONOMY } from "@/core/trade-taxonomy";
 
 /**
@@ -60,5 +60,34 @@ describe("knowledge-derived pitch material", () => {
       expect(pitch.painPoints.length, trade.id).toBeGreaterThanOrEqual(2);
       expect(pitch.objections.length, trade.id).toBeGreaterThanOrEqual(3);
     }
+  });
+});
+
+describe("budget guidance — sourced lines, never computed numbers", () => {
+  it("every taxonomy trade gets budget lines — the platform floor law reaches all 35", () => {
+    // The merged record's field-level merge means a trade either wrote its
+    // own budget research or inherits the Vol 3 platform floors. Either way
+    // the founder is never on the phone with nothing sourced to say about
+    // money.
+    for (const trade of TRADE_TAXONOMY) {
+      const guidance = deriveBudgetGuidance(trade.id);
+      expect(guidance, trade.id).not.toBeNull();
+      expect(guidance!.lines.length, trade.id).toBeGreaterThanOrEqual(1);
+      expect(guidance!.tradeId, trade.id).toBe(trade.id);
+    }
+  });
+
+  it("the lines carry the Vol 3 floor discipline, not invented arithmetic", () => {
+    // Format-only law: the function may surface a sourced sentence
+    // containing figures, but the figures exist verbatim in the knowledge
+    // base. The sub-£500 refusal line is the canonical platform entry.
+    const guidance = deriveBudgetGuidance("electricians");
+    expect(guidance).not.toBeNull();
+    expect(guidance!.lines.join(" ")).toMatch(/£500|CPL|10–15%/);
+  });
+
+  it("unknown free text is silent — no budget without a matched trade", () => {
+    expect(deriveBudgetGuidance("alpaca grooming")).toBeNull();
+    expect(deriveBudgetGuidance("")).toBeNull();
   });
 });

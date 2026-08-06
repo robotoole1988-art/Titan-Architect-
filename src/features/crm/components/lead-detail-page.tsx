@@ -14,7 +14,7 @@ import {
   resolveCplEstimate,
   resolveMarketDataProvider,
 } from "@/core/market-intelligence";
-import { resolveTradePitch } from "@/core/pitch-intelligence";
+import { deriveBudgetGuidance, resolveTradePitch } from "@/core/pitch-intelligence";
 import { confidenceLabel } from "@/core/market-intelligence";
 import type { Deal } from "@/core/pricing";
 import { EstimateCard } from "@/features/market";
@@ -137,7 +137,36 @@ function PitchPanel({ business }: { business: Business }) {
           ))}
         </ul>
       </div>
+
+      <BudgetBlock trade={business.tradeId ?? business.trade} />
     </section>
+  );
+}
+
+/**
+ * "What would this cost me?" — the sourced answer, beside the job values it
+ * is judged against. Every line is a knowledge-base entry (ADR-067):
+ * trade-tiered floors and the CPL guardrail from the Vol 3 acquisition
+ * research, or the trade's own budget research where it wrote one. Nothing
+ * is computed; sourced-or-silent means an unknown trade shows nothing.
+ */
+function BudgetBlock({ trade }: { trade: string }) {
+  const guidance = deriveBudgetGuidance(trade.toLowerCase());
+  if (!guidance) return null;
+  return (
+    <div className="flex flex-col gap-2">
+      <h3 className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+        Suggested starting budget · sourced (ADR-067)
+      </h3>
+      <ul className="flex flex-col gap-1.5">
+        {guidance.lines.map((line) => (
+          <li key={line} className="flex gap-2 text-sm text-foreground/85">
+            <span className="mt-[7px] size-1 shrink-0 rounded-full bg-amber-400/70" />
+            {line}
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

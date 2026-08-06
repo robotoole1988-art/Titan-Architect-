@@ -27,6 +27,8 @@ export {
   isProxyableMediaUrl,
 } from "./api/media-stream";
 export { renderPage } from "./model/render-page";
+export { resolveDemoSite, WebsiteDemoPage } from "./components/website-demo-page";
+export type { DemoSiteRequest, ResolvedDemoSite } from "./components/website-demo-page";
 export { resolveSignatureMoment } from "./moments/registry";
 export {
   PRIMITIVE_COMPONENT_MAP,

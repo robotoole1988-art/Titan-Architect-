@@ -1,6 +1,8 @@
 # ADR-068 — Particles return, for the public face only
 
-- **Status:** Proposed (needs the founder's explicit sanction — this reverses his own ADR-041)
+- **Status:** Rejected (founder, 2026-08-03: "the quality was very poor —
+  idea is great, the delivery was so far below the TITAN standard." ADR-041
+  stands. The flagship vision survives; particles do not carry it.)
 - **Date:** 2026-08-03
 - **Prompted by:** the flagship experience PRD (`docs/prd/prd-007-flagship-experience-the-working-mind.md`) and the founder's vision brief of 2026-08-02
 - **Reverses, narrowly:** ADR-041 (retirement of the particle morph)
@@ -49,3 +51,20 @@ Real-time particle rendering returns under strict containment:
   touches them.
 - If the founder declines, the PRD's still/CSS tiers already describe the
   film without particles; the acts survive, quieter.
+
+## Outcome (2026-08-03)
+
+The founder declined — not on cost or risk, but on quality: the particle
+work ADR-041 retired was itself far below the standard, and un-retiring a
+medium whose best showing was poor would be nostalgia, not judgment. His
+words: the idea is great; the delivery was not.
+
+What this means in practice:
+
+- ADR-041 stands in full. No real-time particle rendering anywhere.
+- PRD-007's acts survive on the still/CSS choreography tiers it already
+  defines (§ device tiers) — the working mind is shown through motion
+  design, live data and the real generator, not through a particle field.
+- The bar for any future medium proposal on the public face: a built
+  prototype at the TITAN standard, judged by the founder with his eyes,
+  before an ADR asks for sanction. Prose does not reopen this.

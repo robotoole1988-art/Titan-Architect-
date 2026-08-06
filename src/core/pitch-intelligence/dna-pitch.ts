@@ -102,3 +102,34 @@ export function deriveDnaPitch(trade: string): DnaPitchMaterial | null {
     ...(jobValues.length > 0 ? { averageJobValues: jobValues } : {}),
   };
 }
+
+/**
+ * Budget guidance for the founder's "what would this cost me?" moment.
+ *
+ * Every line is a knowledge-base entry from the merged record's
+ * `paidAdvertising.budgetGuidance` — the platform layer's trade-tiered
+ * floors (Vol 3: refuse sub-£500/month; CPL ≤ 10–15% of job value) unless
+ * the trade's own research wrote something more specific, in which case the
+ * field-level merge already put the trade's truth first.
+ *
+ * This function formats entries; it never computes a number. Arithmetic on
+ * figures parsed out of prose is how a "suggested budget" becomes an
+ * invented one — the founder reads the sourced lines against the job
+ * values beside them, which is exactly the sanity check the guardrail
+ * entry describes (ADR-067; the no-substring law, ADR-062/066, applied to
+ * numbers).
+ */
+export interface BudgetGuidance {
+  /** The canonical taxonomy id the knowledge base matched. */
+  tradeId: string;
+  /** Sourced budget lines, phrased for reading aloud. */
+  lines: string[];
+}
+
+export function deriveBudgetGuidance(trade: string): BudgetGuidance | null {
+  const { dna, matched } = resolveIndustryDna(trade);
+  if (!matched) return null;
+  const lines = take([dna.paidAdvertising.budgetGuidance], 4);
+  if (lines.length === 0) return null;
+  return { tradeId: matched, lines };
+}
