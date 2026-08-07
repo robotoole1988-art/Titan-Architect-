@@ -24,7 +24,7 @@ export function CompanyPrivacyPage() {
       <main id="main">
         <section className="border-b border-white/[0.07]">
           <div className="mx-auto max-w-6xl px-6 pb-16 pt-24 sm:pt-28">
-            <p className="text-xs font-medium uppercase tracking-[0.24em] text-amber-200/70">
+            <p className="text-xs font-medium uppercase tracking-[0.24em] text-[#8fb0e8]">
               Privacy
             </p>
             <h1 className="mt-7 max-w-3xl text-balance text-4xl font-semibold leading-[1.12] tracking-tight text-white sm:text-5xl">
@@ -106,7 +106,7 @@ export function CompanyPrivacyPage() {
               For anything on this page, or to make such a request, email{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="text-amber-200/80 underline underline-offset-4 hover:text-amber-100"
+                className="text-[#9db9e8] underline underline-offset-4 hover:text-[#c3d9ff]"
               >
                 {CONTACT_EMAIL}
               </a>

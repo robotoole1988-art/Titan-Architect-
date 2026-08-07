@@ -14,7 +14,7 @@ export function CompanyThanksPage() {
       <main id="main">
         <section className="border-b border-white/[0.07]">
           <div className="mx-auto max-w-6xl px-6 pb-24 pt-24 sm:pb-32 sm:pt-32">
-            <p className="text-xs font-medium uppercase tracking-[0.24em] text-amber-200/70">
+            <p className="text-xs font-medium uppercase tracking-[0.24em] text-[#8fb0e8]">
               Received
             </p>
             <h1 className="mt-7 max-w-3xl text-balance text-4xl font-semibold leading-[1.1] tracking-tight text-white sm:text-5xl">
@@ -29,7 +29,7 @@ export function CompanyThanksPage() {
               Anything urgent in the meantime,{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="text-amber-200/80 underline underline-offset-4 hover:text-amber-100"
+                className="text-[#9db9e8] underline underline-offset-4 hover:text-[#c3d9ff]"
               >
                 email directly
               </a>
@@ -37,7 +37,7 @@ export function CompanyThanksPage() {
             </p>
             <Link
               href="/"
-              className="mt-10 inline-block rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-white/80 transition-colors hover:border-white/35 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
+              className="mt-10 inline-block rounded-full border border-white/15 px-6 py-3 text-sm font-medium text-white/80 transition-colors hover:border-white/35 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7fa8ff]/70"
             >
               Back to the site
             </Link>

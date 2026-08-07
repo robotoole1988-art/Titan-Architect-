@@ -18,7 +18,7 @@ export function CompanyAboutPage() {
       <main id="main">
         <section className="border-b border-white/[0.07]">
           <div className="mx-auto max-w-6xl px-6 pb-20 pt-24 sm:pt-28">
-            <p className="text-xs font-medium uppercase tracking-[0.24em] text-amber-200/70">
+            <p className="text-xs font-medium uppercase tracking-[0.24em] text-[#8fb0e8]">
               About
             </p>
             <h1 className="mt-7 max-w-3xl text-balance text-4xl font-semibold leading-[1.1] tracking-tight text-white sm:text-5xl">
@@ -125,7 +125,7 @@ export function CompanyAboutPage() {
               page — it runs on TITAN&rsquo;s own enquiry capture, and the{" "}
               <Link
                 href="/privacy"
-                className="text-amber-200/80 underline underline-offset-4 hover:text-amber-100"
+                className="text-[#9db9e8] underline underline-offset-4 hover:text-[#c3d9ff]"
               >
                 privacy page
               </Link>{" "}
@@ -133,7 +133,7 @@ export function CompanyAboutPage() {
               rather keep the exchange in your own hands:{" "}
               <a
                 href={`mailto:${CONTACT_EMAIL}`}
-                className="text-amber-200/80 underline underline-offset-4 hover:text-amber-100"
+                className="text-[#9db9e8] underline underline-offset-4 hover:text-[#c3d9ff]"
               >
                 write to us directly
               </a>
@@ -142,7 +142,7 @@ export function CompanyAboutPage() {
           </Prose>
           <Link
             href="/#contact"
-            className="mt-9 inline-block rounded-full bg-amber-300 px-6 py-3 text-sm font-semibold text-[#0b0803] transition-colors hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
+            className="mt-9 inline-block rounded-full bg-gradient-to-b from-[#3f79ff] to-[#2c5fe8] px-6 py-3 text-sm font-semibold text-white shadow-[0_6px_24px_rgba(63,121,255,0.35)] transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7fa8ff]/70"
           >
             Start the conversation
           </Link>

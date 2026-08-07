@@ -53,7 +53,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       <body className="min-h-svh bg-[#05060a] font-sans text-white antialiased">
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-6 focus:z-50 focus:rounded-full focus:bg-amber-300 focus:px-5 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#0b0803]"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-6 focus:top-6 focus:z-50 focus:rounded-full focus:bg-[#7fa8ff] focus:px-5 focus:py-2 focus:text-sm focus:font-semibold focus:text-[#071022]"
         >
           Skip to content
         </a>
