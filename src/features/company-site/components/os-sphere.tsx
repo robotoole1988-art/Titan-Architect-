@@ -39,11 +39,15 @@ export function OsSphere() {
     <div aria-hidden="true" className="pointer-events-none select-none">
       <style>{`
 @media (prefers-reduced-motion: no-preference) {
-  .ts-orbit { animation: ts-orbit 44s linear infinite; transform-origin: ${s.cx}px ${s.cy}px; }
+  /* The highlight travels the ring by dash offset — never by transform.
+     A rotated group picks up its origin differently across engines and
+     the arc wanders off the ellipse (caught live in Chrome, 2026-08-07:
+     "the brain is bugged"). Dash offset cannot leave the path. */
+  .ts-orbit { animation: ts-orbit 26s linear infinite; }
   .ts-core { animation: ts-core 7s ease-in-out infinite alternate; }
   .ts-la { animation: ts-shim 9s ease-in-out infinite alternate; }
   .ts-lb { animation: ts-shim 13s ease-in-out -4s infinite alternate; }
-  @keyframes ts-orbit { to { transform: rotate(360deg); } }
+  @keyframes ts-orbit { to { stroke-dashoffset: -1178; } }
   @keyframes ts-core { from { opacity: 0.72; } to { opacity: 1; } }
   @keyframes ts-shim { from { opacity: 0.5; } to { opacity: 0.95; } }
 }
@@ -120,21 +124,20 @@ export function OsSphere() {
           strokeOpacity="0.22"
           strokeWidth="1"
         />
-        <g className="ts-orbit">
-          <ellipse
-            cx={s.cx}
-            cy={s.cy}
-            rx={s.s * 1.32}
-            ry={s.s * 0.375}
-            transform={`rotate(-18 ${s.cx} ${s.cy})`}
-            fill="none"
-            stroke="#c3d9ff"
-            strokeOpacity="0.55"
-            strokeWidth="1.6"
-            strokeDasharray="120 1400"
-            strokeLinecap="round"
-          />
-        </g>
+        <ellipse
+          className="ts-orbit"
+          cx={s.cx}
+          cy={s.cy}
+          rx={s.s * 1.32}
+          ry={s.s * 0.375}
+          transform={`rotate(-18 ${s.cx} ${s.cy})`}
+          fill="none"
+          stroke="#c3d9ff"
+          strokeOpacity="0.55"
+          strokeWidth="1.6"
+          strokeDasharray="120 1058.2"
+          strokeLinecap="round"
+        />
       </svg>
     </div>
   );
