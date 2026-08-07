@@ -16,6 +16,7 @@ import { CONTACT_EMAIL } from "../model/facts";
  */
 
 const NAV = [
+  { href: "/experience/demo/roofing/leeds", label: "Watch it build" },
   { href: "/advertising", label: "Advertising" },
   { href: "/about", label: "About" },
 ] as const;
@@ -27,7 +28,7 @@ export function Wordmark({ muted = false }: { muted?: boolean }) {
         muted ? "text-white/55" : "text-white"
       }`}
     >
-      TITAN
+      TITA<span className={muted ? undefined : "text-[#7fa8ff]"}>N</span>
     </span>
   );
 }
@@ -36,7 +37,7 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#05060a]/85 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <Link href="/" className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70">
+        <Link href="/" className="rounded-sm focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7fa8ff]/70">
           <Wordmark />
           <span className="sr-only">TITAN — home</span>
         </Link>
@@ -53,14 +54,14 @@ export function SiteHeader() {
             <Link
               key={item.href}
               href={item.href}
-              className="hidden text-white/60 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70 sm:inline"
+              className="hidden text-white/60 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7fa8ff]/70 sm:inline"
             >
               {item.label}
             </Link>
           ))}
           <Link
             href="/#contact"
-            className="whitespace-nowrap rounded-full border border-amber-300/30 bg-amber-300/[0.07] px-4 py-1.5 text-amber-100 transition-colors hover:border-amber-300/60 hover:bg-amber-300/[0.14] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
+            className="whitespace-nowrap rounded-full border border-[#7fa8ff]/40 bg-[#7fa8ff]/[0.08] px-4 py-1.5 text-[#c3d9ff] transition-colors hover:border-[#7fa8ff]/70 hover:bg-[#7fa8ff]/[0.16] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7fa8ff]/70"
           >
             Get in touch
           </Link>
@@ -83,6 +84,12 @@ export function SiteFooter() {
             </p>
           </div>
           <nav aria-label="Footer" className="flex flex-col gap-3 text-sm">
+            <Link
+              href="/experience/demo/roofing/leeds"
+              className="text-white/55 hover:text-white"
+            >
+              Watch it build
+            </Link>
             <Link href="/advertising" className="text-white/55 hover:text-white">
               Advertising
             </Link>
@@ -142,7 +149,7 @@ export function Section({
     >
       <div className="mx-auto max-w-6xl px-6 py-20 sm:py-28">
         {eyebrow ? (
-          <p className="mb-5 text-xs font-medium uppercase tracking-[0.24em] text-amber-200/70">
+          <p className="mb-5 text-xs font-medium uppercase tracking-[0.24em] text-[#8fb0e8]">
             {eyebrow}
           </p>
         ) : null}

@@ -11,7 +11,7 @@ import { CONTACT_EMAIL } from "../model/facts";
  */
 
 const FIELD =
-  "w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[0.95rem] text-white placeholder:text-white/50 focus:border-amber-300/60 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300/70";
+  "w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[0.95rem] text-white placeholder:text-white/50 focus:border-[#7fa8ff]/70 focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#7fa8ff]/70";
 
 const LABEL = "text-xs font-medium uppercase tracking-[0.14em] text-white/60";
 
@@ -77,7 +77,7 @@ export function ContactForm() {
       <div className="mt-7 flex flex-wrap items-center gap-5">
         <button
           type="submit"
-          className="rounded-full bg-amber-300 px-7 py-3 text-sm font-semibold text-[#0b0803] transition-colors hover:bg-amber-200 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-amber-300/70"
+          className="rounded-full bg-gradient-to-b from-[#3f79ff] to-[#2c5fe8] px-7 py-3 text-sm font-semibold text-white shadow-[0_6px_24px_rgba(63,121,255,0.35)] transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7fa8ff]/70"
         >
           Send it
         </button>
@@ -90,7 +90,7 @@ export function ContactForm() {
         Prefer email?{" "}
         <a
           href={`mailto:${CONTACT_EMAIL}`}
-          className="text-amber-200/80 underline underline-offset-4 hover:text-amber-100"
+          className="text-[#9db9e8] underline underline-offset-4 hover:text-[#c3d9ff]"
         >
           Write to us directly
         </a>
