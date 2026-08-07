@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "runs": 3,
   "archetypePaths": ["/sites/summit-roofing-rescue", "/sites/kerbside-kings"],
+  "companyPaths": ["/"],
   "categories": {
     "performance": { "floor": 95, "aim": 100 },
     "accessibility": { "floor": 95, "aim": 100 },

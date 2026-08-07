@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-08-07 — The nightly gate audits what exists (overnight build)
+
+- **The Performance Law's nightly was red eleven mornings straight** — it
+  audits the two archetype demo paths, both offline in production since the
+  internal-business cleanup, and a 404 was treated as a law breach. The gate
+  now tells the truth in both directions: a 404 is reported **OFFLINE and
+  skipped** (a takedown is a state, not a lie), any other broken answer
+  still REJECTS, and a fully dark fleet — nothing auditable — fails the run
+  on its own terms. Verified against a mock fleet: 2 offline skipped + live
+  page audited; all-offline exits 1.
+- **TITAN's own home page joins the law** (`companyPaths: ["/"]` in
+  law.json): the site that says "Speed is a rule, not an aspiration" in
+  public is now measured nightly with everything else, fingerprinted by the
+  sphere's server-rendered still.
+
 ## 2026-07-21 — Area-page radar centres the page's area
 
 - The `location.service-area` radar on area landing pages centred and

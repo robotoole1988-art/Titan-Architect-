@@ -49,6 +49,15 @@ const NOT_THE_PRODUCT = ["*vercel.live*", "*vercel-scripts.com*", "*vercel.com/a
 const SITE_FINGERPRINT = "data-primitive=";
 
 /**
+ * TITAN's own site is under the same law (ADR-064) — its home page says
+ * "Speed is a rule, not an aspiration" in public, so the gate measures it
+ * with everything else. Company pages are hand-written, not primitive-
+ * built, so they carry their own marker: the sphere's server-rendered
+ * still (home.tsx). Same principle, different fingerprint.
+ */
+const COMPANY_FINGERPRINT = "data-sphere-still";
+
+/**
  * Preview deployments sit behind Vercel Deployment Protection, so an
  * unauthenticated CI runner is served the login wall — which answers 200
  * with Vercel's own HTML. That is not a hypothetical: the first two runs of
@@ -91,7 +100,12 @@ function parseArgs(argv) {
     console.error("usage: node scripts/lighthouse-gate.mjs <baseUrl> [--runs N] [--paths /a,/b]");
     process.exit(2);
   }
-  const options = { baseUrl: baseUrl.replace(/\/$/, ""), runs: LAW.runs, paths: LAW.archetypePaths };
+  const options = {
+    baseUrl: baseUrl.replace(/\/$/, ""),
+    runs: LAW.runs,
+    // The whole public surface: the archetype fleet plus TITAN's own pages.
+    paths: [...LAW.archetypePaths, ...(LAW.companyPaths ?? [])],
+  };
   for (let i = 0; i < rest.length; i += 2) {
     if (rest[i] === "--runs") options.runs = Number(rest[i + 1]);
     if (rest[i] === "--paths") options.paths = rest[i + 1].split(",").filter(Boolean);
@@ -274,6 +288,9 @@ async function main() {
   );
 
   let failed = false;
+  let audited = 0;
+  const offline = [];
+  const companyPaths = new Set(LAW.companyPaths ?? []);
   for (const path of paths) {
     const url = `${baseUrl}${path}`;
 
@@ -283,21 +300,35 @@ async function main() {
       redirect: "follow",
       ...(bypassHeaders ? { headers: bypassHeaders } : {}),
     });
+    if (response.status === 404) {
+      // Not published is a STATE, not a lie: the takedown path exists so a
+      // site can be offline on purpose ("offline means offline", PR #29).
+      // The gate's job is to measure what is published and refuse to
+      // pretend — so an absent page is reported loudly and skipped, and
+      // the run fails only if that leaves nothing to audit. Eleven straight
+      // nights of red taught us what a gate that conflates the two is
+      // worth: nothing, because it gets ignored.
+      console.log(`\nOFFLINE ${url} — 404: nothing is published here. Skipped, not scored.`);
+      offline.push(url);
+      continue;
+    }
     if (!response.ok) {
-      console.error(`\nREJECTED ${url} — responded ${response.status}; there is nothing to audit.`);
+      console.error(`\nREJECTED ${url} — responded ${response.status}; a live path answered brokenly.`);
       failed = true;
       continue;
     }
+    const fingerprint = companyPaths.has(path) ? COMPANY_FINGERPRINT : SITE_FINGERPRINT;
     const body = await response.text();
-    if (!body.includes(SITE_FINGERPRINT)) {
+    if (!body.includes(fingerprint)) {
       console.error(
-        `\nREJECTED ${url} — 200, but this is not a published TITAN page (no ${SITE_FINGERPRINT}).` +
+        `\nREJECTED ${url} — 200, but this is not the TITAN page it claims to be (no ${fingerprint}).` +
           `\n  A preview behind deployment protection, or a site whose publication did not resolve,` +
           `\n  answers 200 with someone else's HTML. Scoring it would be a lie in either direction.`,
       );
       failed = true;
       continue;
     }
+    audited += 1;
 
     const measurements = [];
     for (let run = 1; run <= runs; run += 1) {
@@ -311,13 +342,24 @@ async function main() {
     if (breaches.length > 0) failed = true;
   }
 
+  if (audited === 0) {
+    // Every path offline is its own emergency: a law with no subjects has
+    // stopped being enforced, and that deserves a red no skip can soften.
+    console.error(
+      `\n${"─".repeat(72)}\nNothing was auditable — every path is offline (${offline.length} skipped).\nThe fleet is dark; the law has no subject. That is a failure of its own.\n`,
+    );
+    process.exit(1);
+  }
   if (failed) {
     console.error(
       `\n${"─".repeat(72)}\nThe Performance Law is not satisfied. A site that misses a floor does\nnot go live — see docs/experience/PUBLISHED-SITES-PERFORMANCE-LAW.md.\n`,
     );
     process.exit(1);
   }
-  console.log(`\n${"─".repeat(72)}\nEvery archetype clears the law.\n`);
+  console.log(
+    `\n${"─".repeat(72)}\nEvery live page clears the law (${audited} audited` +
+      `${offline.length > 0 ? `, ${offline.length} offline and skipped` : ""}).\n`,
+  );
 }
 
 main().catch((error) => {
