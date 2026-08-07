@@ -16,6 +16,7 @@ This directory holds **Product Requirement Documents (PRDs)**: the *what* and
 | [006](./prd-006-business-intake.md) | Business Intake | Draft |
 | [007](./prd-007-flagship-experience-the-working-mind.md) | The Working Mind — the flagship site experience | Draft v2 — motion design, no particles; Increment 1 is the founder's judgment gate on a built prototype |
 | [008](./prd-008-call-tracking.md) | Call Tracking & Enquiry Capture | Draft — compliance brief awaits legal review |
+| [009](./prd-009-customer-app.md) | The Customer App — the customer's window | Draft — from the founder's approved mockup (2026-08-07); increment 1 is the morning screen behind the founder's judgment gate |
 
 PRD-008 carries two supporting documents in this directory:
 [call-tracking-uk-compliance-brief.md](./call-tracking-uk-compliance-brief.md)
