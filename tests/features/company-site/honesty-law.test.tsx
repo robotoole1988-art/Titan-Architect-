@@ -1,5 +1,6 @@
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { gzipSync } from "node:zlib";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { PUBLIC_COMPANY_SITE_PATHS } from "@/core/auth";
@@ -155,16 +156,25 @@ describe("the advertising page matches the application TITAN filed", () => {
 });
 
 describe("the site is as fast as the standard it sells", () => {
-  it("ships no client component", () => {
-    // A marketing page that hydrates to say four things is the exact waste
-    // TITAN charges customers to remove. Every page here is server-rendered
-    // markup; the day one needs interactivity, this test is the conversation.
+  it("ships exactly one client component — the sanctioned sphere island, capped", () => {
+    // The zero-JS law stood from ADR-064 until 2026-08-07, when the founder
+    // judged the still hero live ("why is the brain not interactive and
+    // bright") and sanctioned exactly one exception: the approved sphere
+    // engine, fully alive. The old test said "the day one needs
+    // interactivity, this test is the conversation" — this was the
+    // conversation. The law's spirit survives as a hard cap: ONE island,
+    // byte-ceilinged so "as fast as the standard it sells" stays
+    // measurably true, with the server-rendered still as the designed
+    // first paint and fallback (ordering pinned in sphere.test.ts).
+    const clientFiles: string[] = [];
     for (const file of sourceFiles(FEATURE_DIR)) {
-      const source = readFileSync(file, "utf8");
-      expect(source.includes('"use client"'), `${file} is a client component`).toBe(
-        false,
-      );
+      if (readFileSync(file, "utf8").includes('"use client"')) {
+        clientFiles.push(file.replace(FEATURE_DIR, ""));
+      }
     }
+    expect(clientFiles).toEqual(["/components/sphere-island.tsx"]);
+    const island = readFileSync(join(FEATURE_DIR, "components/sphere-island.tsx"));
+    expect(gzipSync(island).length).toBeLessThan(4500);
   });
 
   it("loads no image — the pages are type and colour", () => {

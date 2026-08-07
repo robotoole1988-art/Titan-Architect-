@@ -9,6 +9,7 @@ import {
 import { Prose, Section, SiteFooter, SiteHeader } from "./chrome";
 import { ContactForm } from "./contact-form";
 import { OsSphere } from "./os-sphere";
+import { SphereIsland } from "./sphere-island";
 
 /**
  * TITAN's home page (ADR-064) — the founder's approved design, 2026-08-06:
@@ -212,10 +213,16 @@ export function CompanyHomePage() {
               </p>
             </div>
 
-            {/* the sphere + desktop callouts */}
+            {/* the sphere: the living island over the designed still.
+                The island mounts first in the DOM (absolute overlay); the
+                still keeps the layout and the first paint, and fades only
+                when the engine reports it is actually running. */}
             <div className="relative mx-auto w-full max-w-[430px] lg:max-w-none">
-              <OsSphere />
-              <div className="absolute inset-0 hidden lg:block" aria-hidden="true">
+              <SphereIsland />
+              <div data-sphere-still className="transition-opacity duration-700">
+                <OsSphere />
+              </div>
+              <div className="absolute inset-0 z-[2] hidden lg:block" aria-hidden="true">
                 {CALLOUTS.map((callout) => (
                   <div key={callout.name} className={`absolute ${callout.pos}`}>
                     <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#dfe9fb] [text-shadow:0_0_14px_rgba(90,150,255,0.5)]">

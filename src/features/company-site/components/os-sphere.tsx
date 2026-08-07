@@ -38,6 +38,10 @@ export function OsSphere() {
   return (
     <div aria-hidden="true" className="pointer-events-none select-none">
       <style>{`
+/* When the living island reports in, the still yields the stage.
+   No JS, reduced motion, or a dead engine: the still simply stays.
+   (Presence-matched, unquoted: the honesty law reads style text too.) */
+[data-sphere-live] + [data-sphere-still] { opacity: 0; }
 @media (prefers-reduced-motion: no-preference) {
   /* The highlight travels the ring by dash offset — never by transform.
      A rotated group picks up its origin differently across engines and

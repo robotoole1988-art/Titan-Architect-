@@ -44,6 +44,27 @@ describe("the OS sphere", () => {
   });
 });
 
+describe("the living island stands on the designed still", () => {
+  it("H1 paints first, the island precedes the still, and the still always ships", async () => {
+    // The island fades the still ONLY once its engine is running (a data
+    // attribute it sets on mount, matched by a sibling selector). That
+    // contract needs three facts in the server markup, in this order:
+    // the headline, then the island's mount point, then the still — and
+    // the still must exist at all, or no-JS and reduced-motion get a hole
+    // where the sphere should be.
+    const { renderToStaticMarkup } = await import("react-dom/server");
+    const { CompanyHomePage } = await import("@/features/company-site");
+    const { createElement } = await import("react");
+    const markup = renderToStaticMarkup(createElement(CompanyHomePage));
+    const h1 = markup.indexOf("<h1");
+    const island = markup.indexOf("data-sphere-island");
+    const still = markup.indexOf("data-sphere-still");
+    expect(h1).toBeGreaterThan(-1);
+    expect(island).toBeGreaterThan(h1);
+    expect(still).toBeGreaterThan(island);
+  });
+});
+
 describe("every trade card opens a real door", () => {
   it("names only trades the taxonomy actually holds", () => {
     // "See it built" must land on the live generator demo for a real trade
