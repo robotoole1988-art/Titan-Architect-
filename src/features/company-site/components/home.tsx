@@ -10,6 +10,7 @@ import { Prose, Section, SiteFooter, SiteHeader } from "./chrome";
 import { ContactForm } from "./contact-form";
 import { OsSphere } from "./os-sphere";
 import { SphereIsland } from "./sphere-island";
+import { TradeArt } from "./trade-art";
 
 /**
  * TITAN's home page (ADR-064) — the founder's approved design, 2026-08-06:
@@ -53,11 +54,11 @@ const CALLOUTS = [
  * the build, not the visitor.
  */
 export const TRADE_CARDS = [
-  { name: "Roofing", line: "Storm-season ready. Emergency call-outs answered.", tradeId: "roofing", town: "leeds", glow: "rgba(90,140,255,0.4)" },
-  { name: "Landscaping", line: "Season-aware. Portfolio-led. Enquiries in spring.", tradeId: "landscaping", town: "harrogate", glow: "rgba(65,214,150,0.34)" },
-  { name: "Driveways", line: "Block paving to resin — kerb appeal that wins the street.", tradeId: "driveways-paving", town: "wakefield", glow: "rgba(255,177,90,0.32)" },
-  { name: "Solar", line: "Panels, batteries, EV chargers — enquiries with intent.", tradeId: "solar-pv", town: "sheffield", glow: "rgba(255,210,104,0.3)" },
-  { name: "Motor trade", line: "MOTs, servicing, repairs — bays kept full.", tradeId: "mot-servicing", town: "bradford", glow: "rgba(110,231,255,0.32)" },
+  { name: "Roofing", line: "Storm-season ready. Emergency call-outs answered.", tradeId: "roofing", town: "leeds", glow: "rgba(90,140,255,0.4)", art: "roofing", tint: "#8fb2ff" },
+  { name: "Landscaping", line: "Season-aware. Portfolio-led. Enquiries in spring.", tradeId: "landscaping", town: "harrogate", glow: "rgba(65,214,150,0.34)", art: "landscaping", tint: "#5fe0a8" },
+  { name: "Driveways", line: "Block paving to resin — kerb appeal that wins the street.", tradeId: "driveways-paving", town: "wakefield", glow: "rgba(255,177,90,0.32)", art: "driveways", tint: "#ffc586" },
+  { name: "Solar", line: "Panels, batteries, EV chargers — enquiries with intent.", tradeId: "solar-pv", town: "sheffield", glow: "rgba(255,210,104,0.3)", art: "solar", tint: "#ffdf8f" },
+  { name: "Motor trade", line: "MOTs, servicing, repairs — bays kept full.", tradeId: "mot-servicing", town: "bradford", glow: "rgba(110,231,255,0.32)", art: "motor", tint: "#8fe8ff" },
 ] as const;
 
 /** The four beats of the journey, in the customer's experience of them. */
@@ -358,11 +359,12 @@ export function CompanyHomePage() {
               <Link
                 key={trade.tradeId}
                 href={`/experience/demo/${trade.tradeId}/${trade.town}`}
-                className="group flex h-56 flex-col justify-end overflow-hidden rounded-2xl border border-white/[0.08] p-4 transition-colors hover:border-[#7fa8ff]/40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7fa8ff]/70"
+                className="group relative flex h-56 flex-col justify-end overflow-hidden rounded-2xl border border-white/[0.08] p-4 transition-colors hover:border-[#7fa8ff]/40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7fa8ff]/70"
                 style={{
                   background: `radial-gradient(130% 95% at 50% 0%, ${trade.glow} 0%, transparent 60%), linear-gradient(180deg, rgba(16,23,38,0.92), rgba(7,10,18,0.95))`,
                 }}
               >
+                <TradeArt kind={trade.art} tint={trade.tint} />
                 <p className="text-[13px] font-bold uppercase tracking-[0.12em] text-white">
                   {trade.name}
                 </p>
@@ -376,12 +378,13 @@ export function CompanyHomePage() {
             ))}
             <a
               href="#demo"
-              className="flex h-56 flex-col justify-end overflow-hidden rounded-2xl border border-white/[0.08] p-4 transition-colors hover:border-[#7fa8ff]/40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7fa8ff]/70"
+              className="group relative flex h-56 flex-col justify-end overflow-hidden rounded-2xl border border-white/[0.08] p-4 transition-colors hover:border-[#7fa8ff]/40 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#7fa8ff]/70"
               style={{
                 background:
                   "radial-gradient(130% 95% at 50% 0%, rgba(180,139,255,0.36) 0%, transparent 60%), linear-gradient(180deg, rgba(16,23,38,0.92), rgba(7,10,18,0.95))",
               }}
             >
+              <TradeArt kind="network" tint="#c9adff" />
               <p className="text-[13px] font-bold uppercase tracking-[0.12em] text-white">
                 + {TRADE_COUNT - TRADE_CARDS.length} more
               </p>
