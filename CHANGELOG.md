@@ -33,9 +33,17 @@
   per slug and per hostname since ADR-027; the app host never did, so
   `/robots.txt` fell through to the founder gate and answered a login
   redirect. Lighthouse scored that as invalid — SEO 91, enforced nightly on
-  production, and on its own enough to keep the run red. `/experience/demo/`
-  is disallowed (the crawler-side half of ADR-070 §4), and `/lab/` too: a
-  founder-judgment prototype is reachable, not crawlable.
+  production, and on its own enough to keep the run red. The public site is
+  crawlable; the door is not.
+- **`/experience/demo/` and `/lab/arrival` are deliberately NOT disallowed**,
+  though the first draft of this change disallowed both. Each already carries
+  `noindex`, and a `Disallow` on the same URL cancels it: a crawler forbidden
+  to fetch the page can never read the `noindex` inside it, so one inbound
+  link can index the bare URL with the instruction not to permanently unread.
+  ADR-070 §4's demo disallow becomes correct when the flagship *links* the
+  demo publicly and crawl budget over 35 trades × any town outweighs
+  de-indexing — not before. A test pins both halves: that those routes really
+  declare `index: false`, and that none of them is disallowed.
 - Noted, not fixed: fonts measure **98.1KB against a 100KB ceiling** on `/`,
   across three woff2. The next family added breaks it.
 

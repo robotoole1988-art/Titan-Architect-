@@ -130,11 +130,26 @@ by `total ≤ 700 KB` (measured: ~415 KB).
 A new route handler at `/robots.txt`, public by exact path in the auth model
 (ADR-064's Set, so nothing rides in behind it). Conventional directives
 only — this file must satisfy a validator as well as a crawler. The public
-company site is crawlable; `/experience/demo/` is disallowed, which is the
-crawler-side half of the promise ADR-070 §4 deferred; `/lab/` is disallowed
-because a founder-judgment prototype is *reachable*, not crawlable; the
-door is disallowed. No `Sitemap:` line, because the app host has no sitemap
-and pointing a crawler at a 404 is the mistake this route exists to fix.
+company site is crawlable; the door (`/login`, `/auth/`) is disallowed. No
+`Sitemap:` line, because the app host has no sitemap and pointing a crawler
+at a 404 is the mistake this route exists to fix.
+
+**`/experience/demo/` and `/lab/arrival` are deliberately NOT disallowed**,
+and this is the part worth writing down. Both are already
+`robots: { index: false }` at the page and the layout. A `Disallow` and a
+`noindex` on the same URL cancel each other out: a crawler forbidden to
+*fetch* the page can never read the `noindex` inside it, so one inbound link
+can put the bare URL in the index with the instruction not to permanently
+unread. One or the other, never both — and `noindex` is the one that
+actually removes a page.
+
+ADR-070 §4 anticipated a disallow for the demo "with the flagship increment
+that links to the demo publicly", and that remains the right moment for it:
+once the demo is linked, its URL space is 35 trades × any town and crawl
+budget becomes the concern that outweighs de-indexing. Until something links
+to it, `noindex` alone is doing the job, and a disallow would only break it.
+A test pins both halves — that each of those routes really does declare
+`index: false`, and that none of them is disallowed.
 
 ### 4. The hydration budget is provisional, and says so
 

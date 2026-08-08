@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { PUBLIC_COMPANY_SITE_PATHS, isProtectedAppPath } from "@/core/auth";
 import { DISALLOWED_PREFIXES, GET } from "@/app/(public)/robots.txt/route";
@@ -10,10 +12,14 @@ import { DISALLOWED_PREFIXES, GET } from "@/app/(public)/robots.txt/route";
  * 91 against a floor of 100 — the reason the nightly production run could not
  * go green even with the fleet up.
  *
- * These tests guard the two ways this one small file could do real damage:
- * telling crawlers to ignore a page that exists to sell TITAN, and drifting
- * out of step with the auth model it describes.
+ * These tests guard the three ways one small file like this does real damage:
+ * telling crawlers to ignore a page that exists to sell TITAN, drifting out of
+ * step with the auth model it describes, and — the subtle one — disallowing a
+ * page that relies on `noindex`, which silently makes the `noindex`
+ * unreachable and can leave the URL indexed for ever.
  */
+
+const APP_DIR = join(process.cwd(), "src", "app");
 
 async function robots(): Promise<string> {
   return await GET().text();
@@ -32,8 +38,7 @@ describe("the app host serves a valid robots.txt", () => {
     const response = GET();
     expect(response.status).toBe(200);
     expect(response.headers.get("content-type")).toContain("text/plain");
-    const body = await response.text();
-    expect(body).not.toContain("<");
+    expect(await response.text()).not.toContain("<");
   });
 
   it("names a user-agent before any rule — a rule with no agent is ignored", async () => {
@@ -63,30 +68,65 @@ describe("what it allows and forbids", () => {
     expect(directives(await robots(), "Allow")).toContain("/");
   });
 
-  it("keeps the generator demo out of the index (ADR-070 §4)", async () => {
-    // The demo pages already carry noindex per page and per layout; this is
-    // the crawler-side half of the same promise.
-    expect(DISALLOWED_PREFIXES).toContain("/experience/demo/");
-    expect(directives(await robots(), "Disallow")).toContain("/experience/demo/");
-  });
-
-  it("keeps founder-judgment prototypes out of the index", async () => {
-    // /lab/arrival is publicly REACHABLE so it can be judged on a real
-    // deployment. Reachable is not crawlable.
-    expect(DISALLOWED_PREFIXES).toContain("/lab/");
-    expect(isProtectedAppPath("/lab/arrival")).toBe(false);
+  it("shuts the door, which has no noindex and nothing to index", async () => {
+    const disallowed = directives(await robots(), "Disallow");
+    expect(disallowed).toContain("/login");
+    expect(disallowed).toContain("/auth/");
   });
 
   it("never disallows a page the company site publishes to sell TITAN", async () => {
-    // The one way this file could quietly cost money. /lab/ and the door are
-    // deliberate exceptions: reachable, but nothing a searcher should land on.
-    const deliberatelyUncrawled = new Set(["/lab/arrival", "/thanks", "/robots.txt"]);
+    // The one way this file could quietly cost money.
     for (const path of PUBLIC_COMPANY_SITE_PATHS) {
-      if (deliberatelyUncrawled.has(path)) continue;
       for (const prefix of DISALLOWED_PREFIXES) {
-        expect(path.startsWith(prefix), `${path} is shadowed by Disallow: ${prefix}`).toBe(false);
+        expect(path.startsWith(prefix), `${path} is shadowed by Disallow: ${prefix}`).toBe(
+          false,
+        );
       }
     }
+  });
+});
+
+describe("Disallow and noindex are never used on the same URL", () => {
+  /**
+   * The rule this suite exists for. A crawler forbidden to FETCH a page can
+   * never read the `noindex` inside it, so one inbound link can index the bare
+   * URL with the instruction not to permanently unread. Whichever route
+   * declares `robots: { index: false }` must stay crawlable.
+   */
+  const NOINDEX_ROUTES: ReadonlyArray<[string, string]> = [
+    // [url path, source file that declares index:false]
+    ["/lab/arrival", "(public)/lab/arrival/page.tsx"],
+    ["/thanks", "(public)/thanks/page.tsx"],
+    ["/experience/demo/", "(demo)/layout.tsx"],
+  ];
+
+  it("every route listed here really does declare noindex", () => {
+    // Pins the premise, so this suite cannot pass on a stale assumption.
+    for (const [, file] of NOINDEX_ROUTES) {
+      const source = readFileSync(join(APP_DIR, file), "utf8");
+      expect(source, `${file} no longer declares index: false`).toMatch(
+        /robots:\s*{\s*index:\s*false/,
+      );
+    }
+  });
+
+  it("and none of them is disallowed, which would make that noindex unreachable", () => {
+    for (const [path] of NOINDEX_ROUTES) {
+      for (const prefix of DISALLOWED_PREFIXES) {
+        expect(
+          path.startsWith(prefix),
+          `${path} relies on noindex, so Disallow: ${prefix} would hide it from the crawler that must read it`,
+        ).toBe(false);
+      }
+    }
+  });
+
+  it("ADR-070 §4's demo disallow is deferred on purpose, not forgotten", async () => {
+    // It becomes correct when the flagship LINKS the demo publicly: at that
+    // point 35 trades × any town makes crawl budget the larger concern. Until
+    // then, noindex alone is doing the job — and a disallow would break it.
+    expect(directives(await robots(), "Disallow")).not.toContain("/experience/demo/");
+    expect(await robots()).toContain("noindex, not Disallow");
   });
 });
 
