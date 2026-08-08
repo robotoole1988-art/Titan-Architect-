@@ -47,6 +47,12 @@ export const PUBLIC_COMPANY_SITE_PATHS: ReadonlySet<string> = new Set([
   // founder judges it on a real deployment; noindex, linked from nowhere,
   // deleted if it misses the standard. A deliberate diff, per the rule above.
   "/lab/arrival",
+  // The app host's own robots.txt (ADR-071). A crawler must be able to read
+  // this file WITHOUT a session — behind the gate it answered a redirect to
+  // the login page, which Lighthouse scored as an invalid robots.txt (SEO 91
+  // against a floor of 100). The published sites have had theirs since
+  // ADR-027; the app host never did.
+  "/robots.txt",
 ]);
 
 /**

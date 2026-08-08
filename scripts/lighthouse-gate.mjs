@@ -31,14 +31,18 @@ const LAW = JSON.parse(
 const LIGHTHOUSE = "lighthouse@12";
 
 /**
- * Vercel injects its preview toolbar (comments, feedback) from vercel.live
- * into every PREVIEW deployment. It is not part of the product and the
- * customer never downloads it, but Lighthouse counts every byte of it: the
- * first run of this gate reported 1,304KB of script against a 130KB budget,
- * and most of that was toolbar. Auditing a preview means blocking it, or the
- * gate measures Vercel's code and calls it ours.
+ * What the law refuses to measure, and the correct way to say so — including
+ * the runtime proof that Lighthouse actually did it (ADR-071).
+ *
+ * The comma-joined form this gate used for weeks blocked NOTHING, so every
+ * preview run scored Vercel's toolbar as TITAN's product. See
+ * `scripts/lighthouse-flags.mjs` for the full account.
  */
-const NOT_THE_PRODUCT = ["*vercel.live*", "*vercel-scripts.com*", "*vercel.com/api*"];
+import {
+  NOT_THE_PRODUCT,
+  blockedPatternsProblem,
+  blockedUrlPatternFlags,
+} from "./lighthouse-flags.mjs";
 
 /**
  * A 200 is not proof we are looking at a TITAN site — a preview login wall,
@@ -47,6 +51,15 @@ const NOT_THE_PRODUCT = ["*vercel.live*", "*vercel-scripts.com*", "*vercel.com/a
  * primitive markers, so that is what we insist on seeing.
  */
 const SITE_FINGERPRINT = "data-primitive=";
+
+/**
+ * TITAN's own site is under the same law (ADR-064) — its home page says
+ * "Speed is a rule, not an aspiration" in public, so the gate measures it
+ * with everything else. Company pages are hand-written, not primitive-
+ * built, so they carry their own marker: the sphere's server-rendered
+ * still (home.tsx). Same principle, different fingerprint.
+ */
+const COMPANY_FINGERPRINT = "data-sphere-still";
 
 /**
  * Preview deployments sit behind Vercel Deployment Protection, so an
@@ -91,12 +104,63 @@ function parseArgs(argv) {
     console.error("usage: node scripts/lighthouse-gate.mjs <baseUrl> [--runs N] [--paths /a,/b]");
     process.exit(2);
   }
-  const options = { baseUrl: baseUrl.replace(/\/$/, ""), runs: LAW.runs, paths: LAW.archetypePaths };
+  const options = {
+    baseUrl: baseUrl.replace(/\/$/, ""),
+    runs: LAW.runs,
+    // The whole public surface: the archetype fleet plus TITAN's own pages.
+    paths: [...LAW.archetypePaths, ...(LAW.companyPaths ?? [])],
+  };
   for (let i = 0; i < rest.length; i += 2) {
     if (rest[i] === "--runs") options.runs = Number(rest[i + 1]);
     if (rest[i] === "--paths") options.paths = rest[i + 1].split(",").filter(Boolean);
   }
   return options;
+}
+
+/**
+ * What the document is MADE of, in decoded bytes (ADR-071).
+ *
+ * Lighthouse reports one transfer size for the whole document, so a budget
+ * named markup+styles was silently billed for React's inline hydration
+ * payload — on TITAN's own home page that is 288KB of 528KB. The gate
+ * already holds the body (it reads it to prove the page is a TITAN page),
+ * so the split costs nothing but this function.
+ */
+function documentComposition(body) {
+  let inlineScriptBytes = 0;
+  // Inline scripts only: a `src=` tag carries no bytes in the document, and
+  // Lighthouse already counts those files under `script`.
+  for (const match of body.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {
+    inlineScriptBytes += Buffer.byteLength(match[1], "utf8");
+  }
+  return { inlineScriptBytes, totalBytes: Buffer.byteLength(body, "utf8") };
+}
+
+/**
+ * markup / hydration are DERIVED lines (ADR-071); every other key is
+ * Lighthouse's own. Mirrors budgetLines() in src/core/performance-law.
+ *
+ * No composition → the whole document is charged to markup+styles. That is
+ * the conservative reading on purpose: no evidence gets the strict answer,
+ * never a free pass.
+ */
+function budgetLines(measurement) {
+  const lines = { ...measurement.budgets };
+  if (lines.document !== undefined) {
+    const composition = measurement.documentComposition;
+    const share =
+      composition && composition.totalBytes > 0
+        ? Math.min(1, Math.max(0, composition.inlineScriptBytes / composition.totalBytes))
+        : 0;
+    lines.markup = lines.document * (1 - share);
+    lines.hydration = lines.document * share;
+  }
+  return lines;
+}
+
+/** The framework floor TITAN cannot move, plus what it may add (ADR-071). */
+function scriptCeiling() {
+  return LAW.scriptLaw.frameworkBaseline.measured + LAW.scriptLaw.appAuthored.ceiling;
 }
 
 /** One Lighthouse run, reduced to what the law cares about. */
@@ -116,7 +180,9 @@ function measure(url) {
       "--screenEmulation.mobile",
       "--throttling-method=simulate",
       `--only-categories=${Object.keys(LAW.categories).join(",")}`,
-      `--blocked-url-patterns=${NOT_THE_PRODUCT.join(",")}`,
+      // ONE flag per pattern. Comma-joining parses as a single literal
+      // pattern and blocks nothing at all (ADR-071).
+      ...blockedUrlPatternFlags(NOT_THE_PRODUCT),
       ...(extraHeadersPath ? [`--extra-headers=${extraHeadersPath}`] : []),
       "--chrome-flags=--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu",
     ],
@@ -129,6 +195,16 @@ function measure(url) {
   if (lhr.runtimeError) {
     throw new Error(`lighthouse runtime error: ${lhr.runtimeError.message}`);
   }
+
+  // Prove, from the report, that what we asked to be blocked WAS blocked
+  // (ADR-071). The flag syntax is an assumption about someone else's CLI, and
+  // this exact assumption was silently wrong for weeks. A measurement the
+  // gate cannot vouch for is not a measurement.
+  const problem = blockedPatternsProblem(
+    lhr.configSettings?.blockedUrlPatterns,
+    NOT_THE_PRODUCT,
+  );
+  if (problem) throw new Error(problem);
 
   const categories = {};
   for (const key of Object.keys(LAW.categories)) {
@@ -195,8 +271,10 @@ function assess(measurement) {
     }
   }
 
+  const lines = budgetLines(measurement);
+
   for (const [key, rule] of Object.entries(LAW.budgets)) {
-    const actual = measurement.budgets[key];
+    const actual = lines[key];
     if (actual === undefined) continue;
     if (actual > rule.ceiling) {
       breaches.push(
@@ -206,14 +284,29 @@ function assess(measurement) {
   }
 
   // Composite budgets judge bytes by what they ARE, not which file carried
-  // them (ADR-058): inlined CSS is still CSS.
+  // them (ADR-058): inlined CSS is still CSS — and inlined hydration
+  // payload is not markup (ADR-071).
   for (const [key, rule] of Object.entries(LAW.compositeBudgets ?? {})) {
-    const parts = rule.of.map((part) => measurement.budgets[part]);
+    const parts = rule.of.map((part) => lines[part]);
     if (parts.every((part) => part === undefined)) continue;
     const actual = parts.reduce((sum, part) => sum + (part ?? 0), 0);
     if (actual > rule.ceiling) {
       breaches.push(
         `${key} transferred ${round(actual)}KB (${rule.of.join(" + ")}) — ${round(actual - rule.ceiling)}KB over the ${rule.ceiling}KB budget`,
+      );
+    }
+  }
+
+  // The script line, judged in two parts (ADR-071): the framework floor is a
+  // measured fact, so a breach names what TITAN actually added on top of it.
+  if (lines.script !== undefined) {
+    const { frameworkBaseline, appAuthored } = LAW.scriptLaw;
+    const ceiling = scriptCeiling();
+    if (lines.script > ceiling) {
+      breaches.push(
+        `script transferred ${round(lines.script)}KB — ${round(lines.script - frameworkBaseline.measured)}KB ` +
+          `above the ${frameworkBaseline.measured}KB framework baseline, against an app-authored ` +
+          `allowance of ${appAuthored.ceiling}KB (${round(lines.script - ceiling)}KB over)`,
       );
     }
   }
@@ -243,20 +336,46 @@ function report(url, measurement, breaches) {
     const mark = actual <= rule.ceiling ? "PASS" : "FAIL";
     console.log(`  ${mark.padEnd(5)} ${key.padEnd(16)} ${round(actual)}${rule.unit ? rule.unit : ""}  (ceiling ${rule.ceiling}${rule.unit ?? ""})`);
   }
+  const lines = budgetLines(measurement);
   for (const [key, rule] of Object.entries(LAW.budgets)) {
-    const actual = measurement.budgets[key];
+    const actual = lines[key];
     if (actual === undefined) continue;
     const mark = actual <= rule.ceiling ? "PASS" : "FAIL";
     console.log(`  ${mark.padEnd(5)} ${`${key} bytes`.padEnd(16)} ${round(actual)}KB  (budget ${rule.ceiling}KB)`);
   }
   for (const [key, rule] of Object.entries(LAW.compositeBudgets ?? {})) {
-    const parts = rule.of.map((part) => measurement.budgets[part]);
+    const parts = rule.of.map((part) => lines[part]);
     if (parts.every((part) => part === undefined)) continue;
     const actual = parts.reduce((sum, part) => sum + (part ?? 0), 0);
     const mark = actual <= rule.ceiling ? "PASS" : "FAIL";
     console.log(
       `  ${mark.padEnd(5)} ${`${key} bytes`.padEnd(16)} ${round(actual)}KB  (budget ${rule.ceiling}KB · ${rule.of.join(" + ")})`,
     );
+  }
+  // The script line is printed as its two parts (ADR-071), so the framework
+  // floor stays visible as a MEASUREMENT — and a page that comes in under it
+  // is reported as the ratchet it is, not passed over in silence.
+  if (lines.script !== undefined) {
+    const baseline = LAW.scriptLaw.frameworkBaseline.measured;
+    const ceiling = scriptCeiling();
+    const mark = lines.script <= ceiling ? "PASS" : "FAIL";
+    const appAdded = lines.script - baseline;
+    // Under the baseline, "app -194.6KB" is nonsense to read. Say what is
+    // actually true instead: the floor measured lower than we recorded.
+    const detail =
+      appAdded < 0
+        ? `(under the recorded ${baseline}KB framework baseline — see RATCHET)`
+        : `(baseline ${baseline}KB + app ${round(appAdded)}KB of ${LAW.scriptLaw.appAuthored.ceiling}KB allowed)`;
+    console.log(
+      `  ${mark.padEnd(5)} ${"script bytes".padEnd(16)} ${round(lines.script)}KB  ${detail}`,
+    );
+    if (appAdded < 0) {
+      console.log(
+        `  RATCHET  the framework floor measured ${round(lines.script)}KB here, below the recorded ` +
+          `${baseline}KB. Re-record it downward in law.json with this run as the evidence — a ` +
+          `baseline is a measurement, and headroom is not a gift.`,
+      );
+    }
   }
   if (breaches.length > 0) {
     console.log(`\n  REJECTED — this page may not ship as it stands:`);
@@ -274,6 +393,9 @@ async function main() {
   );
 
   let failed = false;
+  let audited = 0;
+  const offline = [];
+  const companyPaths = new Set(LAW.companyPaths ?? []);
   for (const path of paths) {
     const url = `${baseUrl}${path}`;
 
@@ -283,21 +405,36 @@ async function main() {
       redirect: "follow",
       ...(bypassHeaders ? { headers: bypassHeaders } : {}),
     });
+    if (response.status === 404) {
+      // Not published is a STATE, not a lie: the takedown path exists so a
+      // site can be offline on purpose ("offline means offline", PR #29).
+      // The gate's job is to measure what is published and refuse to
+      // pretend — so an absent page is reported loudly and skipped, and
+      // the run fails only if that leaves nothing to audit. Eleven straight
+      // nights of red taught us what a gate that conflates the two is
+      // worth: nothing, because it gets ignored.
+      console.log(`\nOFFLINE ${url} — 404: nothing is published here. Skipped, not scored.`);
+      offline.push(url);
+      continue;
+    }
     if (!response.ok) {
-      console.error(`\nREJECTED ${url} — responded ${response.status}; there is nothing to audit.`);
+      console.error(`\nREJECTED ${url} — responded ${response.status}; a live path answered brokenly.`);
       failed = true;
       continue;
     }
+    const fingerprint = companyPaths.has(path) ? COMPANY_FINGERPRINT : SITE_FINGERPRINT;
     const body = await response.text();
-    if (!body.includes(SITE_FINGERPRINT)) {
+    if (!body.includes(fingerprint)) {
       console.error(
-        `\nREJECTED ${url} — 200, but this is not a published TITAN page (no ${SITE_FINGERPRINT}).` +
+        `\nREJECTED ${url} — 200, but this is not the TITAN page it claims to be (no ${fingerprint}).` +
           `\n  A preview behind deployment protection, or a site whose publication did not resolve,` +
           `\n  answers 200 with someone else's HTML. Scoring it would be a lie in either direction.`,
       );
       failed = true;
       continue;
     }
+    audited += 1;
+    const composition = documentComposition(body);
 
     const measurements = [];
     for (let run = 1; run <= runs; run += 1) {
@@ -305,19 +442,32 @@ async function main() {
       measurements.push(measure(url));
       process.stdout.write("done");
     }
-    const median = medianRun(measurements);
+    // The body was already read above to prove this page is ours; ADR-071
+    // spends it a second time, to tell markup from hydration payload.
+    const median = { ...medianRun(measurements), documentComposition: composition };
     const breaches = assess(median);
     report(url, median, breaches);
     if (breaches.length > 0) failed = true;
   }
 
+  if (audited === 0) {
+    // Every path offline is its own emergency: a law with no subjects has
+    // stopped being enforced, and that deserves a red no skip can soften.
+    console.error(
+      `\n${"─".repeat(72)}\nNothing was auditable — every path is offline (${offline.length} skipped).\nThe fleet is dark; the law has no subject. That is a failure of its own.\n`,
+    );
+    process.exit(1);
+  }
   if (failed) {
     console.error(
       `\n${"─".repeat(72)}\nThe Performance Law is not satisfied. A site that misses a floor does\nnot go live — see docs/experience/PUBLISHED-SITES-PERFORMANCE-LAW.md.\n`,
     );
     process.exit(1);
   }
-  console.log(`\n${"─".repeat(72)}\nEvery archetype clears the law.\n`);
+  console.log(
+    `\n${"─".repeat(72)}\nEvery live page clears the law (${audited} audited` +
+      `${offline.length > 0 ? `, ${offline.length} offline and skipped` : ""}).\n`,
+  );
 }
 
 main().catch((error) => {
