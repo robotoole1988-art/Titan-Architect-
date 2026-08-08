@@ -151,7 +151,57 @@ to it, `noindex` alone is doing the job, and a disallow would only break it.
 A test pins both halves — that each of those routes really does declare
 `index: false`, and that none of them is disallowed.
 
-### 4. The hydration budget is provisional, and says so
+### 4. The gate proves its own block list, from the report
+
+Found while verifying the above on the first real preview run, and the most
+consequential defect in this ADR.
+
+The gate built its block list like this:
+
+```js
+`--blocked-url-patterns=${NOT_THE_PRODUCT.join(",")}`
+```
+
+Lighthouse parses `blocked-url-patterns` as a yargs **array**, and yargs does
+not split an array value on commas. Verified by running Lighthouse 12 and
+reading `configSettings.blockedUrlPatterns` back out of the report:
+
+```json
+["*vercel.live*,*vercel-scripts.com*,*vercel.com/api*"]
+```
+
+**One literal pattern, containing commas, matching no URL that exists.** The
+flag must be repeated once per pattern; that form parses to three real
+patterns, also verified.
+
+Nothing warned. The run succeeded and the report looked plausible, so **every
+preview audit since the block list was added has scored Vercel's preview
+toolbar as if it were TITAN's product.** Measured on the preview for this
+branch: `performance 72`, `total-blocking-time 1425ms` — against `99` and
+`80ms` for the identical code in production, where no toolbar exists. It also
+inflated the app-authored script figure to 9.6KB where production measures 0.
+`vercel.live/_next-live/feedback/feedback.js` and a `feedback.html` iframe
+were confirmed loading on the preview.
+
+The July note recording this as fixed was mistaken about the cause: the
+improvement seen then came from the **bypass secret**, which stopped the gate
+scoring the login wall. The block list never worked at all.
+
+Two changes, and the second matters more than the first:
+
+1. The flag is repeated per pattern, in `scripts/lighthouse-flags.mjs` with
+   the whole account written down, and unit-tested.
+2. **The gate now verifies, on every run, that Lighthouse applied the
+   patterns it asked for** — reading `configSettings.blockedUrlPatterns` out
+   of the report and refusing the measurement if any is missing. Proven by
+   deliberately reintroducing the bug: the gate exits 1 and names it.
+
+A flag string is an assumption about someone else's CLI, and assumptions
+about other people's CLIs go stale silently. **A measurement the gate cannot
+vouch for is not a measurement** — so it now vouches, rather than trusting
+its own syntax. That principle, not the comma, is the decision here.
+
+### 5. The hydration budget is provisional, and says so
 
 `hydration: 55 KB` against 41.0 KB measured. The headroom is deliberate:
 the trade-card artwork in the same branch adds SVG to the page and therefore
@@ -163,8 +213,16 @@ purpose, and written down as such, is honest; one set loose quietly is not.
 ## Consequences
 
 - The nightly can go green truthfully, on evidence rather than by exemption.
-  `/` passes every line as measured: markup+styles 34.3 KB of 70, hydration
-  41.0 KB of 55, script 194.6 KB of 214.6, SEO 100 once robots.txt ships.
+  Measured on the branch's own preview, with the block list finally working:
+  markup+styles **37.1 KB** of 70, hydration **44.8 KB** of 55, script
+  **204.2 KB** (baseline + 9.6 KB, which the toolbar fix should return to ~0),
+  font 98.8 KB of 100, total 500.0 KB of 700. Every byte line passes.
+- **The trade artwork's true cost, now measured:** +2.8 KB markup and +3.8 KB
+  hydration over the pre-artwork page. The provisional headroom in §5 was
+  needed and sufficient.
+- **Preview scores could not be trusted before this, and nobody knew.** Any
+  performance or TBT figure from a preview run predating the block-list fix
+  should be discarded rather than reasoned from.
 - **The markup+styles budget turns out to have half its room spare** — 34.3
   KB of 70. The sphere and the trade artwork are affordable, which was not
   knowable while the line was being billed for React.

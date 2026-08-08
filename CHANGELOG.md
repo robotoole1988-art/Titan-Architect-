@@ -44,8 +44,32 @@
   demo publicly and crawl budget over 35 trades × any town outweighs
   de-indexing — not before. A test pins both halves: that those routes really
   declare `index: false`, and that none of them is disallowed.
-- Noted, not fixed: fonts measure **98.1KB against a 100KB ceiling** on `/`,
-  across three woff2. The next family added breaks it.
+- **The gate's block list has never blocked anything, and now proves itself.**
+  Found on this branch's own first preview run: the gate scored
+  `performance 72` and `TBT 1425ms` for code that measures `99` and `80ms` in
+  production. Cause — the block patterns were comma-joined into one flag, and
+  Lighthouse parses `blocked-url-patterns` as a yargs array that does not
+  split on commas. Read back from a real Lighthouse 12 report, the applied
+  value was the single literal pattern
+  `"*vercel.live*,*vercel-scripts.com*,*vercel.com/api*"`, matching no URL
+  that exists. **Every preview audit since the list was added has been scoring
+  Vercel's preview toolbar as TITAN's product** — it also inflated
+  app-authored script to 9.6KB where production measures 0. The July note
+  recording this as fixed was mistaken about the cause: the improvement then
+  came from the bypass secret stopping the gate scoring the *login wall*.
+  Fixed by repeating the flag per pattern — and, more importantly, **the gate
+  now reads `configSettings.blockedUrlPatterns` back out of every report and
+  refuses a measurement it cannot vouch for.** Proven by deliberately
+  reintroducing the bug: the gate exits 1 and names it. Preview performance
+  figures from before this fix should be discarded, not reasoned from.
+- With the accounting fixed and the toolbar actually blocked, the branch's own
+  preview passes every byte line: markup+styles **37.1KB** of 70, hydration
+  **44.8KB** of 55, script **204.2KB** of 214.6, font 98.8KB of 100, total
+  500.0KB of 700. The trade artwork's measured cost: **+2.8KB markup, +3.8KB
+  hydration**.
+- Noted, not fixed: fonts measure **98.8KB against a 100KB ceiling** on `/`,
+  across three woff2 — and the law's own prose says "max 2 woff2". The next
+  family added breaks it.
 
 ## 2026-08-07 — The nightly gate audits what exists (overnight build)
 

@@ -31,14 +31,18 @@ const LAW = JSON.parse(
 const LIGHTHOUSE = "lighthouse@12";
 
 /**
- * Vercel injects its preview toolbar (comments, feedback) from vercel.live
- * into every PREVIEW deployment. It is not part of the product and the
- * customer never downloads it, but Lighthouse counts every byte of it: the
- * first run of this gate reported 1,304KB of script against a 130KB budget,
- * and most of that was toolbar. Auditing a preview means blocking it, or the
- * gate measures Vercel's code and calls it ours.
+ * What the law refuses to measure, and the correct way to say so — including
+ * the runtime proof that Lighthouse actually did it (ADR-071).
+ *
+ * The comma-joined form this gate used for weeks blocked NOTHING, so every
+ * preview run scored Vercel's toolbar as TITAN's product. See
+ * `scripts/lighthouse-flags.mjs` for the full account.
  */
-const NOT_THE_PRODUCT = ["*vercel.live*", "*vercel-scripts.com*", "*vercel.com/api*"];
+import {
+  NOT_THE_PRODUCT,
+  blockedPatternsProblem,
+  blockedUrlPatternFlags,
+} from "./lighthouse-flags.mjs";
 
 /**
  * A 200 is not proof we are looking at a TITAN site — a preview login wall,
@@ -176,7 +180,9 @@ function measure(url) {
       "--screenEmulation.mobile",
       "--throttling-method=simulate",
       `--only-categories=${Object.keys(LAW.categories).join(",")}`,
-      `--blocked-url-patterns=${NOT_THE_PRODUCT.join(",")}`,
+      // ONE flag per pattern. Comma-joining parses as a single literal
+      // pattern and blocks nothing at all (ADR-071).
+      ...blockedUrlPatternFlags(NOT_THE_PRODUCT),
       ...(extraHeadersPath ? [`--extra-headers=${extraHeadersPath}`] : []),
       "--chrome-flags=--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu",
     ],
@@ -189,6 +195,16 @@ function measure(url) {
   if (lhr.runtimeError) {
     throw new Error(`lighthouse runtime error: ${lhr.runtimeError.message}`);
   }
+
+  // Prove, from the report, that what we asked to be blocked WAS blocked
+  // (ADR-071). The flag syntax is an assumption about someone else's CLI, and
+  // this exact assumption was silently wrong for weeks. A measurement the
+  // gate cannot vouch for is not a measurement.
+  const problem = blockedPatternsProblem(
+    lhr.configSettings?.blockedUrlPatterns,
+    NOT_THE_PRODUCT,
+  );
+  if (problem) throw new Error(problem);
 
   const categories = {};
   for (const key of Object.keys(LAW.categories)) {
@@ -344,14 +360,20 @@ function report(url, measurement, breaches) {
     const ceiling = scriptCeiling();
     const mark = lines.script <= ceiling ? "PASS" : "FAIL";
     const appAdded = lines.script - baseline;
+    // Under the baseline, "app -194.6KB" is nonsense to read. Say what is
+    // actually true instead: the floor measured lower than we recorded.
+    const detail =
+      appAdded < 0
+        ? `(under the recorded ${baseline}KB framework baseline — see RATCHET)`
+        : `(baseline ${baseline}KB + app ${round(appAdded)}KB of ${LAW.scriptLaw.appAuthored.ceiling}KB allowed)`;
     console.log(
-      `  ${mark.padEnd(5)} ${"script bytes".padEnd(16)} ${round(lines.script)}KB  ` +
-        `(baseline ${baseline}KB + app ${round(appAdded)}KB of ${LAW.scriptLaw.appAuthored.ceiling}KB allowed)`,
+      `  ${mark.padEnd(5)} ${"script bytes".padEnd(16)} ${round(lines.script)}KB  ${detail}`,
     );
     if (appAdded < 0) {
       console.log(
         `  RATCHET  the framework floor measured ${round(lines.script)}KB here, below the recorded ` +
-          `${baseline}KB — re-record it downward in law.json with this run as the evidence.`,
+          `${baseline}KB. Re-record it downward in law.json with this run as the evidence — a ` +
+          `baseline is a measurement, and headroom is not a gift.`,
       );
     }
   }
