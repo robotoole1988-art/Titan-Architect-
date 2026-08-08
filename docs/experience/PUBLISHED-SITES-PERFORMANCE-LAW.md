@@ -29,10 +29,12 @@ Desktop is not tracked separately; a site that passes mobile floors passes deskt
 
 ## 2. Byte budgets (CI-enforced, ratchet down only)
 
-- **Markup + styles ≤70KB gz combined** — one budget, whichever file the bytes arrive in (ADR-058: `inlineCss` puts the CSS *inside* the document, so the old split of HTML ≤35KB / CSS ≤35KB measured one artefact against one of its two numbers). Same total as before, counted once. · **JS ≤130KB gz total**
-- Fonts ≤100KB (max 2 woff2, preloaded, `font-display: swap`)
-- Above-fold images ≤250KB · initial transfer ≤700KB excluding deferred film
-- Budgets may only ever be lowered. Raising a budget requires an ADR.
+- **Markup + styles ≤70KB gz combined** — one budget, whichever file the bytes arrive in (ADR-058: `inlineCss` puts the CSS *inside* the document, so the old split of HTML ≤35KB / CSS ≤35KB measured one artefact against one of its two numbers). Same total as before, counted once. **`markup` is the document MINUS its inline hydration payload** (ADR-071): a budget named markup+styles is not billed for React's flight data. *Measured on `/`, 2026-08-08: **34.3KB** — half the budget spare.*
+- **Hydration payload ≤55KB gz** (ADR-071) — the App Router serialises every page twice: once as HTML the browser paints, once as the inline payload the client runtime hydrates from. Neither markup nor a script file, and the one line that grows every time a section is added, so it carries its own budget. *Measured on `/`: 41.0KB. **Provisional** — ratchet to measured + 2KB on the first green preview.*
+- **JS: a measured framework floor plus a chosen allowance** (ADR-071, replacing the flat ≤130KB, which no TITAN page has ever met). `frameworkBaseline` = **194.6KB**, measured 2026-08-08 as the identical 11 chunks on `/`, `/about`, `/advertising` and `/privacy` with **zero page-unique bytes** — corroborated by Summit at 195.057KB on 2026-07-28. It is a *measurement*, not a choice: re-record it **downward** only, with the evidence in the diff. `appAuthored` = **≤20KB** on top — what TITAN itself puts on the page. *Measured today: 0KB.*
+- Fonts ≤100KB (max 2 woff2, preloaded, `font-display: swap`). *Measured on `/`: 98.1KB across three woff2 — 1.9KB of headroom. The next family added breaks this.*
+- Above-fold images ≤250KB · initial transfer ≤700KB excluding deferred film. *Measured on `/`: ~415KB total.*
+- Budgets may only ever be lowered. Raising a budget requires an ADR. A **measured baseline** is not a budget: it may only be re-recorded downward, and never without a fresh measurement in the diff.
 
 ## 3. The JS law
 

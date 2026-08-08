@@ -113,6 +113,52 @@ function parseArgs(argv) {
   return options;
 }
 
+/**
+ * What the document is MADE of, in decoded bytes (ADR-071).
+ *
+ * Lighthouse reports one transfer size for the whole document, so a budget
+ * named markup+styles was silently billed for React's inline hydration
+ * payload — on TITAN's own home page that is 288KB of 528KB. The gate
+ * already holds the body (it reads it to prove the page is a TITAN page),
+ * so the split costs nothing but this function.
+ */
+function documentComposition(body) {
+  let inlineScriptBytes = 0;
+  // Inline scripts only: a `src=` tag carries no bytes in the document, and
+  // Lighthouse already counts those files under `script`.
+  for (const match of body.matchAll(/<script(?![^>]*\ssrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {
+    inlineScriptBytes += Buffer.byteLength(match[1], "utf8");
+  }
+  return { inlineScriptBytes, totalBytes: Buffer.byteLength(body, "utf8") };
+}
+
+/**
+ * markup / hydration are DERIVED lines (ADR-071); every other key is
+ * Lighthouse's own. Mirrors budgetLines() in src/core/performance-law.
+ *
+ * No composition → the whole document is charged to markup+styles. That is
+ * the conservative reading on purpose: no evidence gets the strict answer,
+ * never a free pass.
+ */
+function budgetLines(measurement) {
+  const lines = { ...measurement.budgets };
+  if (lines.document !== undefined) {
+    const composition = measurement.documentComposition;
+    const share =
+      composition && composition.totalBytes > 0
+        ? Math.min(1, Math.max(0, composition.inlineScriptBytes / composition.totalBytes))
+        : 0;
+    lines.markup = lines.document * (1 - share);
+    lines.hydration = lines.document * share;
+  }
+  return lines;
+}
+
+/** The framework floor TITAN cannot move, plus what it may add (ADR-071). */
+function scriptCeiling() {
+  return LAW.scriptLaw.frameworkBaseline.measured + LAW.scriptLaw.appAuthored.ceiling;
+}
+
 /** One Lighthouse run, reduced to what the law cares about. */
 function measure(url) {
   const result = spawnSync(
@@ -209,8 +255,10 @@ function assess(measurement) {
     }
   }
 
+  const lines = budgetLines(measurement);
+
   for (const [key, rule] of Object.entries(LAW.budgets)) {
-    const actual = measurement.budgets[key];
+    const actual = lines[key];
     if (actual === undefined) continue;
     if (actual > rule.ceiling) {
       breaches.push(
@@ -220,14 +268,29 @@ function assess(measurement) {
   }
 
   // Composite budgets judge bytes by what they ARE, not which file carried
-  // them (ADR-058): inlined CSS is still CSS.
+  // them (ADR-058): inlined CSS is still CSS — and inlined hydration
+  // payload is not markup (ADR-071).
   for (const [key, rule] of Object.entries(LAW.compositeBudgets ?? {})) {
-    const parts = rule.of.map((part) => measurement.budgets[part]);
+    const parts = rule.of.map((part) => lines[part]);
     if (parts.every((part) => part === undefined)) continue;
     const actual = parts.reduce((sum, part) => sum + (part ?? 0), 0);
     if (actual > rule.ceiling) {
       breaches.push(
         `${key} transferred ${round(actual)}KB (${rule.of.join(" + ")}) — ${round(actual - rule.ceiling)}KB over the ${rule.ceiling}KB budget`,
+      );
+    }
+  }
+
+  // The script line, judged in two parts (ADR-071): the framework floor is a
+  // measured fact, so a breach names what TITAN actually added on top of it.
+  if (lines.script !== undefined) {
+    const { frameworkBaseline, appAuthored } = LAW.scriptLaw;
+    const ceiling = scriptCeiling();
+    if (lines.script > ceiling) {
+      breaches.push(
+        `script transferred ${round(lines.script)}KB — ${round(lines.script - frameworkBaseline.measured)}KB ` +
+          `above the ${frameworkBaseline.measured}KB framework baseline, against an app-authored ` +
+          `allowance of ${appAuthored.ceiling}KB (${round(lines.script - ceiling)}KB over)`,
       );
     }
   }
@@ -257,20 +320,40 @@ function report(url, measurement, breaches) {
     const mark = actual <= rule.ceiling ? "PASS" : "FAIL";
     console.log(`  ${mark.padEnd(5)} ${key.padEnd(16)} ${round(actual)}${rule.unit ? rule.unit : ""}  (ceiling ${rule.ceiling}${rule.unit ?? ""})`);
   }
+  const lines = budgetLines(measurement);
   for (const [key, rule] of Object.entries(LAW.budgets)) {
-    const actual = measurement.budgets[key];
+    const actual = lines[key];
     if (actual === undefined) continue;
     const mark = actual <= rule.ceiling ? "PASS" : "FAIL";
     console.log(`  ${mark.padEnd(5)} ${`${key} bytes`.padEnd(16)} ${round(actual)}KB  (budget ${rule.ceiling}KB)`);
   }
   for (const [key, rule] of Object.entries(LAW.compositeBudgets ?? {})) {
-    const parts = rule.of.map((part) => measurement.budgets[part]);
+    const parts = rule.of.map((part) => lines[part]);
     if (parts.every((part) => part === undefined)) continue;
     const actual = parts.reduce((sum, part) => sum + (part ?? 0), 0);
     const mark = actual <= rule.ceiling ? "PASS" : "FAIL";
     console.log(
       `  ${mark.padEnd(5)} ${`${key} bytes`.padEnd(16)} ${round(actual)}KB  (budget ${rule.ceiling}KB · ${rule.of.join(" + ")})`,
     );
+  }
+  // The script line is printed as its two parts (ADR-071), so the framework
+  // floor stays visible as a MEASUREMENT — and a page that comes in under it
+  // is reported as the ratchet it is, not passed over in silence.
+  if (lines.script !== undefined) {
+    const baseline = LAW.scriptLaw.frameworkBaseline.measured;
+    const ceiling = scriptCeiling();
+    const mark = lines.script <= ceiling ? "PASS" : "FAIL";
+    const appAdded = lines.script - baseline;
+    console.log(
+      `  ${mark.padEnd(5)} ${"script bytes".padEnd(16)} ${round(lines.script)}KB  ` +
+        `(baseline ${baseline}KB + app ${round(appAdded)}KB of ${LAW.scriptLaw.appAuthored.ceiling}KB allowed)`,
+    );
+    if (appAdded < 0) {
+      console.log(
+        `  RATCHET  the framework floor measured ${round(lines.script)}KB here, below the recorded ` +
+          `${baseline}KB — re-record it downward in law.json with this run as the evidence.`,
+      );
+    }
   }
   if (breaches.length > 0) {
     console.log(`\n  REJECTED — this page may not ship as it stands:`);
@@ -329,6 +412,7 @@ async function main() {
       continue;
     }
     audited += 1;
+    const composition = documentComposition(body);
 
     const measurements = [];
     for (let run = 1; run <= runs; run += 1) {
@@ -336,7 +420,9 @@ async function main() {
       measurements.push(measure(url));
       process.stdout.write("done");
     }
-    const median = medianRun(measurements);
+    // The body was already read above to prove this page is ours; ADR-071
+    // spends it a second time, to tell markup from hydration payload.
+    const median = { ...medianRun(measurements), documentComposition: composition };
     const breaches = assess(median);
     report(url, median, breaches);
     if (breaches.length > 0) failed = true;

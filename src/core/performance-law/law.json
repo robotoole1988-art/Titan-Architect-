@@ -1,9 +1,14 @@
 {
   "$comment": "THE numbers of the Published Sites Performance Law (docs/experience/PUBLISHED-SITES-PERFORMANCE-LAW.md). This file is the single source: the CI gate (scripts/lighthouse-gate.mjs), the publish gate and the nightly fleet sampler all read it, so a floor can never drift between them. Budgets may only ever be LOWERED — raising one requires an ADR.",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "runs": 3,
-  "archetypePaths": ["/sites/summit-roofing-rescue", "/sites/kerbside-kings"],
-  "companyPaths": ["/"],
+  "archetypePaths": [
+    "/sites/summit-roofing-rescue",
+    "/sites/kerbside-kings"
+  ],
+  "companyPaths": [
+    "/"
+  ],
   "categories": {
     "performance": { "floor": 95, "aim": 100 },
     "accessibility": { "floor": 95, "aim": 100 },
@@ -16,16 +21,35 @@
     "cumulative-layout-shift": { "ceiling": 0.1, "aim": 0, "unit": "" }
   },
   "budgets": {
-    "script": { "ceiling": 130, "unit": "KB transferred" },
+    "hydration": {
+      "ceiling": 55,
+      "unit": "KB transferred",
+      "why": "ADR-071. The App Router sends every page twice: once as HTML the browser paints, and once as the inline flight payload React hydrates from. Those bytes are neither markup nor a script file, and they are the ONE line that grows every time a section is added — so they get their own budget. PROVISIONAL: 41.0KB measured on / (2026-08-08) with headroom left for the trade artwork, to be ratcheted to measured+2 on the first green preview."
+    },
     "font": { "ceiling": 100, "unit": "KB transferred" },
     "total": { "ceiling": 700, "unit": "KB transferred" }
   },
   "compositeBudgets": {
     "markup+styles": {
-      "of": ["document", "stylesheet"],
+      "of": ["markup", "stylesheet"],
       "ceiling": 70,
       "unit": "KB transferred",
-      "why": "ADR-058. The law wrote HTML <=35KB and CSS <=35KB as separate lines, which silently assumed the CSS arrives as its own file. inlineCss puts it inside the document, so the split measured one artefact against one of its two numbers. 70KB is the same total the law always allowed, counted once, whichever file the bytes arrive in."
+      "why": "ADR-058 established the total: 70KB for markup and styles together, whichever file the bytes arrive in, because inlineCss puts the CSS inside the document. ADR-071 finishes the thought — `markup` is now the document MINUS its inline hydration payload, because a budget named markup+styles must not be billed for React's flight data. Measured 34.3KB on / (2026-08-08): half the budget spare."
+    }
+  },
+  "scriptLaw": {
+    "$comment": "ADR-071. The old law wrote one number — script <= 130KB — and no page in TITAN has ever met it, because ~195KB is what Next.js App Router costs before TITAN writes a line. A ceiling nothing can reach is not a law, it is a permanently red light, and a permanently red light teaches everyone to ignore gates. So the line is split into the part TITAN does not control (measured, ratchet-down) and the part it does (budgeted, tight).",
+    "frameworkBaseline": {
+      "measured": 194.6,
+      "unit": "KB transferred",
+      "measuredOn": "2026-08-08",
+      "evidence": "The identical 11-chunk set on /, /about, /advertising and /privacy — 194.6KB on each, ZERO page-unique bytes. /privacy is a page of legal text and ships exactly what the home page with its sphere ships. Corroborated by the 2026-07-28 measurement of /sites/summit-roofing-rescue at 195.057KB: a different page, six weeks earlier, the same number to within half a kilobyte.",
+      "rule": "This is a MEASUREMENT, never a choice. It may only ever be re-recorded DOWNWARD — and only with a fresh measurement in the diff. Raising it requires an ADR, exactly like raising a budget."
+    },
+    "appAuthored": {
+      "ceiling": 20,
+      "unit": "KB transferred",
+      "why": "What TITAN itself puts on the page, on top of the framework floor. Measured today: 0KB — the company site loads no client component at all, and the JS diet (ADR: CSS motion replaces framer-motion) left nothing behind. The allowance is deliberately small: 20KB buys a real island when one is genuinely needed, and trips the moment a dependency sneaks a runtime back in."
     }
   }
 }

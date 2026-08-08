@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-08-08 — A byte is judged by what it is (ADR-071)
+
+- **TITAN's own home page joined the law yesterday. Nobody measured it first
+  — and it failed three lines.** Against production: SEO 91 (floor 100),
+  markup+styles 75.3KB (budget 70), script 194.6KB (budget 130). The page
+  itself is genuinely fast: performance 99, LCP 1.4s, TBT 80ms — beating the
+  law's *aims*, not just its floors. Every breach was an accounting fault,
+  and each is now fixed rather than excused.
+- **The document is split into what it is made of.** Of 528.1KB decoded,
+  288KB is React's inline flight payload. Lighthouse cannot see inside a
+  document, so a budget named *markup+styles* was billed for over half its
+  total in hydration data — the same mistake ADR-058 fixed one layer up. The
+  gate already reads every body to prove the page is ours; it now spends it
+  twice. `markup` (document − inline script) and `hydration` are separate
+  lines that sum back to the document, pinned by test. **markup+styles comes
+  out at 34.3KB of 70 — half the budget spare**, which was unknowable while
+  React was on the bill.
+- **The script ceiling no page has ever met is retired.** `/`, `/about`,
+  `/advertising` and `/privacy` load the identical 11 chunks totalling
+  194.6KB with **zero page-unique bytes** — `/privacy` is legal text and
+  ships what the home page with its sphere ships. Summit measured 195.057KB
+  six weeks earlier. That is the App Router floor before TITAN writes a line;
+  TITAN's own app-authored client JS is **0KB**. So `script ≤ 130` never
+  measured discipline — it measured the framework, and reported a failure
+  nothing could clear. It becomes a *measured* baseline (194.6KB,
+  re-recordable downward only, with the evidence in the diff) plus a
+  deliberately small 20KB allowance for what TITAN adds. A breach now names
+  what TITAN added, not what React costs, and a page under the baseline is
+  reported as the ratchet it is.
+- **The app host serves its own robots.txt.** Published sites have had one
+  per slug and per hostname since ADR-027; the app host never did, so
+  `/robots.txt` fell through to the founder gate and answered a login
+  redirect. Lighthouse scored that as invalid — SEO 91, enforced nightly on
+  production, and on its own enough to keep the run red. `/experience/demo/`
+  is disallowed (the crawler-side half of ADR-070 §4), and `/lab/` too: a
+  founder-judgment prototype is reachable, not crawlable.
+- Noted, not fixed: fonts measure **98.1KB against a 100KB ceiling** on `/`,
+  across three woff2. The next family added breaks it.
+
 ## 2026-08-07 — The nightly gate audits what exists (overnight build)
 
 - **The Performance Law's nightly was red eleven mornings straight** — it

@@ -97,6 +97,7 @@ ADR that supersedes the old one and update the old one's status.
 | [068](./adr-068-particles-return-for-the-public-face.md) | Particles return, for the public face only — proposed reversal of ADR-041; the founder declined on quality grounds, so ADR-041 stands and the flagship runs on motion design, not particles | Rejected |
 | [069](./adr-069-the-brain-is-built-from-feeds-not-faith.md) | The brain is built from feeds, not faith — memory, senses, judgment; departments are ledgers; proposals, never fiats | Proposed |
 | [070](./adr-070-the-demo-is-the-product-run-honestly.md) | The demo is the product, run honestly — `/experience/demo/[trade]/[town]` serves the pure chain under nine laws: exact ids, hard sanitisation, permanent Example strip, never indexed, deterministic | Proposed |
+| [071](./adr-071-a-byte-is-judged-by-what-it-is.md) | A byte is judged by what it is, and by whether we chose it — the document splits into markup and hydration payload; the script line becomes a measured framework floor (194.6KB, ratchet-down) plus a 20KB app allowance; the app host gets a robots.txt | Proposed |
 
 ### Writing a new ADR
 

@@ -217,8 +217,19 @@ describe("every page is reachable and complete", () => {
       expect((markup.match(/<h1\b/g) ?? []).length, `${name} h1 count`).toBe(1);
       expect(markup, `${name} skips the main landmark`).toContain('id="main"');
     }
-    // /, /advertising, /about, /privacy, /thanks — one page component each.
-    expect(PUBLIC_COMPANY_SITE_PATHS.size).toBe(PAGES.length);
+    // Every public path is accounted for: either a page component with an h1
+    // and a main landmark, or one of the deliberate NON-page routes below.
+    // The count is asserted so a new public path cannot arrive without either
+    // a page in PAGES or a line here explaining why it has none.
+    //
+    // /robots.txt is a route handler, not a page — plain text for crawlers
+    // (ADR-071), with its own suite in robots.test.ts.
+    const NON_PAGE_PATHS = ["/robots.txt"];
+    for (const path of NON_PAGE_PATHS) {
+      expect(PUBLIC_COMPANY_SITE_PATHS.has(path), `${path} is not public`).toBe(true);
+    }
+    // /, /advertising, /about, /privacy, /thanks, /lab/arrival — a page each.
+    expect(PUBLIC_COMPANY_SITE_PATHS.size).toBe(PAGES.length + NON_PAGE_PATHS.length);
   });
 
   it("offers a way to make contact on every page", () => {
